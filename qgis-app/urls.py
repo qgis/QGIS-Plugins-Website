@@ -88,14 +88,7 @@ if settings.DEBUG:
 
 simplemenu.register(
     "/admin/",
-    "/planet/",
-    #    '/community-map/',
     "/plugins/",
-    "/styles/?order_by=-upload_date&&is_gallery=true",
-    "/geopackages/?order_by=-upload_date&&is_gallery=true",
-    "/layerdefinitions/?order_by=-upload_date&&is_gallery=true",
-    "/models/?order_by=-upload_date&&is_gallery=true",
-    "/wavefronts/?order_by=-upload_date&&is_gallery=true",
     FlatPage.objects.all(),
     simplemenu.models.URLItem.objects.all(),
 )
