@@ -69,7 +69,6 @@ INSTALLED_APPS = [
     "simplemenu",
     "tinymce",
     "rpc4django",
-    "feedjack",
     "preferences",
     "rest_framework",
     'rest_framework.authtoken',
@@ -138,10 +137,6 @@ CELERY_BEAT_SCHEDULE = {
         'kwargs': {
             'site': DEFAULT_PLUGINS_SITE
         }
-    },
-    'update_feedjack': {
-        'task': 'plugins.tasks.update_feedjack.update_feedjack',
-        'schedule': crontab(minute='*/30'),  # Execute every 30 minutes.
     },
     'update_qgis_versions': {
         'task': 'plugins.tasks.update_qgis_versions.update_qgis_versions',
