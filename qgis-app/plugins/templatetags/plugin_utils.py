@@ -1,6 +1,8 @@
 from django import template
 from PIL import Image, UnidentifiedImageError
 import xml.etree.ElementTree as ET
+import os.path
+from django.conf import settings
 
 register = template.Library()
 
@@ -60,3 +62,17 @@ def _validate_image(file_path):
 @register.filter
 def feedbacks_not_completed(feedbacks):
     return feedbacks.filter(is_completed=False)
+
+
+# inspired by projecta <https://github.com/kartoza/prj.app>
+@register.simple_tag(takes_context=True)
+def version_tag(context):
+    """Reads current project release from the .version file."""
+    version_file = os.path.join(settings.SITE_ROOT, ".version")
+    try:
+        with open(version_file, "r") as file:
+            version = file.read()
+            context["version"] = version
+    except IOError:
+        context["version"] = "Unknown"
+    return context["version"]
