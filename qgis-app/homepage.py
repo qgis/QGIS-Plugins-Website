@@ -4,7 +4,6 @@ from django.template import RequestContext
 from django.utils.translation import gettext_lazy as _
 from plugins.models import Plugin
 
-# from feedjack.models import Post
 
 
 def homepage(request):

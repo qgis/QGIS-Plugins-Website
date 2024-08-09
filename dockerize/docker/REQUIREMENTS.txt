@@ -26,15 +26,6 @@ django-debug-toolbar~=4.2
 whoosh~=2.7
 django-haystack~=3.2
 
-# Feedjack==0.9.18
-# So use George's fork rather
-# git+https://github.com/Erve1879/feedjack.git
-# George's is also broken: use my fork (django 1.8 ready)
-# git+https://github.com/elpaso/feedjack.git
-# His is also broken, use dimasciput (django 2.2 ready)
-# git+https://github.com/dimasciput/feedjack.git
-# For django 4, use Xpirix (django 4.2 ready)
-git+https://github.com/Xpirix/feedjack.git
 feedparser~=6.0
 celery~=5.3
 
