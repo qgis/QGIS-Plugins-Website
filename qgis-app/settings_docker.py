@@ -78,16 +78,6 @@ INSTALLED_APPS = [
     "sorl_thumbnail_serializer",  # serialize image
     "drf_multiple_model",
     "drf_yasg",
-    "api",
-    # styles:
-    "styles",
-    # geopackages
-    "geopackages",
-    # QGIS Layer Definition File (.qlr)
-    "layerdefinitions",
-    # models (sharing .model3 file feature)
-    "models",
-    "wavefronts",
     "matomo"
 ]
 
