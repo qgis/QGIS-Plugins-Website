@@ -125,30 +125,6 @@ label in the run configurations pull down. Debug will also work and you will be
 able to step through views etc as you work.
 
 ---
-## Setup Style Managers Group
-
-The members of this group will receive style related emails.
-Follow these steps for setting up:
-- Open admin page: `http://0.0.0.0:62202/admin`, login with superuser account.
-- Create new Group: `Authentication and Authorization > Groups > Add group`
-- Set the options:
-  - **Name:** `Style Managers`
-  - **Permissions:**
-    choose all styles | in **Available permissions** by typing `styles` in search input and click `Choose all`
-    - styles | style | Can add style
-    - styles | style | Can change style
-    - styles | style | Can delete style
-    - styles | style | Can view style
-    - styles | style review | Can add style review
-    - styles | style review | Can change style review
-    - styles | style review | Can delete style review
-    - styles | style review | Can view style review
-    - styles | style type | Can add style type
-    - styles | style type | Can change style type
-    - styles | style type | Can delete style type
-    - styles | style type | Can view style type
-
----
 ## Backup and Restore
 
 - Go to repo directory and run backup.sh

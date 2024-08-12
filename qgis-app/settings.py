@@ -132,14 +132,11 @@ INSTALLED_APPS = [
     # Tim for django snippets app support
     #'cab', #the django snippets app itself
     "debug_toolbar",
-    # Tim for command extensions so we can run feedjack cron using python manage.py runscript
     "django_extensions",
     # Sam for Users map
     #'django.contrib.gis',
     #'users',
     "olwidget",
-    # Tim for blog planet / feed aggregator
-    "feedjack",
     # For users app thumbs
     "sorl.thumbnail",
     # RPC
@@ -160,8 +157,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     "rest_framework_gis",
     "preferences",
-    # styles:
-    "styles",
     "matomo"
 ]
 

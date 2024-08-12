@@ -15,7 +15,6 @@ TESTFILE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "testfile
 
 class PluginRenameTestCase(TestCase):
     fixtures = [
-        "fixtures/styles.json",
         "fixtures/auth.json",
         "fixtures/simplemenu.json",
     ]

@@ -1,3 +1,9 @@
-[{"model": "simplemenu.menu", "pk": 1, "fields": {"name": "Navigation"}},
-  {"model": "simplemenu.menu", "pk": 2, "fields": {"name": "Hub"}}
+[
+  {
+    "model": "simplemenu.menu",
+    "pk": 1,
+    "fields": {
+      "name": "Navigation"
+    }
+  }
 ]
