@@ -2,10 +2,10 @@
 
 ## Development Environment
 
-- Clone git repo `git clone https://github.com/qgis/QGIS-Django.git`
+- Clone git repo `git clone https://github.com/qgis/QGID-Plugins-Website.git`
 - Run `$ pwd` in order to get your current directory
-- Path to your repo should be `<your current directory>/QGIS-Django `
-- Go to dockerize directory `cd QGIS-Django/dockerize`
+- Path to your repo should be `<your current directory>/QGID-Plugins-Website `
+- Go to dockerize directory `cd QGID-Plugins-Website/dockerize`
 
 - Build and spin container
 ```bash
@@ -65,7 +65,7 @@ pre-commit install --config .pre-commit-config.yaml
 
 ### Setting up a remote interpreter in PyCharm
 
-- PyCharm -> Preferences -> Project: QGIS-Django
+- PyCharm -> Preferences -> Project: QGID-Plugins-Website
 - Click on the gear icon next to project interpreter -> add
 - SSH Interpreter -> New server configuration
 - Host : `localhost`
@@ -116,7 +116,7 @@ Now set these options:
   filesystem and the filesystem in the remote (docker) host. Click the ellipsis
   and add a run that points to your git checkout on your local host and the
   /home/web directory in the docker host. e.g.
-  * **Local path:** <path to your git repo>/QGIS-Django/qgis-app
+  * **Local path:** <path to your git repo>/QGID-Plugins-Website/qgis-app
   * **Remote path:** /home/web/django_project
 * click OK to save your run configuration
 
