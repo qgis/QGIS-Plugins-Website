@@ -55,3 +55,7 @@ qgis-app/api/tests/*/
 qgis-app/whoosh_index/
 docker-compose.override.yml
 .env
+
+# Webpack
+node_modules
+qgis-app/static/bundles

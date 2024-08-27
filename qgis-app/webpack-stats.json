@@ -1,0 +1,61 @@
+{
+  "status": "done",
+  "assets": {
+    "1736c1d1b86d212ec0e6.otf": {
+      "name": "1736c1d1b86d212ec0e6.otf",
+      "path": "/home/web/django_project/static/bundles/1736c1d1b86d212ec0e6.otf"
+    },
+    "3faa3eef13649db02044.ttf": {
+      "name": "3faa3eef13649db02044.ttf",
+      "path": "/home/web/django_project/static/bundles/3faa3eef13649db02044.ttf"
+    },
+    "4dee53ba0521857236d4.otf": {
+      "name": "4dee53ba0521857236d4.otf",
+      "path": "/home/web/django_project/static/bundles/4dee53ba0521857236d4.otf"
+    },
+    "736703c103c634dcacca.otf": {
+      "name": "736703c103c634dcacca.otf",
+      "path": "/home/web/django_project/static/bundles/736703c103c634dcacca.otf"
+    },
+    "76d6d2f65f83f0dc29ce.svg": {
+      "name": "76d6d2f65f83f0dc29ce.svg",
+      "path": "/home/web/django_project/static/bundles/76d6d2f65f83f0dc29ce.svg"
+    },
+    "7c0d1feecfc29711cf44.woff2": {
+      "name": "7c0d1feecfc29711cf44.woff2",
+      "path": "/home/web/django_project/static/bundles/7c0d1feecfc29711cf44.woff2"
+    },
+    "82e9cf0bb7eea6fe95a7.otf": {
+      "name": "82e9cf0bb7eea6fe95a7.otf",
+      "path": "/home/web/django_project/static/bundles/82e9cf0bb7eea6fe95a7.otf"
+    },
+    "92614d4ba3ac388605c4.otf": {
+      "name": "92614d4ba3ac388605c4.otf",
+      "path": "/home/web/django_project/static/bundles/92614d4ba3ac388605c4.otf"
+    },
+    "css/main.3b44985c1f6725f901af.css": {
+      "name": "css/main.3b44985c1f6725f901af.css",
+      "path": "/home/web/django_project/static/bundles/css/main.3b44985c1f6725f901af.css"
+    },
+    "css/main.cc3b021fe57ab7b6cf66.css": {
+      "name": "css/main.cc3b021fe57ab7b6cf66.css",
+      "path": "/home/web/django_project/static/bundles/css/main.cc3b021fe57ab7b6cf66.css"
+    },
+    "ea31530a64ba0c002b4c.woff2": {
+      "name": "ea31530a64ba0c002b4c.woff2",
+      "path": "/home/web/django_project/static/bundles/ea31530a64ba0c002b4c.woff2"
+    },
+    "main.79b108c6389257a0c5c4.js": {
+      "name": "main.79b108c6389257a0c5c4.js",
+      "path": "/home/web/django_project/static/bundles/main.79b108c6389257a0c5c4.js"
+    }
+  },
+  "chunks": {
+    "main": [
+      "css/main.3b44985c1f6725f901af.css",
+      "main.79b108c6389257a0c5c4.js"
+    ]
+  },
+  "error": "ModuleNotFoundError",
+  "message": "Module not found: Error: Can't resolve '../../images/mastodon.svg' in '/home/web/django_project/static/style/scss'"
+}

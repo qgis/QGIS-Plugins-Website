@@ -59,7 +59,7 @@ services:
       - ${QGISPLUGINS_STATIC_VOLUME}:/home/web/static:rw
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw
       - celerybeat-schedule:/home/web/celerybeat-schedule:rw
-    command: uwsgi --ini /uwsgi.conf
+    command: bash -c "npm install && npm run build && uwsgi --ini /uwsgi.conf"
     depends_on:
       - db
       - rabbitmq
@@ -89,6 +89,19 @@ services:
       - "62203:22"
     networks:
       internal:
+
+  webpack:
+    container_name: qgis-plugins-webpack
+    build:
+      context: ${PWD}/../
+      dockerfile: dockerize/docker/Dockerfile
+      target: dev
+    working_dir: /home/web/django_project
+    command: npm start
+    volumes:
+      - ../qgis-app:/home/web/django_project
+      - ${QGISPLUGINS_STATIC_VOLUME}:/home/web/static:rw
+      - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw
 
   rabbitmq:
     image: rabbitmq:3.7-alpine

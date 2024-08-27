@@ -52,3 +52,4 @@ uwsgi~=2.0
 freezegun~=1.4
 
 sentry-sdk~=2.2
+django-webpack-loader~=3.1
