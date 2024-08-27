@@ -33,29 +33,23 @@
       "name": "92614d4ba3ac388605c4.otf",
       "path": "/home/web/django_project/static/bundles/92614d4ba3ac388605c4.otf"
     },
-    "css/main.3b44985c1f6725f901af.css": {
-      "name": "css/main.3b44985c1f6725f901af.css",
-      "path": "/home/web/django_project/static/bundles/css/main.3b44985c1f6725f901af.css"
-    },
-    "css/main.cc3b021fe57ab7b6cf66.css": {
-      "name": "css/main.cc3b021fe57ab7b6cf66.css",
-      "path": "/home/web/django_project/static/bundles/css/main.cc3b021fe57ab7b6cf66.css"
+    "css/main.1c5e247b2444f97715c6.css": {
+      "name": "css/main.1c5e247b2444f97715c6.css",
+      "path": "/home/web/django_project/static/bundles/css/main.1c5e247b2444f97715c6.css"
     },
     "ea31530a64ba0c002b4c.woff2": {
       "name": "ea31530a64ba0c002b4c.woff2",
       "path": "/home/web/django_project/static/bundles/ea31530a64ba0c002b4c.woff2"
     },
-    "main.79b108c6389257a0c5c4.js": {
-      "name": "main.79b108c6389257a0c5c4.js",
-      "path": "/home/web/django_project/static/bundles/main.79b108c6389257a0c5c4.js"
+    "main.764c559b1eefa68e1373.js": {
+      "name": "main.764c559b1eefa68e1373.js",
+      "path": "/home/web/django_project/static/bundles/main.764c559b1eefa68e1373.js"
     }
   },
   "chunks": {
     "main": [
-      "css/main.3b44985c1f6725f901af.css",
-      "main.79b108c6389257a0c5c4.js"
+      "css/main.1c5e247b2444f97715c6.css",
+      "main.764c559b1eefa68e1373.js"
     ]
-  },
-  "error": "ModuleNotFoundError",
-  "message": "Module not found: Error: Can't resolve '../../images/mastodon.svg' in '/home/web/django_project/static/style/scss'"
+  }
 }

@@ -59,3 +59,5 @@ docker-compose.override.yml
 # Webpack
 node_modules
 qgis-app/static/bundles
+qgis-app/package-lock.json
+qgis-app/webpack-stats.json

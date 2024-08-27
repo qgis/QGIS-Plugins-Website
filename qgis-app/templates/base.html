@@ -1,6 +1,8 @@
 {% load i18n simplemenu_tags static %}
 {% load plugin_utils %}
 {% load matomo_tags %}
+{% load render_bundle from webpack_loader %}
+ {% render_bundle 'main' %}
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
