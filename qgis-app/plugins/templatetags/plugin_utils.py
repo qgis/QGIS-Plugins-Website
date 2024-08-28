@@ -3,6 +3,8 @@ from PIL import Image, UnidentifiedImageError
 import xml.etree.ElementTree as ET
 import os.path
 from django.conf import settings
+from bs4 import BeautifulSoup
+import requests
 
 register = template.Library()
 
@@ -76,3 +78,24 @@ def version_tag(context):
     except IOError:
         context["version"] = "Unknown"
     return context["version"]
+
+@register.simple_tag
+def get_sustaining_members_section():
+    """
+    Get the Sustaining members HTML section from the new website
+    """
+    try:
+        url = 'https://qgis.org'
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # Extract the section by the specified class name
+        section = soup.select_one('section.section')
+
+        if section:
+            return section.prettify()  # Returning HTML content
+        else:
+            return "Section not found"
+    except requests.RequestException as e:
+        return f"Error: {e}"
