@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <link rel="stylesheet" href="{% static "style/new/basic.css" %}" type="text/css" />
-    <link rel="stylesheet" href="{% static "bootstrap/css/bootstrap.min.css" %}" type="text/css" />
+    {% comment %} <link rel="stylesheet" href="{% static "bootstrap/css/bootstrap.min.css" %}" type="text/css" /> {% endcomment %}
     <link rel="stylesheet" href="{% static "style/new/qgis-style.css" %}" type="text/css" />
     <link rel="stylesheet" href="{% static "style/new/bootstrap-sphinx.css" %}" type="text/css" />
     <link rel="stylesheet" href="{% static "bootstrap/css/bootstrap-responsive.min.css" %}" type="text/css" />
@@ -33,57 +33,22 @@
             By continuing to visit this site you agree to our use of cookies."
             data-close-text="Got it!">
     </script>
+
+    <script type="text/javascript" src="https://qgis.github.io/qgis-uni-navigation/index.js"></script>
     {% block extrajs %}{% endblock %}
 
 </head>
 <body id="page_bg" {% block onload %}{% endblock %}>
+
     <div id="main_bg">
-        {% block navigation %}
-        <div id="navbar" class="navbar navbar-inverse navbar-fixed-top">
-            <div class="navbar-inner">
-                <div class="container">
-                    <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
-                    <button class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-                      <span class="icon-bar"></span>
-                      <span class="icon-bar"></span>
-                      <span class="icon-bar"></span>
-                    </button>
-
-                        <a class="brand" href="https://www.qgis.org">QGIS</a>
-                        {% if user.is_authenticated %}
-                        <a id="user-tooltip" href="{% if user.is_superuser %}{% url "admin:index" %}{% else %}{% url "my_plugins" %}{% endif %}"
-                           data-toggle="tooltip" data-placement="bottom" title="{{ user.username }}" style="float: right !important"><i class="icon-user icon-3x"></i></a>
-                        {% endif %}
-
-                    <form class="navbar-search" action="{% url "haystack_search" %}" method="get">
-                      <input type="text"  id="id_q" name="q" class="search-query" placeholder="Search" />
-                      <button type="submit" class="btn btn-search"><i class="icon-search" aria-hidden="true"></i></button>
-                    </form>
-
-                    {% get_namedmenu Navigation as menu %}
-                     <div class="nav-collapse collapse" style="height: 0px;">
-                        <ul class="unstyled nav main-menu">
-                        {% for item in menu %}
-                            <li><a href="{{ item.page.url }}">{{ item.name }}</a></li>
-                        {% endfor %}
-
-                        {% if user.is_authenticated %}
-                        <li><a href="{% url "logout" %}">{% trans "Logout" %}</a></li>
-                        {% else %}
-                        <li><a href="{% url "login" %}">{% trans "Login" %}</a></li>
-                        {% endif %}
-                        {% block navigation_extra %}
-                        {% endblock %}
-
-
-                    </ul>
-
-
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endblock %}
+        <section style="height: 60px">
+            <qg-top-nav
+            breakpoint="1024"
+            class="is-highest navbar is-fixed-top"
+            location-prefix="{{ MAIN_WEBSITE_URL }}"
+        ></qg-top-nav>
+        {% include 'layouts/header.html' %}
+        </section>
         <div class="container-fluid">
             <div class="row-fluid">
                 <div class="span3 well" id="leftcolumn" data-spy="scroll">
