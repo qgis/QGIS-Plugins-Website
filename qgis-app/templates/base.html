@@ -42,7 +42,7 @@
 <body id="page_bg" {% block onload %}{% endblock %}>
 
     <div id="main_bg">
-        <section style="height: 60px">
+        <section style="height: 72px">
             <qg-top-nav
             breakpoint="1024"
             class="is-highest navbar is-fixed-top"
@@ -50,35 +50,57 @@
         ></qg-top-nav>
         {% include 'layouts/header.html' %}
         </section>
+        <section class="hero is-dark is-small has-bg-img" style="background: url({% static "images/hegobg1.webp" %});
+            background-position: center;
+            background-size: cover;">
+
+            <div class="hero-body">
+                <div class="columns container is-flex is-align-items-center is-justify-content-space-between">
+                    <p class="title hero-title pr-3 mb-0">
+                        {{title}}
+                    </p>
+                    <figure>
+                        <img src="{% static "images/large-logo.svg" %}" style="width: 8vw">
+                    </figure>
+                </div>
+            </div>
+        </section>
+        <section class="section">
+            <div class="container content">
+                <div class="columns is-multiline is-centered">
+                    <div class="column is-3">
+                        <a class="related-plugins-collapser" data-toggle="collapse" data-target="#collapse-related-plugins">
+                            Related Plugins and Tags
+                        </a>
+                        <div id="collapse-related-plugins" class="collapse">
+                            {% block leftbar %}
+                                {% block menu %}&nbsp;{% endblock %}
+                            {% endblock %}
+                        </div>
+                    </div>
+                    <div class="content column is-9">
+                        <section class="info">
+                            
+                        </section>
+                        {% if messages %}
+                        <div class="alert">
+                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                            {% for message in messages %}
+                            <p {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|safe }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="responsive-content">
+                        {% block content %}
+                        {% endblock %}
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
         <div class="container-fluid">
             <div class="row-fluid">
-                <div class="span3 well" id="leftcolumn" data-spy="scroll">
-                    <a class="related-plugins-collapser" data-toggle="collapse" data-target="#collapse-related-plugins">
-                        Related Plugins and Tags
-                    </a>
-                    <div id="collapse-related-plugins" class="collapse">
-                        {% block leftbar %}
-                            {% block menu %}&nbsp;{% endblock %}
-                        {% endblock %}
-                    </div>
-                </div>
-                <div class="span9" id="maincolumn">
-                    <section class="info">
-                        {% block app_title %}{% endblock %}
-                    </section>
-                    {% if messages %}
-                    <div class="alert">
-                        <button type="button" class="close" data-dismiss="alert">&times;</button>
-                        {% for message in messages %}
-                        <p {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|safe }}</p>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                    <div class="responsive-content">
-                    {% block content %}
-                    {% endblock %}
-                    </div>
-                </div>
                 {% block rightbar %}
 <!--
                 <div class="span2" id="rightcolumn"></div>

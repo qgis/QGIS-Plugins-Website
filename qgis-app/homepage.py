@@ -26,5 +26,6 @@ def homepage(request):
             "latest": latest,
             "popular": popular,
             "content": content,
+            "title": "QGIS plugins web portal"
         },
     )
