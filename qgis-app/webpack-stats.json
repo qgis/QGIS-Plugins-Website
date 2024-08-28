@@ -33,23 +33,123 @@
       "name": "92614d4ba3ac388605c4.otf",
       "path": "/home/web/django_project/static/bundles/92614d4ba3ac388605c4.otf"
     },
-    "css/main.1c5e247b2444f97715c6.css": {
-      "name": "css/main.1c5e247b2444f97715c6.css",
-      "path": "/home/web/django_project/static/bundles/css/main.1c5e247b2444f97715c6.css"
+    "css/main.009929ad0a66769acf98.css": {
+      "name": "css/main.009929ad0a66769acf98.css",
+      "path": "/home/web/django_project/static/bundles/css/main.009929ad0a66769acf98.css"
+    },
+    "css/main.1680ff5ed31ea4eebaf6.css": {
+      "name": "css/main.1680ff5ed31ea4eebaf6.css",
+      "path": "/home/web/django_project/static/bundles/css/main.1680ff5ed31ea4eebaf6.css"
+    },
+    "css/main.1e625ac4e4b1a99b88ad.css": {
+      "name": "css/main.1e625ac4e4b1a99b88ad.css",
+      "path": "/home/web/django_project/static/bundles/css/main.1e625ac4e4b1a99b88ad.css"
+    },
+    "css/main.29f0102663cd9c8db525.css": {
+      "name": "css/main.29f0102663cd9c8db525.css",
+      "path": "/home/web/django_project/static/bundles/css/main.29f0102663cd9c8db525.css"
+    },
+    "css/main.37af2ae93a5e484c0a0b.css": {
+      "name": "css/main.37af2ae93a5e484c0a0b.css",
+      "path": "/home/web/django_project/static/bundles/css/main.37af2ae93a5e484c0a0b.css"
+    },
+    "css/main.3b44985c1f6725f901af.css": {
+      "name": "css/main.3b44985c1f6725f901af.css",
+      "path": "/home/web/django_project/static/bundles/css/main.3b44985c1f6725f901af.css"
+    },
+    "css/main.45e16f85135c0392cf62.css": {
+      "name": "css/main.45e16f85135c0392cf62.css",
+      "path": "/home/web/django_project/static/bundles/css/main.45e16f85135c0392cf62.css"
+    },
+    "css/main.49e20cad524e53b0ba25.css": {
+      "name": "css/main.49e20cad524e53b0ba25.css",
+      "path": "/home/web/django_project/static/bundles/css/main.49e20cad524e53b0ba25.css"
+    },
+    "css/main.4e3fd7226abbb6f3b98c.css": {
+      "name": "css/main.4e3fd7226abbb6f3b98c.css",
+      "path": "/home/web/django_project/static/bundles/css/main.4e3fd7226abbb6f3b98c.css"
+    },
+    "css/main.5200eb5e56bf2fb03a57.css": {
+      "name": "css/main.5200eb5e56bf2fb03a57.css",
+      "path": "/home/web/django_project/static/bundles/css/main.5200eb5e56bf2fb03a57.css"
+    },
+    "css/main.579aeefd57322c05fff1.css": {
+      "name": "css/main.579aeefd57322c05fff1.css",
+      "path": "/home/web/django_project/static/bundles/css/main.579aeefd57322c05fff1.css"
+    },
+    "css/main.5bdc06a805686540cd27.css": {
+      "name": "css/main.5bdc06a805686540cd27.css",
+      "path": "/home/web/django_project/static/bundles/css/main.5bdc06a805686540cd27.css"
+    },
+    "css/main.6e5d0c090cfa1ba0f315.css": {
+      "name": "css/main.6e5d0c090cfa1ba0f315.css",
+      "path": "/home/web/django_project/static/bundles/css/main.6e5d0c090cfa1ba0f315.css"
+    },
+    "css/main.6fd8fd1984f18e0570ba.css": {
+      "name": "css/main.6fd8fd1984f18e0570ba.css",
+      "path": "/home/web/django_project/static/bundles/css/main.6fd8fd1984f18e0570ba.css"
+    },
+    "css/main.7d55a64ac3025156c512.css": {
+      "name": "css/main.7d55a64ac3025156c512.css",
+      "path": "/home/web/django_project/static/bundles/css/main.7d55a64ac3025156c512.css"
+    },
+    "css/main.7d7408bc49dace8b5f81.css": {
+      "name": "css/main.7d7408bc49dace8b5f81.css",
+      "path": "/home/web/django_project/static/bundles/css/main.7d7408bc49dace8b5f81.css"
+    },
+    "css/main.8128f5d981568a1f30e3.css": {
+      "name": "css/main.8128f5d981568a1f30e3.css",
+      "path": "/home/web/django_project/static/bundles/css/main.8128f5d981568a1f30e3.css"
+    },
+    "css/main.8cbcdfb8c95a0a254d67.css": {
+      "name": "css/main.8cbcdfb8c95a0a254d67.css",
+      "path": "/home/web/django_project/static/bundles/css/main.8cbcdfb8c95a0a254d67.css"
+    },
+    "css/main.8ce4c1984344ea882a3d.css": {
+      "name": "css/main.8ce4c1984344ea882a3d.css",
+      "path": "/home/web/django_project/static/bundles/css/main.8ce4c1984344ea882a3d.css"
+    },
+    "css/main.c278a854b600095e2a38.css": {
+      "name": "css/main.c278a854b600095e2a38.css",
+      "path": "/home/web/django_project/static/bundles/css/main.c278a854b600095e2a38.css"
+    },
+    "css/main.ce5ae606fb5cd49c0741.css": {
+      "name": "css/main.ce5ae606fb5cd49c0741.css",
+      "path": "/home/web/django_project/static/bundles/css/main.ce5ae606fb5cd49c0741.css"
+    },
+    "css/main.d2ae263204b71690659d.css": {
+      "name": "css/main.d2ae263204b71690659d.css",
+      "path": "/home/web/django_project/static/bundles/css/main.d2ae263204b71690659d.css"
+    },
+    "css/main.d6c3b7f7a685bb9fa6b0.css": {
+      "name": "css/main.d6c3b7f7a685bb9fa6b0.css",
+      "path": "/home/web/django_project/static/bundles/css/main.d6c3b7f7a685bb9fa6b0.css"
+    },
+    "css/main.d9c3dd0de5e15b821163.css": {
+      "name": "css/main.d9c3dd0de5e15b821163.css",
+      "path": "/home/web/django_project/static/bundles/css/main.d9c3dd0de5e15b821163.css"
+    },
+    "css/main.e3feaac6f13b5350cceb.css": {
+      "name": "css/main.e3feaac6f13b5350cceb.css",
+      "path": "/home/web/django_project/static/bundles/css/main.e3feaac6f13b5350cceb.css"
+    },
+    "css/main.f2c1d4bddd9e094b5cd5.css": {
+      "name": "css/main.f2c1d4bddd9e094b5cd5.css",
+      "path": "/home/web/django_project/static/bundles/css/main.f2c1d4bddd9e094b5cd5.css"
     },
     "ea31530a64ba0c002b4c.woff2": {
       "name": "ea31530a64ba0c002b4c.woff2",
       "path": "/home/web/django_project/static/bundles/ea31530a64ba0c002b4c.woff2"
     },
-    "main.764c559b1eefa68e1373.js": {
-      "name": "main.764c559b1eefa68e1373.js",
-      "path": "/home/web/django_project/static/bundles/main.764c559b1eefa68e1373.js"
+    "main.4d26be7a1ac0c1ebacf5.js": {
+      "name": "main.4d26be7a1ac0c1ebacf5.js",
+      "path": "/home/web/django_project/static/bundles/main.4d26be7a1ac0c1ebacf5.js"
     }
   },
   "chunks": {
     "main": [
-      "css/main.1c5e247b2444f97715c6.css",
-      "main.764c559b1eefa68e1373.js"
+      "css/main.29f0102663cd9c8db525.css",
+      "main.4d26be7a1ac0c1ebacf5.js"
     ]
   }
 }

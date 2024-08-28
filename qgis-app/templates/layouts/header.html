@@ -23,7 +23,64 @@
                                 <span>{{ item.name }}</span>
                             </a>
                         {% endfor %}
+
+                    {% get_namedmenu New as New %}
+                    <div class="navbar-item has-dropdown is-hoverable has-text-weight-semibold is-size-7">
+                        <a class="navbar-link">
+                          New & Updated
+                        </a>
+                        <div class="navbar-dropdown">
+                            {% for item in New %}
+                            <a href="{{ item.page.url }}" class="navbar-item has-text-weight-semibold is-size-7">
+                                {{ item.name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
                     
+                    {% get_namedmenu Top as Top %}
+                    <div class="navbar-item has-dropdown is-hoverable has-text-weight-semibold is-size-7">
+                        <a class="navbar-link">
+                          Top
+                        </a>
+                        <div class="navbar-dropdown">
+                            {% for item in Top %}
+                            <a href="{{ item.page.url }}" class="navbar-item has-text-weight-semibold is-size-7">
+                                {{ item.name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    {% get_namedmenu Category as Category %}
+                    <div class="navbar-item has-dropdown is-hoverable has-text-weight-semibold is-size-7">
+                        <a class="navbar-link">
+                          Category
+                        </a>
+                        <div class="navbar-dropdown">
+                            {% for item in Category %}
+                            <a href="{{ item.page.url }}" class="navbar-item has-text-weight-semibold is-size-7">
+                                {{ item.name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    {% if user.is_authenticated and user.is_staff %}
+                        {% get_namedmenu Unapproved as Unapproved %}
+                        <div class="navbar-item has-dropdown is-hoverable has-text-weight-semibold is-size-7">
+                            <a class="navbar-link">
+                            Under review
+                            </a>
+                            <div class="navbar-dropdown">
+                                {% for item in Unapproved %}
+                                <a href="{{ item.page.url }}" class="navbar-item has-text-weight-semibold is-size-7">
+                                    {{ item.name }}
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
             <div class="navbar-end">

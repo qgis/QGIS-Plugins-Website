@@ -157,6 +157,16 @@ p {
   }
 }
 
+@media screen and (min-width: 1024px) {
+  .navbar-start {
+    padding: 10px;
+    .navbar-dropdown {
+        background-color: #002033;
+        border: none;
+    }
+  }
+}
+
 #menu > div > a > span:hover {
   border-bottom: solid 1px;
   color: black;
@@ -216,13 +226,17 @@ a.is-active > span {
     border-radius: 5px;
   }
 
-  a.navbar-item.is-active, .navbar-link.is-active {
+  a.navbar-item.is-active, .navbar-link.is-active, .navbar-item {
     color: white;
     background-color: unset;
     &:hover {
       color: #0a0a0a;
       background-color: #fafafa;
     }
+  }
+  .navbar-link {
+    color: inherit;
+    border-radius: 5px;
   }
 }
 

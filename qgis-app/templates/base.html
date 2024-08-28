@@ -114,7 +114,9 @@
 
     </div>
 </section>
-        <footer class="footer">
+
+{% include 'layouts/footer.html' %}
+        {% comment %} <footer class="footer">
             <div class="container">
                 <div>
                   <ul class="unstyled inline" id="social">
@@ -130,7 +132,7 @@
                   <p class="credit">{% trans "This web application was developed by:" %}&nbsp;<a href="https://www.itopen.it">Alessandro Pasotti</a> and &nbsp;<a href="https://kartoza.com"><img src="{% static 'images/kartoza-logo-only.png' %}" alt="Kartoza icon" width="16" height="16" />Kartoza</a>. <span>Version: {% version_tag %}</span>.</p>
                 {% endblock %}
             </div>
-        </footer>
+        </footer> {% endcomment %}
     </div>
 <script type="text/javascript">
 $('#user-tooltip').tooltip('hide');

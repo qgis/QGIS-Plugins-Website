@@ -88,7 +88,29 @@ if settings.DEBUG:
 
 simplemenu.register(
     "/admin/",
+    # All plugins
     "/plugins/",
+    # My plugins
+    "/plugins/my",
+    # Unapproved plugins
+    "/plugins/unapproved/",
+    "/plugins/feedback_completed/",
+    "/plugins/feedback_received/",
+    "/plugins/feedback_pending/",
+    # New plugins
+    "/plugins/fresh/",
+    "/plugins/latest/",
+    # Top plugins
+    "/plugins/featured/",
+    "/plugins/popular/",
+    "/plugins/most_voted/",
+    "/plugins/most_downloaded/",
+    "/plugins/most_rated/",
+    # Category
+    "/plugins/stable/",
+    "/plugins/experimental/",
+    "/plugins/server/",
+    "/plugins/deprecated/",
     FlatPage.objects.all(),
     simplemenu.models.URLItem.objects.all(),
 )
