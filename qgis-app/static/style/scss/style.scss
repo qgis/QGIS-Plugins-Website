@@ -221,23 +221,26 @@ a.is-active > span {
   z-index: 100;
   transition: top 0.3s;
 
-  .navbar-item {
-    color: white;
-    border-radius: 5px;
-  }
-
-  a.navbar-item.is-active, .navbar-link.is-active, .navbar-item {
-    color: white;
-    background-color: unset;
-    &:hover {
-      color: #0a0a0a;
-      background-color: #fafafa;
+  .navbar-start {
+    .navbar-item {
+      color: white;
+      border-radius: 5px;
+    }
+  
+    a.navbar-item.is-active, .navbar-link.is-active, .navbar-item {
+      color: white;
+      background-color: unset;
+      &:hover {
+        color: #0a0a0a;
+        background-color: #fafafa;
+      }
+    }
+    .navbar-link {
+      color: inherit;
+      border-radius: 5px;
     }
   }
-  .navbar-link {
-    color: inherit;
-    border-radius: 5px;
-  }
+
 }
 
 @media screen and (min-width: 1024px) {

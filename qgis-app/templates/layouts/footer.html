@@ -1,4 +1,4 @@
-{% load static %}
+{% load simplemenu_tags plugin_utils static %}
 <footer class="footer">
     <div class="container">
         <div class="columns is-desktop">
@@ -11,140 +11,76 @@
                 <div class="columns is-desktop">
                     <ul class="column mb-5">
                         <li class="is-size-5 mb-5">
-                            <a href="{{ MAIN_WEBSITE_URL }}/product/overview/" class="footertitle text-nowrap">
-                                Product
+                            <a href="/" class="footertitle text-nowrap">
+                                QGIS Plugins
                             </a>
                         </li>
-                        <li class="mb-4">
-                            <a href="{{ MAIN_WEBSITE_URL }}/product/overview/" class="has-text-white text-nowrap">
-                                Overview
-                            </a>
-                        </li>
-                        <li class="mb-4">
-                            <a
-                                href="{{ MAIN_WEBSITE_URL }}/product/case-studies/"
-                                class="has-text-white text-nowrap is-size-6"
-                            >
-                                Case studies
-                            </a>
-                        </li>
-                        <li class="mb-4">
-                            <a href="https://plugins.qgis.org" class="has-text-white text-nowrap">
-                                Plugins
-                            </a>
-                        </li>
-                        <li class="mb-4">
-                            <a href="{{ MAIN_WEBSITE_URL }}/product/visual-changelogs" class="has-text-white text-nowrap">
-                                Visual Changelogs
-                            </a>
-                        </li>
+                        {% get_namedmenu Navigation as menu %}
+                            {% for item in menu %}
+                            <li class="mb-4">
+                                <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
+                                    {{ item.name }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        {% get_namedmenu New as New %}
+                            {% for item in New %}
+                                <li class="mb-4">
+                                    <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
+                                        {{ item.name }}
+                                    </a>
+                                </li>
+                            {% endfor %}
                     </ul>
     
                     <ul class="column mb-5">
                         <li class="is-size-5 mb-5">
-                            <a href="{{ MAIN_WEBSITE_URL }}/community/involve/" class="footertitle text-nowrap">
-                                Community
+                            <a class="footertitle text-nowrap">
+                                Top
                             </a>
                         </li>
-                        <li class="mb-4">
-                            <a href="{{ MAIN_WEBSITE_URL }}/community/involve" class="has-text-white text-nowrap">
-                                Get involved
-                            </a>
-                        </li>
-                        <li class="mb-4">
-                            <a href="{{ MAIN_WEBSITE_URL }}/community/certification" class="has-text-white text-nowrap">
-                                Certification Programme
-                            </a>
-                        </li>
-                        <li class="mb-4">
-                            <a href="{{ MAIN_WEBSITE_URL }}/community/foundation" class="has-text-white text-nowrap">
-                                QGIS Foundation
-                            </a>
-                        </li>
-                        <li class="mb-4">
-                            <a href="{{ MAIN_WEBSITE_URL }}/community/organisation" class="has-text-white text-nowrap">
-                                Project Organisation
-                            </a>
-                        </li>
-                        <li class="mb-4">
-                            <a href="{{ MAIN_WEBSITE_URL }}/community/members" class="has-text-white text-nowrap">
-                                Members and Donors
-                            </a>
-                        </li>
-                        <li class="mb-4">
-                            <a href="https://plugins.qgis.org/planet/" class="has-text-white text-nowrap">
-                                Members Blogs
-                            </a>
-                        </li>
+                        {% get_namedmenu Top as Top %}
+                            {% for item in Top %}
+                                <li class="mb-4">
+                                    <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
+                                        {{ item.name }}
+                                    </a>
+                                </li>
+                            {% endfor %}
                     </ul>
     
                     <ul class="column mb-5">
                         <li class="is-size-5 mb-5">
-                            <a href="{{ MAIN_WEBSITE_URL }}/resources/hub/" class="footertitle text-nowrap">
-                                Resources
+                            <a class="footertitle text-nowrap">
+                                Category
                             </a>
                         </li>
-                        <li class="mb-4">
-                            <a href="{{ MAIN_WEBSITE_URL }}/resources/hub" class="has-text-white text-nowrap">
-                                Documentation
-                            </a>
-                        </li>
-                        <li class="mb-4">
-                            <a href="{{ MAIN_WEBSITE_URL }}/resources/installation-guide/" class="has-text-white text-nowrap">
-                                Installation guide
-                            </a>
-                        </li>
-                        <li class="mb-4">
-                            <a href="{{ MAIN_WEBSITE_URL }}/resources/testing/" class="has-text-white text-nowrap">
-                                Testing
-                            </a>
-                        </li>
-                        <li class="mb-4">
-                            <a href="{{ MAIN_WEBSITE_URL }}/resources/roadmap/" class="has-text-white text-nowrap">
-                                Roadmap
-                            </a>
-                        </li>
-                        <li class="mb-4 mb-5">
-                            <a href="{{ MAIN_WEBSITE_URL }}/resources/reports/" class="has-text-white text-nowrap">
-                                Reports
-                            </a>
-                        </li>
-                        <li class="mb-4 mb-5">
-                            <a href="{{ MAIN_WEBSITE_URL }}/resources/books/" class="has-text-white text-nowrap">
-                                Books
-                            </a>
-                        </li>
-                        <li class="mb-4 mb-5">
-                            <a href="{{ MAIN_WEBSITE_URL }}/resources/support/bug-reporting" class="has-text-white text-nowrap">
-                                Support
-                            </a>
-                        </li>
-                        <li class="mb-4">
-                            <a href="https://blog.qgis.org/" class="has-text-white text-nowrap">
-                                Blog
-                            </a>
-                        </li>
+                        {% get_namedmenu Category as Category %}
+                            {% for item in Category %}
+                                <li class="mb-4">
+                                    <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
+                                        {{ item.name }}
+                                    </a>
+                                </li>
+                            {% endfor %}
                     </ul>
-                    <ul class="column mb-5">
-                        <li class="is-size-5 mb-5">
-                            <a href="{{ MAIN_WEBSITE_URL }}/funding/donate/" class="footertitle text-nowrap">
-                                Funding
-                            </a>
-                        </li>
-                        <li class="mb-4">
-                            <a href="{{ MAIN_WEBSITE_URL }}/funding/donate/" class="has-text-white text-nowrap">
-                                Donate
-                            </a>
-                        </li>
-                        <li class="mb-4">
-                            <a
-                                href="{{ MAIN_WEBSITE_URL }}/funding/membership/"
-                                class="has-text-white text-nowrap is-size-6"
-                            >
-                                Membership
-                            </a>
-                        </li>
-                    </ul>
+                    {% if user.is_authenticated and user.is_staff %}
+                        <ul class="column mb-5">
+                            <li class="is-size-5 mb-5">
+                                <a class="footertitle text-nowrap">
+                                    Under review
+                                </a>
+                            </li>
+                            {% get_namedmenu Unapproved as Unapproved %}
+                                {% for item in Unapproved %}
+                                    <li class="mb-4">
+                                        <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
+                                            {{ item.name }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                        </ul>
+                    {% endif %}
                 </div>
             </div>
             <div class="column is-2-desktop">
@@ -173,17 +109,13 @@
                 </a>
             </div>
         </div>
-        <div class="columns is-desktop privacy-links">
-            <a href="{{ MAIN_WEBSITE_URL }}/diversity" class="column is-narrow is-offset-2-desktop">Diversity statement</a>
-            <a href="{{ MAIN_WEBSITE_URL }}/conduct" class="column is-narrow">Code of conduct</a>
-            <a href="{{ MAIN_WEBSITE_URL }}/environmental-policy" class="column is-narrow">Environmental policy</a>
-            <a href="{{ MAIN_WEBSITE_URL }}/license" class="column is-narrow">License</a>
-            <a href="{{ MAIN_WEBSITE_URL }}/styleguide" class="column is-narrow">Visual Style Guide</a>   
-            <a href="{{ MAIN_WEBSITE_URL }}/goodies" class="column is-narrow">Goodies</a>
-            <a href="{{ MAIN_WEBSITE_URL }}/archive" class="column is-narrow">Archive</a>   
-        </div>
         <div class="columns is-desktop issue-report-link is-justify-content-center">
             <a href="https://github.com/qgis/QGIS-Django/issues" class="column is-narrow p-0 is-size-6">Problems with this website? Report an issue here 🐙</a>   
         </div>
+    </div>
+    <div class="commit-link is-size-7">
+        <p>
+            Version: <a target="_blank">{% version_tag %}</a>
+        </p>
     </div>
 </footer>
