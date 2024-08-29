@@ -168,11 +168,6 @@ p {
   }
 }
 
-#menu > div > a > span:hover {
-  border-bottom: solid 1px;
-  color: black;
-}
-
 a.is-active > span {
   border-bottom: solid $primary1-invert 1px;
 }
