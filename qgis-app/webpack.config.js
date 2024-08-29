@@ -44,4 +44,16 @@ module.exports = {
       }
     ],
   },
+  stats: {
+    assets: false,           // Hide assets info
+    chunks: false,           // Hide chunks info
+    modules: false,          // Hide modules info
+    entrypoints: false,      // Hide entrypoints info
+    performance: false,      // Hide performance info
+    errors: true,            // Show only errors
+    errorDetails: true,      // Include detailed error messages
+    warnings: true,          // Show warnings
+    builtAt: true,           // Show when the build was created
+    colors: true,            // Colorized output
+  },
 };
