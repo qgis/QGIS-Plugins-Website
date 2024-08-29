@@ -6,7 +6,7 @@
   <div style="margin:0; width:fit-content;">
     <h2>
       <button type="submit" name="plugin_token_create" id="plugin_token_create"
-        value="{% trans "Generate a New Token" %}" class="btn btn-block btn-primary" style="padding: 10px">
+        value="{% trans "Generate a New Token" %}" class="button  is-success" style="padding: 10px">
         <i class="icon-plus icon-white icon-2x" style=" vertical-align: middle;"></i>
         &nbsp;{% trans "Generate a New Token" %}
       </button>
@@ -39,9 +39,9 @@
         <td>{{ plugin_token.token.created_at|local_timezone }}</td>
         <td>{{ plugin_token.last_used_on|default:"-"|local_timezone }}</td>
         <td>
-          <a class="btn btn-primary btn-mini" href="{% url "plugin_token_update" plugin.package_name plugin_token.token.id %}"
+          <a class="button is-success is-small" href="{% url "plugin_token_update" plugin.package_name plugin_token.token.id %}"
             title="{% trans "Edit description" %}"><i class="icon-pencil icon-white"></i></a>&nbsp;
-          <a class="btn btn-danger btn-mini delete"
+          <a class="button btn-danger is-small delete"
             href="{% url "plugin_token_delete" plugin.package_name plugin_token.token.id %}"
             title="{% trans "Delete" %}"><i class="icon-remove icon-white"></i>
           </a>

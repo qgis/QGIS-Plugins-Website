@@ -3,7 +3,7 @@
     <h2>{% trans "Delete plugin"%}: {{ plugin.title }}</h2>
     <form action="" method="post">{% csrf_token %}
         <p class="alert alert-danger">{% trans "You asked to delete the plugin and all its versions. The plugin will be permanently deleted. This action cannot be undone. Please confirm."%}</p>
-        <p><input type="submit" class="btn btn-danger" name="delete_confirm" value="{% trans "Ok" %}" /> <a class="btn btn-primary" href="javascript:history.back()">{% trans "Cancel" %}</a></p>
+        <p><input type="submit" class="button btn-danger" name="delete_confirm" value="{% trans "Ok" %}" /> <a class="button is-success" href="javascript:history.back()">{% trans "Cancel" %}</a></p>
     </form>
 
 {% endblock %}

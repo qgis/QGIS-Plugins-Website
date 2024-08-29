@@ -39,8 +39,8 @@
                 </label>
                 {% if feedback.reviewer == request.user %}
                 <div class="pull-right">
-                    <button type="button" id="editButton" class="btn btn-primary btn-mini" data-feedback-id="{{ feedback.id }}"><i class="icon-pencil"></i></button>
-                    <button type="button" class="btn btn-danger btn-mini deleteButton" data-feedback-id="{{ feedback.id }}"><i class="icon-remove"></i></button>
+                    <button type="button" id="editButton" class="button is-success is-small" data-feedback-id="{{ feedback.id }}"><i class="icon-pencil"></i></button>
+                    <button type="button" class="button btn-danger is-small deleteButton" data-feedback-id="{{ feedback.id }}"><i class="icon-remove"></i></button>
                 </div>
                 {% endif %}
             </div>
@@ -48,7 +48,7 @@
         {% endfor %}
         {% if feedbacks %}
         <div class="text-center update-feedback">
-            <button type="button" id="updateButton" class="btn btn-primary">Update</button>
+            <button type="button" id="updateButton" class="button is-success">Update</button>
         </div>
         {% endif %}
 
@@ -58,7 +58,7 @@
                 <b>New Feedback</b>
                     {{ form.feedback }}
                     <div class="text-right">
-                        <button class="btn btn-primary" type="submit">{% trans "Submit New Feedback" %}</button>
+                        <button class="button is-success" type="submit">{% trans "Submit New Feedback" %}</button>
                     </div>
             </form>
         </div>
@@ -191,8 +191,8 @@
             var inputForm = `
                 <input type="text" class="form-control" id="editFeedbackInput" value="${feedbackTask}" style="width: 100%;margin-bottom: 0 !important;">
                 <div style="display: flex;gap: 10px;">
-                    <button type="button" class="btn btn-success btn-mini" id="saveButton" data-feedback-id="${feedbackId}">Save</button>
-                    <button type="button" class="btn btn-secondary btn-mini" id="cancelButton" data-feedback-id="${feedbackId}">Cancel</button>
+                    <button type="button" class="button btn-success is-small" id="saveButton" data-feedback-id="${feedbackId}">Save</button>
+                    <button type="button" class="button btn-secondary is-small" id="cancelButton" data-feedback-id="${feedbackId}">Cancel</button>
                 </div>
             `;
 

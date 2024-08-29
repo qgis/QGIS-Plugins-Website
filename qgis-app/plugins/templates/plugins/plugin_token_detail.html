@@ -37,7 +37,7 @@
             readonly
         >{{access_token}}</textarea>
         <div class="tooltip">
-            <button class="btn btn-primary" onclick="copyToClipBoard('{{ access_token }}')">
+            <button class="button is-success" onclick="copyToClipBoard('{{ access_token }}')">
               <span class="tooltiptext" id="copyTooltip">{% trans "Copy token to clipboard" %}</span>
               <i class="icon-copy icon-white"></i>
             </button>
@@ -48,7 +48,7 @@
 </dl>
 <div>
   <a class="btn" href="{% url "plugin_token_list" plugin.package_name %}?v={{ timestamp_from_last_edit }}">{% trans "Back to the list" %}</a>
-  <a class="btn btn-primary" href="{% url "plugin_token_update" plugin.package_name object.pk %}">{% trans "Edit description" %}</a>
+  <a class="button is-success" href="{% url "plugin_token_update" plugin.package_name object.pk %}">{% trans "Edit description" %}</a>
 </div>
 {% endblock %}
 {% block extracss %}
