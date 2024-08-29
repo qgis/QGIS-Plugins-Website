@@ -1,0 +1,109 @@
+{% load i18n plugins_tagcloud thumbnail plugin_utils static %}
+<nav id="sidebar" class="sidebar">
+    <ul class="content-wrapper">
+        <li>
+            <div class="has-child">
+                <a href="{% url 'featured_plugins'%}" class="has-text-weight-semibold has-text-success">
+                    <i class="fas fa-medal is-size-5 mr-3"></i>
+                    {% trans "Featured plugins" %}
+                </a>
+            </div>
+            <ul>
+                {% for plugin in featured  %}
+                <li>
+                    <a href="{% url "plugin_detail" plugin.package_name %}">
+                        <span class="mr-2">
+                            {% if plugin.icon and plugin.icon.file and plugin.icon|is_image_valid %}
+                                {% with image_extension=plugin.icon.name|file_extension %}
+                                    {% if image_extension == 'svg' %}
+                                        <img class="pull-right plugin-icon" alt="{% trans "Plugin icon" %}" src="{{ plugin.icon.url }}" width="16" height="16" />
+                                    {% else %}
+                                        {% thumbnail plugin.icon "16x16" format="PNG" as im %}
+                                            <img class="plugin-icon" alt="{% trans "Plugin icon" %}" src="{{ im.url }}" width="{{ im.x }}" height="{{ im.y }}" />
+                                        {% endthumbnail %}
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                <img height="16" width="16" class="plugin-icon" src="{% static "images/qgis-icon-16x16.png" %}" alt="{% trans "Plugin icon" %}" />
+                            {% endif %}
+                        </span>
+                        {{ plugin.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% if latest %}
+        <hr/>
+        <li>
+            <div class="has-child">
+                <a href="{% url 'latest_plugins'%}" class="has-text-weight-semibold has-text-info">
+                    <i class="fa-solid fa-caret-up is-size-5 mr-3"></i>
+                    {% trans "Updated plugins" %}
+                </a>
+            </div>
+            <ul>
+                {% for plugin in latest %}
+                <li>
+                    <a href="{% url "plugin_detail" plugin.package_name %}">
+                        <span class="mr-2">
+                            {% if plugin.icon and plugin.icon.file and plugin.icon|is_image_valid %}
+                                {% with image_extension=plugin.icon.name|file_extension %}
+                                    {% if image_extension == 'svg' %}
+                                        <img class="pull-right plugin-icon" alt="{% trans "Plugin icon" %}" src="{{ plugin.icon.url }}" width="16" height="16" />
+                                    {% else %}
+                                        {% thumbnail plugin.icon "16x16" format="PNG" as im %}
+                                            <img class="plugin-icon" alt="{% trans "Plugin icon" %}" src="{{ im.url }}" width="{{ im.x }}" height="{{ im.y }}" />
+                                        {% endthumbnail %}
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                <img height="16" width="16" class="plugin-icon" src="{% static "images/qgis-icon-16x16.png" %}" alt="{% trans "Plugin icon" %}" />
+                            {% endif %}
+                        </span>
+                        {{ plugin.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endif %}
+        {% if popular %}
+        <hr/>
+        <li>
+            <div class="has-child">
+                <a href="{% url 'popular_plugins'%}" class="has-text-weight-semibold has-text-danger">
+                    <i class="fa-solid fa-fire is-size-5 mr-3"></i>
+                    {% trans "Popular plugins" %}
+                </a>
+            </div>
+            <ul>
+                {% for plugin in popular %}
+                <li>
+                    <a href="{% url "plugin_detail" plugin.package_name %}">
+                        <span class="mr-2">
+                            {% if plugin.icon and plugin.icon.file and plugin.icon|is_image_valid %}
+                                {% with image_extension=plugin.icon.name|file_extension %}
+                                    {% if image_extension == 'svg' %}
+                                        <img class="pull-right plugin-icon" alt="{% trans "Plugin icon" %}" src="{{ plugin.icon.url }}" width="16" height="16" />
+                                    {% else %}
+                                        {% thumbnail plugin.icon "16x16" format="PNG" as im %}
+                                            <img class="plugin-icon" alt="{% trans "Plugin icon" %}" src="{{ im.url }}" width="{{ im.x }}" height="{{ im.y }}" />
+                                        {% endthumbnail %}
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                <img height="16" width="16" class="plugin-icon" src="{% static "images/qgis-icon-16x16.png" %}" alt="{% trans "Plugin icon" %}" />
+                            {% endif %}
+                        </span>
+                        {{ plugin.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endif %}
+
+        <!-- {% include_plugins_tagcloud_modal 'plugins.plugin' %} -->
+    </ul>
+</nav>

@@ -174,16 +174,11 @@ $navbar-item-img-max-height: 57px;;
 /* We are going for a more boxy look on our site */
 $notification-radius: $corner-radius;
 
-
-
-@import "../../../node_modules/bulma/sass/utilities/_all.sass";
-@import "../../../node_modules/bulma/sass/base/_all.sass";
-@import "../../../node_modules/bulma/sass/elements/_all.sass";
+@import "bulma/utilities/_all.sass";
+@import "bulma/base/_all.sass";
+@import "bulma/elements/_all.sass";
 @import "bulma/components/_all.sass";
-@import "../../../node_modules/bulma/sass/grid/_all.sass";
-// @import "../../../node_modules/bulma/sass/layout/_all.sass";
-@import "../../../node_modules/bulma/sass/helpers/_all.sass";
-@import "../../../node_modules/bulma/sass/form/_all.sass";
-
-// @import "bulma/layout/footer.sass";
+@import "bulma/grid/_all.sass";
 @import "bulma/layout/_all.sass";
+@import "bulma/helpers/_all.sass";
+@import "bulma/form/_all.sass";

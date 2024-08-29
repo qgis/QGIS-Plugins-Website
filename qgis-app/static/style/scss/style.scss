@@ -14,10 +14,20 @@ mark {
   padding: 0.05rem 0.25em;
 }
 
-// .title {
-//   color: inherit;
-//   font-weight: 500;
-// }
+
+.content p {
+  color: $text-primary2;
+}
+
+h2 {
+  font-size: 3rem;
+  font-weight: 600;
+  line-height: 1;
+  margin-bottom: 2rem;
+  @media screen and (max-width: 768px) {
+    font-size: 2.25rem;
+  }
+}
 
 .table {
   color: inherit;
