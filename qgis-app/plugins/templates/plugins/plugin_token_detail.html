@@ -47,7 +47,7 @@
 
 </dl>
 <div>
-  <a class="btn" href="{% url "plugin_token_list" plugin.package_name %}?v={{ timestamp_from_last_edit }}">{% trans "Back to the list" %}</a>
+  <a class="button" href="{% url "plugin_token_list" plugin.package_name %}?v={{ timestamp_from_last_edit }}">{% trans "Back to the list" %}</a>
   <a class="button is-success" href="{% url "plugin_token_update" plugin.package_name object.pk %}">{% trans "Edit description" %}</a>
 </div>
 {% endblock %}

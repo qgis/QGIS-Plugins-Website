@@ -53,34 +53,38 @@
     {# Filtered views menu #}
     {% if object_list.count %}
     <div id="list_commands">
-        <span class="num_items">{% blocktrans with records_count=page_obj.paginator.count %}{{ records_count }} records found{% endblocktrans %}</span>&nbsp;&mdash;&nbsp;
-        <a class="toggle_desc" href="javascript:void(0);" onclick="return toggle_desc()">{% trans "Click to toggle descriptions." %}</a>
+        <span class="num_items">{% blocktrans with records_count=page_obj.paginator.count %}{{ records_count }} records found{% endblocktrans %}</span>
+        <!-- <a class="toggle_desc" href="javascript:void(0);" onclick="return toggle_desc()">{% trans "Click to toggle descriptions." %}</a> -->
     </div>
     <div class="pagination">
     {#% include 'sortable_listview/sort_links.html' %#}
     </div>
     <div class="schedule-container">
-        <table class="roadmap">
+        <table class="table plugins-list-table">
             <thead>
                 <tr>
-                    <th>&nbsp;</th>
-                    <th>{% anchor name %}</th>
-                    {% if not user.is_anonymous %}<th><img title="{% trans "Approved" %}" src="{% static "images/tick_16.png" %}" alt="{% trans "Approved" %}"/></th>{% endif %}
-                    <th>{% anchor featured %}</th>
-                    <th>{% anchor downloads %}</th>
-                    <th>{% anchor author "Author" %}</th>
-                    <th>{% anchor latest_version_date "Latest Plugin Version" %}</th>
-                    <th>{% anchor created_on "Created on" %}</th>
-                    <th>{% anchor average_vote "Stars (votes)" %}</th>
-                    <th>{% trans "Stable" %}</th>
-                    <th>{% trans "Exp." %}</th>
-                    {% if user.is_authenticated %}<th colspan="2">{% trans "Manage" %}</th>{% endif %}
+                    <th class="pt-3 pb-3">&nbsp;</th>
+                    <th  class="pt-3 pb-3">{% anchor name %}</th>
+                    {% if not user.is_anonymous %}<th  class="pt-3 pb-3"><img title="{% trans "Approved" %}" src="{% static "images/tick_16.png" %}" alt="{% trans "Approved" %}"/></th>{% endif %}
+                    <!-- <th  class="pt-3 pb-3">{% anchor featured %}</th> -->
+                    <th  class="pt-3 pb-3">{% anchor downloads %}</th>
+                    <th  class="pt-3 pb-3">{% anchor author "Author" %}</th>
+                    <th  class="pt-3 pb-3">{% anchor latest_version_date "Latest Plugin Version" %}</th>
+                    <!-- <th  class="pt-3 pb-3">{% anchor created_on "Created on" %}</th> -->
+                    <th  class="pt-3 pb-3">{% anchor average_vote "Stars (votes)" %}</th>
+                    <!-- <th  class="pt-3 pb-3">{% trans "Stable" %}</th>
+                    <th  class="pt-3 pb-3">{% trans "Exp." %}</th> -->
+                    {% if user.is_authenticated %}<th colspan="2" class="pt-3 pb-3">{% trans "Manage" %}</th>{% endif %}
                 </tr>
             </thead>
             <tbody>
                 {% for object in object_list %}
-                <tr class="pmain {% if object.deprecated %} error deprecated{% endif %}" id="pmain{{object.pk}}">
-                    <td><a title="{% if object.deprecated %} [DEPRECATED] {% endif %}{% trans "Click here for plugin details" %}" href="{% url "plugin_detail" object.package_name %}">
+                <tr 
+                class="pmain {% if object.deprecated %} error deprecated{% endif %} pointer" 
+                id="pmain{{object.pk}}"
+                onclick="window.location.href='{% url "plugin_detail" object.package_name %}';"
+                >
+                    <td>
                     {% if object.icon and object.icon.file and object.icon|is_image_valid %}
                         {% with image_extension=object.icon.name|file_extension %}
                             {% if image_extension == 'svg' %}
@@ -93,22 +97,46 @@
                         {% endwith %}
                     {% else %}
                         <img height="32" width="32" class="plugin-icon" src="{% static "images/qgis-icon-32x32.png" %}" alt="{% trans "Plugin icon" %}" />
-                    {% endif %}
-                    </a></td>
-                    <td><a title="{% if object.deprecated %} [DEPRECATED] {% endif %}{% trans "Click here for plugin details" %}"  href="{% url "plugin_detail" object.package_name %}">{{ object.name }}</a></td>
+                    {% endif %}</td>
+                    <td>
+                        <span class="plugin-name">
+                            {{ object.name }}
+                        </span>
+                    </td>
                     {% if not user.is_anonymous %}<td>{% if object.approved %}<img src="{% static "images/tick_16.png" %}" />{% else %}&mdash;{% endif %}</td>{% endif %}
-                    <td>{% if object.featured%}<img src="{% static "images/tick_16.png" %}" />{% else %}&mdash;{% endif %}</td>
+                    <!-- <td>{% if object.featured%}<img src="{% static "images/tick_16.png" %}" />{% else %}&mdash;{% endif %}</td> -->
                     <td>{{ object.downloads }}</td>
                     {% if object.author %}
-                    <td><a title="{% trans "See all plugins by"%} {{ object.author }}" href="{% url "author_plugins" object.author %}">{{ object.author }}</a></td>
+                    <td>
+                        <a class="author" title="{% trans "See all plugins by"%} {{ object.author }}" href="{% url "author_plugins" object.author %}">
+                            {{ object.author }}
+                        </a>
+                    </td>
                     {% endif %}
                     <td>{{ object.latest_version_date|local_timezone:"SHORT_NATURAL_DAY" }}</td>
-                    <td>{{ object.created_on|local_timezone:"SHORT" }}</td>
+                    <!-- <td>{{ object.created_on|local_timezone:"SHORT" }}</td> -->
                     <td><div><div class="star-ratings"><span style="width:{% widthratio object.average_vote 5 100 %}%" class="rating"></span></div> ({{ object.rating_votes }})</div></td>
-                    <td>{% if object.stable %}<a href="{% url "version_download" object.package_name object.stable.version %}" title="{% trans "Download the stable version" %}" >{{ object.stable.version }}</a>{% else %}&mdash;{% endif %}</td>
-                    <td>{% if object.experimental %}<a href="{% url "version_download" object.package_name object.experimental.version %}" title="{% trans "Download the experimental version" %}" >{{ object.experimental.version }}</a>{% else %}&mdash;{% endif %}</td>
-                    {% if user.is_authenticated %}{% if user in object.editors or user.is_staff %}<td><a class="button is-success is-small" href="{% url "plugin_update" object.package_name %}"><i class="icon-pencil icon-white" title="{% trans "Edit" %}"></i></a>
-                    <a class="button btn-danger is-small"  class="delete" href="{% url "plugin_delete" object.package_name %}"><i class="icon-remove-sign icon-white" title="{% trans "Delete" %}"></i></a>{% else %}{% endif %}</td>{% endif %}
+                    <!-- <td>{% if object.stable %}<a href="{% url "version_download" object.package_name object.stable.version %}" title="{% trans "Download the stable version" %}" >{{ object.stable.version }}</a>{% else %}&mdash;{% endif %}</td>
+                    <td>{% if object.experimental %}<a href="{% url "version_download" object.package_name object.experimental.version %}" title="{% trans "Download the experimental version" %}" >{{ object.experimental.version }}</a>{% else %}&mdash;{% endif %}</td> -->
+                    {% if user.is_authenticated %}
+                        {% if user in object.editors or user.is_staff %}
+                        <td>
+                            <div class="field has-addons">
+                                <p class="control mb-0">
+                                    <a class="button is-success is-small is-outlined" href="{% url "plugin_update" object.package_name %}">
+                                        <i class="fa-solid fa-pencil" title="{% trans "Edit" %}"></i>
+                                    </a>
+                                </p>
+                                <p class="control mb-0">
+                                    <a class="button is-danger is-small is-outlined"  class="delete" href="{% url "plugin_delete" object.package_name %}">
+                                        <i class="fa-solid fa-trash"  title="{% trans "Delete" %}"></i>
+                                    </a>
+                                </p>
+                            </div>
+                            </td>
+                        {% else %}
+                        {% endif %}
+                    {% endif %}
     
                 </tr>
     
@@ -118,63 +146,17 @@
             </tbody>
         </table>
     </div>
-    <div class="pagination" style="display:flex;justify-content: space-between;align-items: center;">
-    {% include 'sortable_listview/pagination.html' %}
-
-    <div style="margin-top:20px;">
-        {% if show_more_items_number <= page_obj.paginator.count %}
-        <button class="btn" onclick="set_per_page({{show_more_items_number}})">
-            {% trans "Show more" %}
-        </button>
-        {% else %}
-        <button class="btn" disabled>
-            {% trans "Show more" %}
-        </button>
-        {% endif %}
+    <div class="is-flex is-justify-content-space-between is-align-items-center mt-3 mb-3">
+    {% include 'plugins/list_pagination.html' %}
     </div>
-    <div style="margin-top:20px;">
-        <span>
-            {% trans "Elements per page:" %}&nbsp;
-        </span>
-        <select class="form-select" id="items_per_page" style="margin:0;">
-            {% if paginator.per_page not in per_page_list%}
-                <option>{{paginator.per_page}}</option>
-            {% endif %}
-            {% for p in per_page_list %}
-                <option value="{{ p }}" {% if p ==  paginator.per_page%} selected {% endif %}>{{ p }}</option>
-            {% endfor %}
-        </select>
-
-    </div>
-    <script type="text/javascript">
-        function set_per_page(n){
-            if(window.location.href.search('per_page') >= 0){
-                 new_page = window.location.href.replace(/per_page=\d+/, 'per_page=' + n);
-            } else {
-                new_page = -1 == window.location.href.search('\\?') ? window.location.href + '?' + 'per_page=' + n : window.location.href + '&' + 'per_page=' + n;
-            }
-            // Reset page
-            new_page = new_page.replace(/&page=\d+/, '&page=1');
-            new_page = new_page.replace(/\?page=\d+/, '?page=1');
-            window.location.href = new_page;
-        }
-
-        let itemsPerPageSelect = document.getElementById("items_per_page");
-        itemsPerPageSelect.addEventListener("change", function () {
-            if (itemsPerPageSelect.value) {
-                set_per_page(itemsPerPageSelect.value)
-            }
-        });
-    </script>
-    </div>
-    <div class="alert">
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    <div class="notification">
+        <i class="fas fa-info mr-3"></i>
         {% trans "Deprecated plugins are printed in red." %}
     </div>
     {% else %}
     {% block plugins_message %}
-    <div class="alert">
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    <div class="notification">
+        <i class="fas fa-info mr-3"></i>
         {% trans "This list is empty!" %}
     </div>
     {% endblock %}

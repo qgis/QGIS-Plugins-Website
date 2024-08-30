@@ -40,7 +40,7 @@
             <h4>{% trans "Version management"%}</h4>
             {% if user.is_staff or user in version.plugin.editors %}
             <a class="button is-success" href="{% url "version_update" version.plugin.package_name version.version %}">{% trans "Edit" %}</a>
-            <a class="button btn-danger" href="{% url "version_delete" version.plugin.package_name version.version %}">{% trans "Delete" %}</a>
+            <a class="button is-danger" href="{% url "version_delete" version.plugin.package_name version.version %}">{% trans "Delete" %}</a>
             {% endif %}
             <a class="button is-success" href="{% url "plugin_detail" version.plugin.package_name %}">{% trans "Plugin details" %}</a>
 
@@ -53,7 +53,7 @@
             <h4>{% trans "Author management"%}</h4>
             <form class="form-inline"  method="post" action="{% url "user_permissions_manage" version.plugin.created_by.username %}">{% csrf_token %}
                 {% if version.created_by.is_active %}
-                <input class="button btn-danger" type="submit" id="user_block" name="user_block" value="{% trans "Block author" %}" />{% else %}
+                <input class="button is-danger" type="submit" id="user_block" name="user_block" value="{% trans "Block author" %}" />{% else %}
                 <input class="button btn-warning" type="submit" id="user_unblock" name="user_unblock" value="{% trans "Unblock author" %}" />
                 {% endif %}
                 {% if version.created_by.is_active %}

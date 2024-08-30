@@ -41,7 +41,7 @@
         <td>
           <a class="button is-success is-small" href="{% url "plugin_token_update" plugin.package_name plugin_token.token.id %}"
             title="{% trans "Edit description" %}"><i class="icon-pencil icon-white"></i></a>&nbsp;
-          <a class="button btn-danger is-small delete"
+          <a class="button is-danger is-small delete"
             href="{% url "plugin_token_delete" plugin.package_name plugin_token.token.id %}"
             title="{% trans "Delete" %}"><i class="icon-remove icon-white"></i>
           </a>

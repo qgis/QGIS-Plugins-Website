@@ -346,7 +346,7 @@
                                     {% endif %}
                                 </a>
                                 {% if user.is_staff or user in version.plugin.editors %}
-                                <a class="button is-success is-small" href="{% url "version_update" object.package_name version.version %}" title="{% trans "Edit" %}"><i class="icon-pencil icon-white"></i></a>&nbsp;<a class="button btn-danger is-small delete" href="{% url "version_delete" object.package_name version.version %}" title="{% trans "Delete" %}"><i class="icon-remove icon-white"></i></a>{% endif %}</form>
+                                <a class="button is-success is-small" href="{% url "version_update" object.package_name version.version %}" title="{% trans "Edit" %}"><i class="icon-pencil icon-white"></i></a>&nbsp;<a class="button is-danger is-small delete" href="{% url "version_delete" object.package_name version.version %}" title="{% trans "Delete" %}"><i class="icon-remove icon-white"></i></a>{% endif %}</form>
                                 </td>
                                 {% endif %}
                             </tr>
@@ -371,7 +371,7 @@
                         {% endif %}
                     {% endif %}
                     {% if user.is_staff or user in object.editors %}
-                        <a class="button btn-danger" class="delete" href="{% url "plugin_delete" object.package_name %}">{% trans "Delete" %}</a>
+                        <a class="button is-danger" class="delete" href="{% url "plugin_delete" object.package_name %}">{% trans "Delete" %}</a>
                     {% endif %}
                 </div>
                 </form>

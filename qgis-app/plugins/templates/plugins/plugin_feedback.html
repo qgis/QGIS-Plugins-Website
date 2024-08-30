@@ -40,7 +40,7 @@
                 {% if feedback.reviewer == request.user %}
                 <div class="pull-right">
                     <button type="button" id="editButton" class="button is-success is-small" data-feedback-id="{{ feedback.id }}"><i class="icon-pencil"></i></button>
-                    <button type="button" class="button btn-danger is-small deleteButton" data-feedback-id="{{ feedback.id }}"><i class="icon-remove"></i></button>
+                    <button type="button" class="button is-danger is-small deleteButton" data-feedback-id="{{ feedback.id }}"><i class="icon-remove"></i></button>
                 </div>
                 {% endif %}
             </div>
