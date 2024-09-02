@@ -177,16 +177,16 @@ class PackageUploadForm(forms.Form):
     Single step upload for new plugins
     """
 
+    package = forms.FileField(
+        label=_("Plugin package"),
+        help_text=_("Please select the zipped file of the plugin."),
+    )
     experimental = forms.BooleanField(
         required=False,
         label=_("Experimental"),
         help_text=_(
             "Please check this box if the plugin is experimental. <br/> Please note that this field might be overridden by metadata (if present)."
         ),
-    )
-    package = forms.FileField(
-        label=_("Plugin package"),
-        help_text=_("Please select the zipped file of the plugin."),
     )
 
     def clean_package(self):
