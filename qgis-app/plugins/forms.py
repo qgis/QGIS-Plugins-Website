@@ -181,7 +181,7 @@ class PackageUploadForm(forms.Form):
         required=False,
         label=_("Experimental"),
         help_text=_(
-            "Please check this box if the plugin is experimental. Please note that this field might be overridden by metadata (if present)."
+            "Please check this box if the plugin is experimental. <br/> Please note that this field might be overridden by metadata (if present)."
         ),
     )
     package = forms.FileField(

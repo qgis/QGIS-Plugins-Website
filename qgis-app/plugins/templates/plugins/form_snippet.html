@@ -1,27 +1,69 @@
 {% load i18n plugin_utils %}
-    <fieldset>
-{% for field in form %}
-        <div class="fieldWrapper {{ field.css_classes }}">
-            {% if field.field.widget|klass == 'CheckboxInput' %}
-            <label for="{{ field.html_name }}" class="{{ field.css_classes }}">
-                {{ field.label }}
-                {% if field.errors %}
-                <div class="alert alert-error">
-                {{ field.errors }}
-                </div>
-                {% endif %}
-                <input type="checkbox" id="{{ field.html_name }}" name="{{ field.html_name }}" {% if field.value %}checked="checked"{% endif %} />
-            </label>
-            {% else %}
-            {{ field.label_tag }}
-            {% if field.errors %}
-            <div class="alert alert-error">
-            {{ field.errors }}
-            </div>
-            {% endif %}
-            {{ field }}
-            {% endif %}
-            <div class="help">{{ field.help_text }}</div>
-        </div>
-{% endfor %}
-    </fieldset>
+<fieldset>
+  {% for field in form %}
+  <div class="field {{ field.css_classes }}">
+    {% if field.field.widget|klass == 'CheckboxInput' %}
+    <div class="control">
+      <label
+        for="{{ field.html_name }}"
+        class="checkbox label{{ field.css_classes }}"
+      >
+        {% if field.errors %}
+        <p class="help is-danger">{{ field.errors }}</p>
+        {% endif %}
+        <input
+          type="checkbox"
+          id="{{ field.html_name }}"
+          name="{{ field.html_name }}"
+          {%
+          if
+          field.value
+          %}checked="checked"
+          {%
+          endif
+          %}
+        />
+        {{ field.label }}
+      </label>
+    </div>
+    {% elif field.field.widget|klass == 'ClearableFileInput' %}
+    <div class="file has-name">
+      <label class="file-label">
+        <input
+          class="file-input"
+          type="file"
+          name="resume"
+          id="{{ field.html_name }}"
+          name="{{ field.html_name }}"
+        />
+        <span class="file-cta">
+          <span class="file-icon">
+            <i class="fas fa-cloud-upload-alt"></i>
+          </span>
+          <span class="file-label"> {{ field.label }} </span>
+        </span>
+        <span class="file-name" id="filename"> Choose a file… </span>
+      </label>
+    </div>
+    {% else %} {{ field.label_tag }} {% if field.errors %}
+    <p class="help is-danger">{{ field.errors }}</p>
+    {% endif %} {{ field }} {% endif %}
+    <div class="help has-text-grey">{{ field.help_text | safe }}</div>
+  </div>
+  {% endfor %}
+</fieldset>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const fileInput = document.querySelector(".file-input");
+    const fileName = document.querySelector("#filename");
+
+    fileInput.addEventListener("change", function () {
+      if (fileInput.files.length > 0) {
+        fileName.textContent = fileInput.files[0].name;
+      } else {
+        fileName.textContent = "Choose a file…";
+      }
+    });
+  });
+</script>
