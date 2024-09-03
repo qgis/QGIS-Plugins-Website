@@ -17,7 +17,7 @@ cd ${INSTALL_DIR}
 ## the development version will just use the code from the
 ## development folder of the user
 if [ ${FETCH_FROM_GIT:-"0"} != "0" ]; then
-    git clone --single-branch --branch modernize https://github.com/qgis/QGID-Plugins-Website.git .
+    git clone --single-branch --branch modernize https://github.com/qgis/QGIS-Plugins-Website.git .
 else
     if [ ! -e /var/qgis_plugins/qgis-app ]; then
     ln -s /vagrant/qgis-app/ /var/qgis_plugins/
