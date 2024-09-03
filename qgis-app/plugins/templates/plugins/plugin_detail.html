@@ -145,21 +145,24 @@
 {% endblock %}
 {% block content %}
     <div class="columns">
-        <div class="column is-12">
-            <h2>{{ object.name }}
+        <div class="column is-2">
             {% if object.icon and object.icon.file and object.icon|is_image_valid %}
                 {% with image_extension=object.icon.name|file_extension %}
                     {% if image_extension == 'svg' %}
-                        <img class="is-pulled-right plugin-icon" alt="{% trans "Plugin icon" %}" src="{{ object.icon.url }}" width="24" height="24" />
+                        <img class="plugin-icon" alt="{% trans "Plugin icon" %}" src="{{ object.icon.url }}" width="24" height="24" />
                     {% else %}
                         {% thumbnail object.icon "128x128" upscale=False format="PNG" as im %}
-                            <img class="is-pulled-right plugin-icon" alt="{% trans "Plugin icon" %}" src="{{ im.url }}" width="{{ im.x }}" height="{{ im.y }}" />
+                            <img class="plugin-icon" alt="{% trans "Plugin icon" %}" src="{{ im.url }}" width="{{ im.x }}" height="{{ im.y }}" />
                         {% endthumbnail %}
                     {% endif %}
                 {% endwith %}
             {% else %}
-                <img height="32" width="32" class="is-pulled-right plugin-icon" src="{% static "images/qgis-icon-32x32.png" %}" alt="{% trans "Plugin icon" %}" />
+                <img height="32" width="32" class="plugin-icon" src="{% static "images/qgis-icon-32x32.png" %}" alt="{% trans "Plugin icon" %}" />
             {% endif %}
+        </div>
+        <div class="column is-10">
+            <h2>
+                {{ object.name }}
             </h2>
             <div class="is-flex is-align-items-center">
                 <span style="color:gray;">{% trans "Plugin ID:" %} {{ object.pk }}</span>
@@ -170,8 +173,10 @@
                     </button>
                 </div>
             </div>
+            <p class="plugin-details-description">{{ object.description|safe|linebreaksbr }}</p>
+            <div id="rating"> (<span id="votes">{% firstof votes '0' %}</span>) {% trans "votes" %}&nbsp;<span id="loading" style="display:none">Loading...</span><span id="vote-message" style="display:none"></span></div>
 
-            <a class="button is-success mt-5" href="{% if object.stable %}{{ object.stable.get_download_url }}{% else %}{{ object.experimental.get_download_url }}{% endif %}">
+            <a class="button is-success mt-3" href="{% if object.stable %}{{ object.stable.get_download_url }}{% else %}{{ object.experimental.get_download_url }}{% endif %}">
                 <i class="fas fa-download" style="vertical-align: middle;"></i>&nbsp;{% trans "Download latest" %}
             </a>
         </div>
@@ -190,18 +195,76 @@
         {% endif %}
         
         {% if object.deprecated %}
-        <div class="notification is-danger">
-            <p>{% trans "This plugin is deprecated!" %}</p>
+        <div class="notification is-danger ">
+            <p class="has-text-white">{% trans "This plugin is deprecated!" %}</p>
         </div>
         {% endif %}
 
-        <div id="rating"> (<span id="votes">{% firstof votes '0' %}</span>) {% trans "votes" %}&nbsp;<span id="loading" style="display:none">Loading...</span><span id="vote-message" style="display:none"></span></div>
         
-        <div class="container rich">
-            <div class="cont coloring-6">
-                <p class="plugin-details-description">{{ object.description|safe|linebreaksbr }}</p>
+        {% if user.is_staff or user in object.editors %}
+        <div id="plugin-manage">
+            <form method="post" action="{% url "plugin_manage" object.package_name %}">
+            {% csrf_token %}
+            <div class="field is-grouped">
+                <p class="control">
+                    <a class="button" href="{% url "plugin_update" object.package_name %}">
+                        <span class="icon">
+                            <i class="fas fa-edit"></i>
+                        </span>
+                        <span>{% trans "Edit" %}</span>
+                    </a>
+                </p>
+                <p class="control">
+                    <a class="button" href="{% url "version_create" object.package_name %}">
+                        <span class="icon">
+                            <i class="fas fa-plus"></i>
+                        </span>
+                        <span>{% trans "Add version" %}</span>
+                    </a>
+                </p>
+                <p class="control">
+                    <a class="button" href="{% url "plugin_token_list" object.package_name %}">
+                        <span class="icon">
+                            <i class="fas fa-key"></i>
+                        </span>
+                        <span>{% trans "Tokens" %}</span>
+                    </a>
+                </p>
+                {% if user.is_staff %}
+                    <p class="control">
+                        {% if object.featured %}
+                            <button class="button is-danger" type="submit" name="unset_featured" value="unset_featured" id="unset_featured">
+                                <span class="icon">
+                                    <i class="fas fa-star"></i>
+                                </span>
+                                <span>{% trans "Unset featured" %}</span>
+                            </button>
+                        {% else %}
+                            <button class="button" type="submit" name="set_featured" value="set_featured" id="set_featured">
+                                <span class="icon">
+                                    <i class="fas fa-star"></i>
+                                </span>
+                                <span>{% trans "Set featured" %}</span>
+                            </button>
+                        {% endif %}
+                    </p>
+                {% endif %}
+                {% if user.is_staff or user in object.editors %}
+                    <p class="control">
+                        <a class="button is-danger" href="{% url "plugin_delete" object.package_name %}">
+                            <span class="icon">
+                                <i class="fas fa-trash"></i>
+                            </span>
+                            <span>{% trans "Delete" %}</span>
+                        </a>
+                    </p>
+                {% endif %}
             </div>
+            </form>
         </div>
+        {% endif %}
+
+        <hr/>
         <div class="tabs is-toggle is-centered" id="plugintab">
             <ul>
                 {% if object.about %}
@@ -210,18 +273,17 @@
                 <li {% if not object.about %}class="is-active"{% endif %} data-tab="2"><a href="#plugin-details">{% trans "Details" %}</a></li>
                 <li data-tab="3"><a href="#plugin-versions">{% trans "Versions" %}</a></li>
                 {% if user.is_staff or user in object.editors %}
-                <li data-tab="4"><a href="#plugin-manage">{% trans "Manage" %}</a></li>
                 <li data-tab="5"><a href="#plugin-stats">{% trans "Stats" %}</a></li>
                 {% endif %}
             </ul>
         </div>
         <div class="tab-content">
             {% if object.about %}
-            <div class="tab-pane is-active" id="plugin-about" data-content="1">
+            <div class="tab-pane is-active" id="plugin-about">
                 <p>{{ object.about|safe|linebreaksbr }}</p>
             </div>
             {% endif %}
-            <div class="tab-pane{% if not object.about %} is-active{% endif %}" id="plugin-details" data-content="2">
+            <div class="tab-pane{% if not object.about %} is-active{% endif %}" id="plugin-details">
                 {% if object.server %}
                 <div class="notification is-info">{% trans "This plugin provides an interface for QGIS Server." %}</div>
                 {% endif %}
@@ -276,7 +338,7 @@
                             <td>{% trans "Tags" %}</td>
                             <td>
                                 {% for tag in object.tags.all %}
-                                    <a href="{% url "tags_plugins" tag.slug %}">{{tag}}</a>{% if not forloop.last %},&nbsp;{% endif %}
+                                    <a href="{% url "tags_plugins" tag.slug %}" class="tag is-warning">{{tag}}</a>
                                 {% endfor %}
                             </td>
                         </tr>
@@ -334,7 +396,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="tab-pane" id="plugin-versions" data-content="3">
+            <div class="tab-pane" id="plugin-versions">
                 {% if object.pluginversion_set.count %}
                 <div id="version_list">
                     <table class="table is-striped">
@@ -357,7 +419,7 @@
                             <tr>
                                 <td><a title="{% trans "Version details" %}" href="{% url "version_detail" object.package_name version.version %}">{{ version.version }}</a></td>
                                 {% if not user.is_anonymous %}
-<td>
+                                <td>
                                     {% if version.approved %}
                                         <i class="fas fa-check-circle has-text-success"></i>
                                     {% else %}
@@ -416,18 +478,11 @@
                 {% endif %}
             </div> 
             {% if user.is_staff or user in object.editors %}
-            <div class="tab-pane" id="plugin-manage" data-content="4">
-                <form method="post" action="{% url "plugin_manage" object.package_name %}">{% csrf_token %}
-                <div>
-                    <a class="button is-small is-warning" href="{% url "plugin_update" object.package_name %}">{% trans "Update plugin details" %}</a>
-                </div>
-                </form>
-            </div>
-            <div class="tab-pane" id="plugin-stats" data-content="5">
+            <div class="tab-pane" id="plugin-stats">
                 <iframe
                     src="{{stats_url}}"
                     frameborder="0"
-                    width="1350"
+                    width="100%"
                     height="810"
                     allowtransparency
                 ></iframe>
