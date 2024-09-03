@@ -1,9 +1,6 @@
 {% extends 'plugins/plugin_base.html' %}{% load i18n %}
 {% block content %}
     <h2>{{ form_title }} {{ version }}</h2>
-    <div class="alert alert-info">
-        <p class="required"><label style="display:inline"></label> {% trans "required field." %}</p>
-    </div>
     {% if form.non_field_errors %}
     <div class="alert alert-error">
         <button type="button" class="close" data-dismiss="alert">&times;</button>
@@ -13,11 +10,16 @@
     </div>
     {% endif %}
 
-    <form action="" method="post" enctype="multipart/form-data" class="horizontal">{% csrf_token %}
+    <form action="" method="post" enctype="multipart/form-data" class="horizontal">
+        {% csrf_token %}
         {% include "plugins/form_snippet.html" %}
         <div class="form-actions">
-            <input class="button is-success" type="submit" value="{% trans "Save" %}" />
+            <button class="button is-success" type="submit">
+                <span class="icon">
+                    <i class="fas fa-save"></i> <!-- FontAwesome save icon -->
+                </span>
+                <span>{% trans "Save" %}</span>
+            </button>
         </div>
     </form>
-
 {% endblock %}

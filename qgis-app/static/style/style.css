@@ -57,7 +57,7 @@ img.plugin-icon {
     max-width: inherit;
 }
 
-.required label:after { content:" *"; color: red; }
+label.required:after { content:" *"; color: red; }
 
 /* HUB style */
 .dropdown-menu {
