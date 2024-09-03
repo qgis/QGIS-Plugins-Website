@@ -320,12 +320,12 @@
                         {% if object.pk %}
                         <tr>
                             <td>{% trans "Plugin ID" %}</td>
-                            <td>
+                            <td class="is-flex is-align-items-center">
                                 <span>{{ object.pk }}</span>
                                 <div class="tooltip">
-                                    <button class="button is-small" onclick="copyToClipBoard('{{ object.pk }}')">
+                                    <button class="button is-light is-small" onclick="copyToClipBoard('{{ object.pk }}')">
                                         <span class="tooltiptext" id="copyTooltip">{% trans "Copy to clipboard" %}</span>
-                                        <i class="icon-copy"></i>
+                                        <i class="fas fa-copy"></i>
                                     </button>
                                 </div>
                             </td>
@@ -340,15 +340,15 @@
                     <table class="table is-striped">
                         <thead>
                             <tr>
-                                <th>{% trans "Version" %}</th>
-                                {% if not user.is_anonymous %}<th>{% trans "Approved" %}</th>{% endif %}
-                                <th>{% trans "Experimental" %}</th>
-                                <th>{% trans "Min QGIS version" %}</th>
-                                <th>{% trans "Max QGIS version" %}</th>
-                                <th>{% trans "Downloads" %}</th>
-                                <th>{% trans "Uploaded by" %}</th>
-                                <th>{% trans "Date" %}</th>
-                                {% if user.is_staff or user in object.approvers or user in object.editors %}<th>{% trans "Manage" %}</th>{% endif %}
+                                <th><i class="fa-solid fa-code-commit"></i> {% trans "Version" %}</th>
+                                {% if not user.is_anonymous %}<th title="{% trans "Approved" %}"><i class="fa-solid fa-plug-circle-check"></i></th>{% endif %}
+                                <th  title="{% trans "Experimental" %}"><i class="fa-solid fa-flask"></i></th>
+                                <th title="{% trans "Min QGIS version" %}">{% trans "Min QGIS v." %}</th>
+                                <th title="{% trans "Max QGIS version" %}">{% trans "Max QGIS v." %}</th>
+                                <th title="{% trans "Downloads" %}"><i class="fa-solid fa-download"></i></th>
+                                <th title="{% trans "Uploaded by" %}"><i class="fa-solid fa-user"></i></th>
+                                <th title="{% trans "Date" %}"><i class="fa-regular fa-calendar"></i> {% trans "Date" %}</th>
+                                {% if user.is_staff or user in object.approvers or user in object.editors %}<th title="{% trans "Manage" %}"><i class="fa-solid fa-gear"></i> {% trans "Manage" %}</th>{% endif %}
                             </tr>
                         </thead>
                         <tbody>
@@ -356,11 +356,25 @@
                             {% if version.approved or not user.is_anonymous %}
                             <tr>
                                 <td><a title="{% trans "Version details" %}" href="{% url "version_detail" object.package_name version.version %}">{{ version.version }}</a></td>
-                                {% if not user.is_anonymous %}<td>{{ version.approved|yesno }}</td>{% endif %}
-                                <td>{{ version.experimental|yesno }}</td>
-                                <td>{{ version.min_qg_version }}</td>
-                                <td>{{ version.max_qg_version }}</td>
-                                <td>{{ version.downloads }}</td>
+                                {% if not user.is_anonymous %}
+<td>
+                                    {% if version.approved %}
+                                        <i class="fas fa-check-circle has-text-success"></i>
+                                    {% else %}
+                                        <i class="fas fa-times-circle has-text-danger"></i>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                                <td>
+                                    {% if version.experimental %}
+                                        <i class="fas fa-check-circle has-text-success"></i>
+                                    {% else %}
+                                        <i class="fas fa-times-circle has-text-danger"></i>
+                                    {% endif %}
+                                </td>
+                                <td><span class="tag is-info">{{ version.min_qg_version }}</span></td>
+                                <td><span class="tag is-success">{{ version.max_qg_version }}</span></td>
+                                <td class="downloads">{{ version.downloads }}</td>
                                 {% if version.is_from_token %}
                                 <td>Token {{ version.token.description|default:"" }}</td>
                                 {% else %}
@@ -373,22 +387,22 @@
                                     {% if user.is_staff or user in version.plugin.approvers %}
                                         {% if not version.approved %}
                                         <button class="button is-success is-small" type="submit" name="version_approve" title="{% trans "Approve" %}">
-                                            <i class="icon-thumbs-up"></i>
+                                            <i class="fas fa-thumbs-up"></i>
                                         </button>
                                         {% else %}
                                         <button class="button is-warning is-small" type="submit" name="version_unapprove" title="{% trans "Unapprove" %}">
-                                            <i class="icon-thumbs-down"></i></button>
+                                            <i class="fas fa-thumbs-down"></i></button>
                                         {% endif %}
                                     {% endif %}
                                     <a class="button is-small {% if version.feedback|feedbacks_not_completed|length >= 1 %}is-warning{% else %}is-success{% endif %}" href="{% url "version_feedback" object.package_name version.version %}" title="{% trans "Feedback" %}">
-                                        <i class="icon-comments"></i>
+                                        <i class="fas fa-comments"></i>
                                         {% if version.feedback|feedbacks_not_completed|length >= 2 %}
                                             {{ version.feedback|feedbacks_not_completed|length }}
                                         {% endif %}
                                     </a>
                                     {% if user.is_staff or user in version.plugin.editors %}
-                                    <a class="button is-success is-small" href="{% url "version_update" object.package_name version.version %}" title="{% trans "Edit" %}"><i class="icon-pencil"></i></a>
-                                    <a class="button is-danger is-small delete" href="{% url "version_delete" object.package_name version.version %}" title="{% trans "Delete" %}"><i class="icon-remove"></i></a>
+                                    <a class="button is-success is-small" href="{% url "version_update" object.package_name version.version %}" title="{% trans "Edit" %}"><i class="fas fa-pencil"></i></a>
+                                    <a class="button is-danger is-small" href="{% url "version_delete" object.package_name version.version %}" title="{% trans "Delete" %}"><i class="fas fa-remove"></i></a>
                                     {% endif %}
                                     </form>
                                 </td>
