@@ -1,9 +1,257 @@
 [
-  {
-    "model": "simplemenu.menu",
-    "pk": 1,
-    "fields": {
-      "name": "Navigation"
-    }
+{
+  "model": "simplemenu.menu",
+  "pk": 1,
+  "fields": {
+    "name": "Navigation"
   }
+},
+{
+  "model": "simplemenu.menu",
+  "pk": 3,
+  "fields": {
+    "name": "New"
+  }
+},
+{
+  "model": "simplemenu.menu",
+  "pk": 4,
+  "fields": {
+    "name": "Top"
+  }
+},
+{
+  "model": "simplemenu.menu",
+  "pk": 5,
+  "fields": {
+    "name": "Category"
+  }
+},
+{
+  "model": "simplemenu.menu",
+  "pk": 6,
+  "fields": {
+    "name": "Unapproved"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 1,
+  "fields": {
+    "name": "QGIS Plugins Home",
+    "menu": 1,
+    "rank": 1,
+    "urlobj_content_type": 28,
+    "urlobj_id": 1,
+    "urlstr": ""
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 2,
+  "fields": {
+    "name": "All plugins",
+    "menu": 1,
+    "rank": 2,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 12,
+  "fields": {
+    "name": "My plugins",
+    "menu": 1,
+    "rank": 6,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/my"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 13,
+  "fields": {
+    "name": "New plugins",
+    "menu": 3,
+    "rank": 7,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/fresh/"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 14,
+  "fields": {
+    "name": "Updated plugins",
+    "menu": 3,
+    "rank": 8,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/latest/"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 15,
+  "fields": {
+    "name": "Featured",
+    "menu": 4,
+    "rank": 9,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/featured/"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 16,
+  "fields": {
+    "name": "Popular",
+    "menu": 4,
+    "rank": 10,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/popular/"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 17,
+  "fields": {
+    "name": "Most downloaded",
+    "menu": 4,
+    "rank": 11,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/most_downloaded/"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 18,
+  "fields": {
+    "name": "Most voted",
+    "menu": 4,
+    "rank": 12,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/most_voted/"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 19,
+  "fields": {
+    "name": "Most rated",
+    "menu": 4,
+    "rank": 13,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/most_rated/"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 20,
+  "fields": {
+    "name": "Stable",
+    "menu": 4,
+    "rank": 14,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/stable/"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 21,
+  "fields": {
+    "name": "Experimental",
+    "menu": 5,
+    "rank": 15,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/experimental/"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 22,
+  "fields": {
+    "name": "QGIS server plugins",
+    "menu": 5,
+    "rank": 16,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/server/"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 23,
+  "fields": {
+    "name": "Deprecated",
+    "menu": 5,
+    "rank": 17,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/deprecated/"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 24,
+  "fields": {
+    "name": "Review plugins (resolved)",
+    "menu": 6,
+    "rank": 18,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/feedback_completed/"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 25,
+  "fields": {
+    "name": "Review plugins (Pending)",
+    "menu": 6,
+    "rank": 19,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/feedback_received/"
+  }
+},
+{
+  "model": "simplemenu.menuitem",
+  "pk": 26,
+  "fields": {
+    "name": "Awaiting review",
+    "menu": 6,
+    "rank": 20,
+    "urlobj_content_type": null,
+    "urlobj_id": null,
+    "urlstr": "/plugins/feedback_pending/"
+  }
+},
+{
+  "model": "simplemenu.urlitem",
+  "pk": 1,
+  "fields": {
+    "name": "Snippets",
+    "url": "/snippets/"
+  }
+},
+{
+  "model": "simplemenu.urlitem",
+  "pk": 2,
+  "fields": {
+    "name": "Main QGIS website",
+    "url": "http://www.qgis.org"
+  }
+}
 ]
