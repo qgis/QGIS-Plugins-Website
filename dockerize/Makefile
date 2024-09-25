@@ -237,3 +237,11 @@ dbseed:
 	@echo "Seed db with JSON data from /fixtures/*.json"
 	@echo "------------------------------------------------------------------"
 	@docker compose -p $(PROJECT_ID) exec devweb bash -c 'python manage.py loaddata fixtures/*.json'
+
+loadmenu:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Delete all simplemenu entries and load from fixtures/simplemenu.json"
+	@echo "------------------------------------------------------------------"
+	@docker compose -p $(PROJECT_ID) devweb python manage.py clear_simplemenu
+	@docker compose -p $(PROJECT_ID) devweb python manage.py loaddata fixtures/simplemenu.json
