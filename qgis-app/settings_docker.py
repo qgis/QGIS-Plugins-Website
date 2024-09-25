@@ -186,4 +186,3 @@ WEBPACK_LOADER = {
         'STATS_FILE': os.path.join(SITE_ROOT, 'webpack-stats.json'),
     }
 }
-MAIN_WEBSITE_URL='https://qgis.org'
