@@ -2,7 +2,7 @@
 {% block content %}
     <h2>{{ form_title }} {{ version }}</h2>
     {% if form.non_field_errors %}
-    <div class="notification is-danger">
+    <div class="notification is-danger is-light">
         <button class="delete" data-dismiss="alert">&times;</button>
         {% for error in form.non_field_errors %}
             {{ error }} <br/>

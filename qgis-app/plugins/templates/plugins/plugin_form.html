@@ -38,13 +38,13 @@ ul.as-list {
 {% block content %}
     <h2>{{ form_title }} {{ plugin }}</h2>
     {% if form.errors %}
-    <div class="notification is-danger">
+    <div class="notification is-danger is-light">
         <button class="delete" data-dismiss="alert">&times;</button>
         {% trans "The form contains errors and cannot be submitted, please check the fields highlighted in red." %}
     </div>
     {% endif %}
     {% if form.non_field_errors %}
-    <div class="notification is-danger">
+    <div class="notification is-danger is-light">
         <button class="delete" data-dismiss="alert">&times;</button>
         {% for error in form.non_field_errors %}
             {{ error }}<br />

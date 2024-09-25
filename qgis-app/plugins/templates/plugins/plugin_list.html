@@ -80,7 +80,7 @@
             <tbody>
                 {% for object in object_list %}
                 <tr 
-                class="pmain {% if object.deprecated %} error deprecated{% endif %} pointer" 
+                class="pmain {% if object.deprecated %} has-background-danger-light{% endif %} pointer" 
                 id="pmain{{object.pk}}"
                 onclick="window.location.href='{% url "plugin_detail" object.package_name %}';"
                 >
@@ -149,7 +149,7 @@
     <div class="is-flex is-justify-content-space-between is-align-items-center mt-3 mb-3">
     {% include 'plugins/list_pagination.html' %}
     </div>
-    <div class="notification">
+    <div class="notification is-danger is-light is-light">
         <i class="fas fa-info mr-3"></i>
         {% trans "Deprecated plugins are printed in red." %}
     </div>
