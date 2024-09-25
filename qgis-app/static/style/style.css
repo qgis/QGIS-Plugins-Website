@@ -86,12 +86,3 @@ label.required:after { content:" *"; color: red; }
   }
 }
 
-.modal {
-  /* make modal fullscreen */
-  bottom: 20px;
-}
-
-.modal-header {
-  border-bottom: none;
-  text-align: center;
-}

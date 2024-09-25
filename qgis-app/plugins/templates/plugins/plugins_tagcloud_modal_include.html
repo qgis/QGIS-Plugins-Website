@@ -2,20 +2,8 @@
 
 {% trans "Plugin Tags" as tags_title %}
 
-<a id="tagcloudModalButton" href="#tagcloudModal" role="button" class="button  btn-link btn-large" data-toggle="modal">
-  <i class="icon-tags icon-white icon-2x"></i>
+<a class="tagcloudModalButton" href="#tagcloudModal" role="button" data-target="pluginTagsModal">
+  <i class="fas fa-tags mr-3"></i>
   {{ tags_title }}
-  <i class="icon-resize-full icon-white"></i>
 </a>
 
-<div id="tagcloudModal" class="modal hide" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="tag_cloud_modal">
-    <div class="modal-header">
-      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-      <h3>{{ tags_title }}</h3>
-    </div>
-    <div class="modal-body">
-    {% include_plugins_tagcloud 'plugins.plugin' %}
-    </div>
-  </div>
-</div>
