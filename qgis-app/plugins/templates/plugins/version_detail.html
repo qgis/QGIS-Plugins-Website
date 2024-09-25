@@ -5,7 +5,7 @@
     <div class="pull-right"><a href="{% url "version_download" version.plugin.package_name version.version %}" class="button is-success"><i class="icon-download-alt icon-white"></i> {% trans "Download" %}</a></div>
 
     {% if not version.created_by.is_active and not version.is_from_token %}
-    <div class="alert alert-error">
+    <div class="notification is-danger">
         {% trans "The plugin author has been blocked." %}
     </div>
     {% endif %}

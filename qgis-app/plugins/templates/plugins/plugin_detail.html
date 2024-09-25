@@ -185,19 +185,19 @@
         <div>
             {% if not object.experimental and not object.stable %}
             <div class="notification is-warning">
-                <p>{% trans "This plugin has no public version yet." %}</p>
+                {% trans "This plugin has no public version yet." %}
             </div>
             {% endif %}
             
             {% if not object.created_by.is_active %}
             <div class="notification is-warning">
-                <p>{% trans "The plugin maintainer has been blocked." %}</p>
+                {% trans "The plugin maintainer has been blocked." %}
             </div>
             {% endif %}
             
             {% if object.deprecated %}
             <div class="notification is-danger ">
-                <p class="has-text-white">{% trans "This plugin is deprecated!" %}</p>
+                {% trans "This plugin is deprecated!" %}
             </div>
             {% endif %}
     

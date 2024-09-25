@@ -45,12 +45,12 @@
         </span>
         <span class="file-name" id="filename"> Choose a file… </span>
       </label>
-        {% if field.errors %}
-          {% for error in field.errors  %}
-            <p class="help is-danger has-text-weight-medium">{{ error }}</p>
-          {% endfor %}
-        {% endif %} 
     </div>
+    {% if field.errors %}
+      {% for error in field.errors  %}
+        <p class="help is-danger has-text-weight-medium">{{ error }}</p>
+      {% endfor %}
+    {% endif %} 
     {% elif field.field.widget|klass == 'Textarea' %}
       <div class="field">
         <label class="label">{{ field.label_tag }}</label>
