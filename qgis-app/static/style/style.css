@@ -53,10 +53,6 @@ div.tag_cloud a {
     width: inherit !important;
 }
 
-img.plugin-icon {
-    max-width: inherit;
-}
-
 label.required:after { content:" *"; color: red; }
 
 /* HUB style */

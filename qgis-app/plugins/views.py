@@ -513,6 +513,7 @@ def plugin_upload(request):
 class PluginDetailView(DetailView):
     model = Plugin
     queryset = Plugin.objects.all()
+    title = _("Plugin details")
 
     @method_decorator(ensure_csrf_cookie)
     def dispatch(self, *args, **kwargs):
@@ -542,6 +543,7 @@ class PluginDetailView(DetailView):
                 "stats_url": stats_url,
                 "rating": plugin.rating.get_rating(),
                 "votes": plugin.rating.votes,
+                "title": self.title,
             }
         )
         return context
