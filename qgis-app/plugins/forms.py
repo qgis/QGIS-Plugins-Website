@@ -240,7 +240,7 @@ class VersionFeedbackForm(forms.Form):
                     "- [ ] second task"
                 ),
                 "rows": "5",
-                "class": "span12"
+                "class": "textarea is-fullwidth"
             }
         )
     )
