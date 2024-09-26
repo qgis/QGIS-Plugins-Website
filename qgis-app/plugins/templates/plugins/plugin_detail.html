@@ -51,7 +51,7 @@
             e.preventDefault();
 
             // Store the current scroll position
-            // scrollPosition = $(window).scrollTop();
+            scrollPosition = $(window).scrollTop();
 
             // Update the URL without triggering a reload
             window.location.hash = this.hash;
@@ -63,10 +63,6 @@
             // Hide all tab panes and show the selected one
             $('.tab-pane').removeClass('is-active');
             $($(this).attr('href')).addClass('is-active');
-        });
-
-        // Restore the scroll position on tab change
-        $('.tabs a').on('shown', function (e) {
             $(window).scrollTop(scrollPosition);
         });
 
@@ -399,7 +395,7 @@
                 </div>
                 <div class="tab-pane" id="plugin-versions">
                     {% if object.pluginversion_set.count %}
-                    <div id="version_list">
+                    <div class="table_container">
                         <table class="table is-striped">
                             <thead>
                                 <tr>
