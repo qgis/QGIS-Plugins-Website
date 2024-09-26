@@ -11,7 +11,7 @@
         <li>{% trans "Email: " %} {{ plugin_user.email }}</li>{% endif %}
     </ul>
     <form method="post" action="{% url "user_permissions_manage" plugin_user.username %}">{% csrf_token %}
-    <div class="form-actions">
+    <div class="form-actions has-text-right mt-3">
             {% if plugin_user.is_active %}
             <input class="button is-danger" type="submit" id="user_block" name="user_block" value="{% trans "Block author" %}" />{% else %}
                 <input class="button btn-warning"  type="submit" id="user_unblock" name="user_unblock" value="{% trans "Unblock author" %}" />

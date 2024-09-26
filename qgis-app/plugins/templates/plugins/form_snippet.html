@@ -1,5 +1,5 @@
 {% load i18n plugin_utils %}
-<fieldset>
+<fieldset class="box-content">
   {% for field in form %}
   <div class="field {{ field.css_classes }}">
     {% if field.field.widget|klass == 'CheckboxInput' %}
