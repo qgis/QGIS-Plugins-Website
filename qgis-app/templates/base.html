@@ -44,36 +44,7 @@
         location-prefix="https://qgis.org"
     ></qg-top-nav>
     {% include 'layouts/header.html' %}
-
-    <section class="hero is-dark is-medium has-bg-img" style="background: url({% static "images/hegobg1.webp" %});
-        background-position: 50%;
-        background-size: cover;">
-        <div class="hero-body">
-            <div class="columns container">
-                <div class="column is-8 is-flex hero-text has-text-left">
-                    <div class="hero-container">
-                        <div class="label">Free and Open Source</div>
-                        <h1 class="title hero-title pr-3">
-                            {{title}}
-                        </h1>
-                        <p class="subtitle hero-subtitle">QGIS plugins add additional functionality to the QGIS application.</p>
-                    </div>
-                    <div class="is-vcentered">
-                        <a class="button is-primary1 is-size-5" href="/plugins/">
-                            Explore
-                        </a>
-                        <!-- <p class="subtitle hero-subtitle">Available on Windows, Mac, Linux</p> -->
-                    </div>
-
-                </div>
-                <div class="logo">
-                    <figure class="image logo column is-justify-content-center">
-                        <img src="{% static "images/large-logo.svg" %}">
-                    </figure>
-                </div>
-            </div>
-        </div>
-    </section>
+    {% block pagetitle %}{% endblock %}
     <section class="section">
         <div class="container content">
             <div class="columns is-multiline is-centered">
@@ -83,9 +54,6 @@
                     {% endblock %}
                 </div>
                 <div class="content column is-9">
-                    <section class="info">
-                        
-                    </section>
                     {% if messages %}
                     <div class="notification is-light">
                         <button class="delete"></button>
@@ -94,10 +62,8 @@
                         {% endfor %}
                     </div>
                     {% endif %}
-                    <div class="responsive-content">
                     {% block content %}
                     {% endblock %}
-                    </div>
 
                 </div>
             </div>

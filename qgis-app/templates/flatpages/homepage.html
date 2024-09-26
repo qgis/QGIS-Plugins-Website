@@ -1,5 +1,8 @@
 {% extends BASE_TEMPLATE %}
 
+{% block pagetitle %}
+    {% include "flatpages/home_title.html" %}
+{% endblock %}
 {% block extratitle %}Plugins{% endblock %}
 {% block content %}
     {% include "flatpages/home_content.html" %}

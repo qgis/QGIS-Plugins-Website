@@ -33,21 +33,23 @@
       {% endif %}
     </ul>
   </nav>
+  
 
-  <div>
-        {% if show_more_items_number <= page_obj.paginator.count %}
-        <button class="button" onclick="set_per_page({{show_more_items_number}})">
-            {% trans "Show more" %}
-        </button>
-        {% else %}
-        <button class="button" disabled>
-            {% trans "Show more" %}
-        </button>
-        {% endif %}
+  <div class="is-flex is-justify-content-space-between is-flex-wrap-wrap">
+    <div class="mt-3 mb-3">
+          {% if show_more_items_number <= page_obj.paginator.count %}
+          <button class="button" onclick="set_per_page({{show_more_items_number}})">
+              {% trans "Show more" %}
+          </button>
+          {% else %}
+          <button class="button" disabled>
+              {% trans "Show more" %}
+          </button>
+          {% endif %}
     </div>
     <div class="is-flex is-align-items-center">
         <span>
-            {% trans "Elements per page:" %}&nbsp;
+            {% trans "Items per page:" %}&nbsp;
         </span>
         <div class="select">
             <select id="items_per_page">
@@ -58,9 +60,10 @@
                     <option value="{{ p }}" {% if p ==  paginator.per_page%} selected {% endif %}>{{ p }}</option>
                 {% endfor %}
             </select>
-
+  
         </div>
     </div>
+  </div>
 
     <script type="text/javascript">
         function set_per_page(n){

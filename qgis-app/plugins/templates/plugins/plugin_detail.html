@@ -206,7 +206,7 @@
             <div id="plugin-manage">
                 <form method="post" action="{% url "plugin_manage" object.package_name %}">
                 {% csrf_token %}
-                <div class="field is-grouped">
+                <div class="field is-grouped is-flex-wrap-wrap" style="gap: 10px;">
                     <p class="control">
                         <a class="button" href="{% url "plugin_update" object.package_name %}">
                             <span class="icon">

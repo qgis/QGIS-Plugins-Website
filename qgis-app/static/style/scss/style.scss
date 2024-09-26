@@ -14,7 +14,6 @@ mark {
   padding: 0.05rem 0.25em;
 }
 
-
 .content p {
   color: $text-primary2;
 }
@@ -60,11 +59,12 @@ p {
   color: $text-primary2;
 }
 
-.input, .textarea, .select select {
+.input,
+.textarea,
+.select select {
   color: $text-primary2;
   border-color: $grey-light;
 }
-
 
 // @media screen and (max-width: 768px) {
 //   .hero-body {
@@ -76,8 +76,9 @@ p {
   background-color: unset;
   min-height: 3em;
 }
-.navbar-brand, .navbar-tabs {
-  min-height:unset;
+.navbar-brand,
+.navbar-tabs {
+  min-height: unset;
   a:hover {
     color: $primary1-invert;
   }
@@ -167,7 +168,7 @@ p {
   color: $primary1-invert;
   margin-left: unset;
   width: 3em;
-  height: 3em ;
+  height: 3em;
 }
 
 @media screen and (max-width: 1023px) {
@@ -188,31 +189,34 @@ p {
     }
   }
   @keyframes slideInFromLeft {
-      from {
-          transform: translateX(-100%);
-          opacity: 0;
-      }
-      to {
-          transform: translateX(0);
-          opacity: 1;
-      }
+    from {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
   }
 
   @keyframes slideOutToLeft {
-      from {
-          transform: translateX(0);
-          opacity: 1;
-      }
-      to {
-          transform: translateX(-100%);
-          opacity: 0;
-      }
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
   }
-  .context-container .navbar-start a.navbar-item.is-active:hover, 
-  .context-container .navbar-start .navbar-link.is-active:hover, 
+  .context-container .navbar-start a.navbar-item.is-active:hover,
+  .context-container .navbar-start .navbar-link.is-active:hover,
   .context-container .navbar-start .navbar-item:hover {
     background-color: unset !important;
     color: white !important;
+  }
+  .content > .columns .content {
+    width: 100%;
   }
 }
 
@@ -220,8 +224,8 @@ p {
   .navbar-start {
     padding: 10px;
     .navbar-dropdown {
-        background-color: #002033;
-        border: none;
+      background-color: #002033;
+      border: none;
     }
   }
 }
@@ -249,7 +253,6 @@ a.is-active > span {
   border-radius: 10px;
 }
 
-
 .is-semi-transparent {
   opacity: 0.9;
 }
@@ -260,14 +263,14 @@ a.is-active > span {
   font-weight: 500;
 }
 
-.gradient-row{
+.gradient-row {
   background: #002033;
   height: 3em;
   display: flex;
   align-items: center;
   justify-content: flex-end;
 }
-.context-container{
+.context-container {
   @extend .gradient-row;
   position: fixed;
   width: 100%;
@@ -280,8 +283,10 @@ a.is-active > span {
       color: white;
       border-radius: 5px;
     }
-  
-    a.navbar-item.is-active, .navbar-link.is-active, .navbar-item {
+
+    a.navbar-item.is-active,
+    .navbar-link.is-active,
+    .navbar-item {
       color: white;
       background-color: unset;
       &:hover {
@@ -294,16 +299,15 @@ a.is-active > span {
       border-radius: 5px;
     }
   }
-
 }
 
 @media screen and (min-width: 1024px) {
   :root {
-      --qg-nav-max-width: 960px;
+    --qg-nav-max-width: 960px;
   }
 }
 @media screen and (min-width: 1408px) {
   :root {
-      --qg-nav-max-width: 1344px;
+    --qg-nav-max-width: 1344px;
   }
 }
