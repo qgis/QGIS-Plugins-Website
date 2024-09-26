@@ -84,7 +84,7 @@
                 id="pmain{{object.pk}}"
                 onclick="window.location.href='{% url "plugin_detail" object.package_name %}';"
                 >
-                    <td>
+                    <td style="min-width: 46px;">
                     {% if object.icon and object.icon.file and object.icon|is_image_valid %}
                         {% with image_extension=object.icon.name|file_extension %}
                             {% if image_extension == 'svg' %}

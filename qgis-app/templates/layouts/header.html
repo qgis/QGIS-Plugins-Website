@@ -6,14 +6,14 @@
                 {% comment %} <a class="navbar-item brand">
                     QGIS
                 </a> {% endcomment %}
-                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="menu">
+                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="pluginsNavbar">
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                 </a>
             </div>
             
-            <div id="menu" class="navbar-menu">
+            <div id="pluginsNavbar" class="navbar-menu">
                 <div class="navbar-start">
                     {% get_namedmenu Navigation as menu %}
                         {% for item in menu %}
@@ -25,9 +25,11 @@
                         {% endfor %}
 
                     {% get_namedmenu New as New %}
+                    {% get_namedmenu Top as Top %}
+                    {% get_namedmenu Category as Category %}
                     <div class="navbar-item has-dropdown is-hoverable has-text-weight-semibold is-size-7">
                         <a class="navbar-link">
-                          New & Updated
+                          Category
                         </a>
                         <div class="navbar-dropdown">
                             {% for item in New %}
@@ -35,72 +37,49 @@
                                 {{ item.name }}
                             </a>
                             {% endfor %}
-                        </div>
-                    </div>
-                    
-                    {% get_namedmenu Top as Top %}
-                    <div class="navbar-item has-dropdown is-hoverable has-text-weight-semibold is-size-7">
-                        <a class="navbar-link">
-                          Top
-                        </a>
-                        <div class="navbar-dropdown">
+                            <hr class="navbar-divider">
                             {% for item in Top %}
                             <a href="{{ item.page.url }}" class="navbar-item has-text-weight-semibold is-size-7">
                                 {{ item.name }}
                             </a>
                             {% endfor %}
-                        </div>
-                    </div>
-
-                    {% get_namedmenu Category as Category %}
-                    <div class="navbar-item has-dropdown is-hoverable has-text-weight-semibold is-size-7">
-                        <a class="navbar-link">
-                          Category
-                        </a>
-                        <div class="navbar-dropdown">
+                            <hr class="navbar-divider">
                             {% for item in Category %}
                             <a href="{{ item.page.url }}" class="navbar-item has-text-weight-semibold is-size-7">
                                 {{ item.name }}
                             </a>
                             {% endfor %}
+                            {% if user.is_authenticated and user.is_staff %}
+                                {% get_namedmenu Unapproved as Unapproved %}
+                                    <hr class="navbar-divider">
+                                    {% for item in Unapproved %}
+                                    <a href="{{ item.page.url }}" class="navbar-item has-text-weight-semibold is-size-7">
+                                        {{ item.name }}
+                                    </a>
+                                    {% endfor %}
+                            {% endif %}
                         </div>
                     </div>
 
-                    {% if user.is_authenticated and user.is_staff %}
-                        {% get_namedmenu Unapproved as Unapproved %}
-                        <div class="navbar-item has-dropdown is-hoverable has-text-weight-semibold is-size-7">
-                            <a class="navbar-link">
-                            Under review
-                            </a>
-                            <div class="navbar-dropdown">
-                                {% for item in Unapproved %}
-                                <a href="{{ item.page.url }}" class="navbar-item has-text-weight-semibold is-size-7">
-                                    {{ item.name }}
-                                </a>
-                                {% endfor %}
-                            </div>
+                </div>
+                <div class="navbar-end">
+                    <div class="navbar-item">
+                        <div class="control has-icons-right search-control">
+                            <form action="{% url "haystack_search" %}" method="get" style="margin:0;">
+                                <input class="input is-small"  id="id_q" name="q" type="text" placeholder="Search">
+                                <span class="icon is-right"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            </form>
                         </div>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="navbar-end">
-                <div class="navbar-item">
-                    <div class="control has-icons-right search-control">
-                    <form action="{% url "haystack_search" %}" method="get" style="margin:0;">
-                            <input class="input is-small"  id="id_q" name="q" type="text" placeholder="Search">
-                            <span class="icon is-right"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    </form>
-                </div>
-                <div class="navbar-item">
-                    {% if user.is_authenticated %}
-                    <a class="button is-danger is-small is-outlined" href="{% url "logout" %}">{% trans "Logout" %}</a>
-                    {% else %}
-                    <a class="button is-info is-small" href="{% url "login" %}">{% trans "Login" %}</a>
-                    {% endif %}
-                    {% block navigation_extra %}
-                    {% endblock %}
-                </div>
-
+                    </div>
+                    <div class="navbar-item">
+                        {% if user.is_authenticated %}
+                        <a class="button is-danger is-small is-outlined" href="{% url "logout" %}">{% trans "Logout" %}</a>
+                        {% else %}
+                        <a class="button is-info is-small" href="{% url "login" %}">{% trans "Login" %}</a>
+                        {% endif %}
+                        {% block navigation_extra %}
+                        {% endblock %}
+                    </div>
                 </div>
             </div>
         </nav>

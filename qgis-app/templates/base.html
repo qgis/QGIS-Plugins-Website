@@ -2,20 +2,16 @@
 {% load plugin_utils %}
 {% load matomo_tags %}
 {% load render_bundle from webpack_loader %}
- {% render_bundle 'main' %}
+{% render_bundle 'main' %}
+
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html class="has-navbar-fixed-top">
 <head>
   <title>{% block title %}QGIS {% block extratitle %}Plugins{% endblock %}{% endblock %}</title>
   <meta name="AUTHOR" content="QGIS Web Team" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link rel="stylesheet" href="{% static "style/new/basic.css" %}" type="text/css" />
-    {% comment %} <link rel="stylesheet" href="{% static "bootstrap/css/bootstrap.min.css" %}" type="text/css" /> {% endcomment %}
-    <link rel="stylesheet" href="{% static "style/new/qgis-style.css" %}" type="text/css" />
-    <link rel="stylesheet" href="{% static "style/new/bootstrap-sphinx.css" %}" type="text/css" />
-    {% comment %} <link rel="stylesheet" href="{% static "bootstrap/css/bootstrap-responsive.min.css" %}" type="text/css" /> {% endcomment %}
     <!-- Icons -->
     <link rel="stylesheet" href="{% static 'font-awesome/css/fontawesome.min.css' %}" type="text/css">
     <link type="text/css" href="{% static "style/style.css" %}" rel="stylesheet" />
@@ -40,75 +36,86 @@
     {% block extrajs %}{% endblock %}
 
 </head>
-<body id="page_bg" {% block onload %}{% endblock %}>
+<body{% block onload %}{% endblock %}>
 
-    <div id="main_bg">
-        <section style="height: 72px">
-            <qg-top-nav
-            breakpoint="1024"
-            class="is-highest navbar is-fixed-top"
-            location-prefix="https://qgis.org"
-        ></qg-top-nav>
-        {% include 'layouts/header.html' %}
-        </section>
-        <section class="hero is-dark is-small has-bg-img" style="background: url({% static "images/hegobg1.webp" %});
-            background-position: center;
-            background-size: cover;">
+    <qg-top-nav
+        breakpoint="1024"
+        class="is-highest navbar is-fixed-top"
+        location-prefix="https://qgis.org"
+    ></qg-top-nav>
+    {% include 'layouts/header.html' %}
 
-            <div class="hero-body">
-                <div class="columns container is-flex is-align-items-center is-justify-content-space-between">
-                    <p class="title hero-title pr-3 mb-0">
-                        {{title}}
-                    </p>
-                    <figure>
-                        <img src="{% static "images/large-logo.svg" %}" style="width: 8vw">
+    <section class="hero is-dark is-medium has-bg-img" style="background: url({% static "images/hegobg1.webp" %});
+        background-position: 50%;
+        background-size: cover;">
+        <div class="hero-body">
+            <div class="columns container">
+                <div class="column is-8 is-flex hero-text has-text-left">
+                    <div class="hero-container">
+                        <div class="label">Free and Open Source</div>
+                        <h1 class="title hero-title pr-3">
+                            {{title}}
+                        </h1>
+                        <p class="subtitle hero-subtitle">QGIS plugins add additional functionality to the QGIS application.</p>
+                    </div>
+                    <div class="is-vcentered">
+                        <a class="button is-primary1 is-size-5" href="/plugins/">
+                            Explore
+                        </a>
+                        <!-- <p class="subtitle hero-subtitle">Available on Windows, Mac, Linux</p> -->
+                    </div>
+
+                </div>
+                <div class="logo">
+                    <figure class="image logo column is-justify-content-center">
+                        <img src="{% static "images/large-logo.svg" %}">
                     </figure>
                 </div>
             </div>
-        </section>
-        <section class="section">
-            <div class="container content">
-                <div class="columns is-multiline is-centered">
-                    <div class="column is-3">
-                        {% block leftbar %}
-                            {% block menu %}&nbsp;{% endblock %}
-                        {% endblock %}
+        </div>
+    </section>
+    <section class="section">
+        <div class="container content">
+            <div class="columns is-multiline is-centered">
+                <div class="column is-3">
+                    {% block leftbar %}
+                        {% block menu %}&nbsp;{% endblock %}
+                    {% endblock %}
+                </div>
+                <div class="content column is-9">
+                    <section class="info">
+                        
+                    </section>
+                    {% if messages %}
+                    <div class="notification is-light">
+                        <button class="delete"></button>
+                        {% for message in messages %}
+                            <p{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|safe }}</p>
+                        {% endfor %}
                     </div>
-                    <div class="content column is-9">
-                        <section class="info">
-                            
-                        </section>
-                        {% if messages %}
-                        <div class="notification is-light">
-                            <button class="delete"></button>
-                            {% for message in messages %}
-                                <p{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|safe }}</p>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        <div class="responsive-content">
-                        {% block content %}
-                        {% endblock %}
-                        </div>
+                    {% endif %}
+                    <div class="responsive-content">
+                    {% block content %}
+                    {% endblock %}
+                    </div>
 
-                    </div>
                 </div>
             </div>
-        </section>
-        <div class="container-fluid">
-            <div class="row-fluid">
-                {% block rightbar %}
+        </div>
+    </section>
+    <div class="container-fluid">
+        <div class="row-fluid">
+            {% block rightbar %}
 <!--
-                <div class="span2" id="rightcolumn"></div>
+            <div class="span2" id="rightcolumn"></div>
 -->
-                {% endblock %}
-            </div><!-- end row fluid -->
-        </div><!-- end container fluid -->
-        
-        {% get_sustaining_members_section as sustaining_members_section %}
-        {{ sustaining_members_section|safe }}
-        {% include 'layouts/footer.html' %}
-    </div>
+            {% endblock %}
+        </div><!-- end row fluid -->
+    </div><!-- end container fluid -->
+    
+    {% get_sustaining_members_section as sustaining_members_section %}
+    {{ sustaining_members_section|safe }}
+    {% include 'layouts/footer.html' %}
     {% include "plugins/plugin_tags_modal.html" %}
 <script type="text/javascript">
 $('#user-tooltip').tooltip('hide');
