@@ -179,7 +179,7 @@ p {
     &.is-active {
       display: block;
       position: fixed;
-      height: 100dvh;
+      height: 87dvh;
       overflow: auto;
       left: 0;
       animation: slideInFromLeft 0.3s ease-out forwards;
@@ -235,8 +235,8 @@ a.is-active > span {
 }
 
 .login-container {
-  box-shadow: 0 8px 12px 0 rgba(60, 60, 60, 0.75);
-  border-radius: 20px;
+  // box-shadow: 0 8px 12px 0 rgba(60, 60, 60, 0.75);
+  // border-radius: 20px;
   max-width: 500px;
 }
 
