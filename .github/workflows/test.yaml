@@ -52,7 +52,7 @@ jobs:
 
 
       - name: Build
-        run: docker compose up build
+        run: docker compose build
         
       - name: Run the containers
         run: docker compose up -d db devweb
