@@ -16,72 +16,83 @@
     {% endif %}
     <h2>{% trans "Feedback Plugin" %} {{ version.plugin.name }} {{ version.version }}</h2>
     <div class="feedback-list">
-        <p>Please tick the checkbox when the task is completed and click the "Update" button to update status.</p>
-        {% for feedback in feedbacks %}
-        <div class="previous-feedback {% if feedback.reviewer == request.user %}with-box{% endif %}" data-feedback-id="{{ feedback.id }}">
-            <div class="field ">
-                <label class="checkbox">
-                    <input type="checkbox" class="statusCheckbox" name="statusCheckbox" data-feedback-id="{{ feedback.id }}" {% if feedback.is_completed %}checked disabled{% endif %}>
-                    <span class="has-text-weight-bold"> 
-                        {% if feedback.reviewer.first_name %}
-                            {{ feedback.reviewer.first_name }} {{ feedback.reviewer.last_name }}
-                        {% else %}
-                            {{ feedback.reviewer.username }}
-                        {% endif %}
-                    </span>
-                    <span class="feedback-info">wrote {{ feedback.created_on|timesince }} ago</span>
-                </label>
-                <p class="control is-expanded mt-3">
-                    <label class="feedback">
-                        <span id="feedbackTask">{{ feedback.task }}</span>
-                        <span id="editedOn" class="feedback-info">
-                            {% if feedback.modified_on %}
-                                &mdash; (edited) {{ feedback.modified_on|timesince }} ago
+        <div class="notification is-success is-light">
+            <button class="delete" data-dismiss="alert">&times;</button>
+            <p>Please tick the checkbox when the task is completed and click the "Update" button to update status.</p>
+        </div>
+        <div class="box-content">
+            {% for feedback in feedbacks %}
+            <div class="previous-feedback with-box" data-feedback-id="{{ feedback.id }}">
+                <div class="field ">
+                    <label class="checkbox">
+                        <input type="checkbox" class="statusCheckbox" name="statusCheckbox" data-feedback-id="{{ feedback.id }}" {% if feedback.is_completed %}checked disabled{% endif %}>
+                        <span class="has-text-weight-bold"> 
+                            {% if feedback.reviewer.first_name %}
+                                {{ feedback.reviewer.first_name }} {{ feedback.reviewer.last_name }}
+                            {% else %}
+                                {{ feedback.reviewer.username }}
                             {% endif %}
                         </span>
+                        <span class="feedback-info">wrote {{ feedback.created_on|timesince }} ago</span>
                     </label>
-                </p>
-                {% if feedback.reviewer == request.user %}
-                <div class="control has-text-right">
-                    <button type="button" id="editButton" class="button is-small is-outlined is-success" data-feedback-id="{{ feedback.id }}">
-                        <span class="icon is-small">
-                            <i class="fas fa-pencil-alt"></i>
-                        </span>
-                    </button>
-                    <button type="button" class="button is-small is-outlined is-danger deleteButton" data-feedback-id="{{ feedback.id }}">
-                        <span class="icon is-small">
-                            <i class="fas fa-trash-alt"></i>
-                        </span>
-                    </button>
+                    <p class="control is-expanded mt-3">
+                        <label class="feedback">
+                            <span id="feedbackTask">{{ feedback.task }}</span>
+                            <span id="editedOn" class="feedback-info">
+                                {% if feedback.modified_on %}
+                                    &mdash; (edited) {{ feedback.modified_on|timesince }} ago
+                                {% endif %}
+                            </span>
+                        </label>
+                    </p>
+                    {% if feedback.reviewer == request.user %}
+                    <div class="control has-text-right">
+                        <button type="button" id="editButton" class="button is-small is-outlined is-success" data-feedback-id="{{ feedback.id }}">
+                            <span class="icon is-small">
+                                <i class="fas fa-pencil-alt"></i>
+                            </span>
+                        </button>
+                        <button type="button" class="button is-small is-outlined is-danger deleteButton" data-feedback-id="{{ feedback.id }}">
+                            <span class="icon is-small">
+                                <i class="fas fa-trash-alt"></i>
+                            </span>
+                        </button>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
+            {% endfor %}
+            {% if feedbacks %}
+            <div class="has-text-centered update-feedback">
+                <button type="button" id="updateButton" class="button is-success">
+                <span class="icon">
+                    <i class="fas fa-check"></i>
+                </span>
+                <span>Update</span>
+                </button>
+            </div>
+            {% endif %}
         </div>
-        {% endfor %}
-        {% if feedbacks %}
-        <div class="has-text-centered update-feedback">
-            <button type="button" id="updateButton" class="button is-success">
-            <span class="icon">
-                <i class="fas fa-check"></i>
-            </span>
-            <span>Update</span>
-            </button>
-        </div>
-        {% endif %}
 
         {% if is_user_has_approval_rights %}
         <div class="new-feedback">
             <form method="post" action="{% url 'version_feedback' version.plugin.package_name version.version %}">{% csrf_token %}
-                <b>New Feedback</b>
-                    {{ form.feedback }}
-                    <div class="has-text-right mt-3">
-                        <button class="button" type="submit">
+                <div class="field">
+                    <label class="label">{% trans "New Feedback" %}</label>
+                    <div class="control">
+                        {{ form.feedback}}
+                    </div>
+                </div>
+                <div class="field has-text-right mt-3">
+                    <div class="control">
+                        <button class="button is-success" type="submit">
                             <span class="icon">
                                 <i class="fas fa-paper-plane"></i>
                             </span>
                             <span>{% trans "Submit New Feedback" %}</span>
                         </button>
                     </div>
+                </div>
             </form>
         </div>
         {% endif %}

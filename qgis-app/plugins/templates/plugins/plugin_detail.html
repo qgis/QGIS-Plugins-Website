@@ -396,14 +396,14 @@
                 <div class="tab-pane" id="plugin-versions">
                     {% if object.pluginversion_set.count %}
                     <div class="table_container">
-                        <table class="table is-striped">
+                        <table class="table versions-list-table">
                             <thead>
                                 <tr>
-                                    <th><i class="fa-solid fa-code-commit"></i> {% trans "Version" %}</th>
+                                    <th>{% trans "Version" %}</th>
                                     {% if not user.is_anonymous %}<th title="{% trans "Approved" %}"><i class="fa-solid fa-plug-circle-check"></i></th>{% endif %}
                                     <th  title="{% trans "Experimental" %}"><i class="fa-solid fa-flask"></i></th>
-                                    <th title="{% trans "Min QGIS version" %}">{% trans "Min QGIS v." %}</th>
-                                    <th title="{% trans "Max QGIS version" %}">{% trans "Max QGIS v." %}</th>
+                                    <th title="{% trans "Min QGIS version" %}">{% trans "QGIS >=" %}</th>
+                                    <th title="{% trans "Max QGIS version" %}">{% trans "QGIS <=" %}</th>
                                     <th title="{% trans "Downloads" %}"><i class="fa-solid fa-download"></i></th>
                                     <th title="{% trans "Uploaded by" %}"><i class="fa-solid fa-user"></i></th>
                                     <th title="{% trans "Date" %}"><i class="fa-regular fa-calendar"></i> {% trans "Date" %}</th>
@@ -413,11 +413,10 @@
                             <tbody>
                             {% for version in object.pluginversion_set.all %}
                                 {% if version.approved or not user.is_anonymous %}
-                                <tr>
+                                <tr onclick="window.location.href='{% url "version_detail" object.package_name version.version %}';">
                                     <td class="has-text-centered">
-                                        <a title="{% trans "Version details" %}" href="{% url "version_detail" object.package_name version.version %}">
-                                            {{ version.version }}
-                                        </a></td>
+                                        {{ version.version }}
+                                    </td>
                                     {% if not user.is_anonymous %}
                                     <td class="has-text-centered">
                                         {% if version.approved %}

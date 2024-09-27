@@ -80,7 +80,7 @@
             <tbody>
                 {% for object in object_list %}
                 <tr 
-                class="pmain {% if object.deprecated %} has-background-danger-light{% endif %} pointer" 
+                class="pmain {% if object.deprecated %} has-background-danger-light{% endif %}" 
                 id="pmain{{object.pk}}"
                 onclick="window.location.href='{% url "plugin_detail" object.package_name %}';"
                 >
