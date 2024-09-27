@@ -173,4 +173,4 @@ $ cp backups/2020/December/PG_QGIS_PLUGINS_gis.16-December-2020.dmp dockerize/ba
 $ cd dockerize
 $ make dbrestore
 ```
-
+Edit
