@@ -1,4 +1,4 @@
-{% load simplemenu_tags plugin_utils static %}
+{% load simplemenu_tags plugin_utils static i18n %}
 <footer class="footer">
     <div class="container">
         <div class="columns is-desktop">
@@ -112,10 +112,23 @@
         <div class="columns is-desktop issue-report-link is-justify-content-center">
             <a href="https://github.com/qgis/QGIS-Django/issues" class="column is-narrow p-0 is-size-6">Problems with this website? Report an issue here 🐙</a>   
         </div>
+        <div class="columns is-desktop is-justify-content-center mb-3">
+            <p class="credit">
+                {% trans "All content is licensed under" %} 
+                <a href="https://creativecommons.org/licenses/by-sa/3.0/">
+                    Creative Commons Attribution-ShareAlike 3.0 licence (CC BY-SA)
+                </a>.
+                {% trans "Select graphics from " %}
+                <a href="https://thenounproject.com" target="_blank">
+                    {% trans "The Noun Project collection" %}
+                </a>.
+            </p>
+        </div>
     </div>
     <div class="commit-link is-size-7">
+
         <p>
-            Version: <a target="_blank">{% version_tag %}</a>
+            {% trans "This web application was developed by:" %}&nbsp;<a href="https://www.itopen.it">Alessandro Pasotti</a> and &nbsp;<a href="https://kartoza.com"><img src="{% static 'images/kartoza-logo-only.png' %}" alt="Kartoza icon" width="16" height="16" />Kartoza</a>. <span>Version: {% version_tag %}</span>.
         </p>
     </div>
 </footer>

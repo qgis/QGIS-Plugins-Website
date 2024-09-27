@@ -14,13 +14,11 @@
 
     <!-- Icons -->
     <link rel="stylesheet" href="{% static 'font-awesome/css/fontawesome.min.css' %}" type="text/css">
-    <link type="text/css" href="{% static "style/style.css" %}" rel="stylesheet" />
     {% block extracss %}{% endblock %}
 
     <link rel="shortcut icon" href="{% static "images/favicon.ico" %}"/>
 
     <script type="text/javascript" src="{% static "js/jquery-1.11.1.min.js" %}"></script>
-    <script type="text/javascript" src="{% static "bootstrap/js/bootstrap-3.4.1.min.js" %}"></script>
     <script type="text/javascript" src="{% static "js/bulma.js" %}"></script>
 
     <!-- Cookie disclaimer -->
@@ -83,9 +81,7 @@
     {{ sustaining_members_section|safe }}
     {% include 'layouts/footer.html' %}
     {% include "plugins/plugin_tags_modal.html" %}
-<script type="text/javascript">
-$('#user-tooltip').tooltip('hide');
-</script>
+
 <script type="text/javascript" src="{% static 'js/moment.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/local_timezone-1.0.js' %}"></script>
 <style>
