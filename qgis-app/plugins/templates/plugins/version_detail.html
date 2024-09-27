@@ -72,54 +72,80 @@
 
     <div class="tab-content">
         <div class="tab-pane is-active" id="details-tab">
-            <table class="table is-fullwidth">
-                <tbody>
-                    {% if version.changelog %}
-                    <tr>
-                        <th class="has-text-weight-bold" style="vertical-align: top;">{% trans "Changelog" %}</th>
-                        <td>
-                            <pre>
-                                {{ version.changelog|wordwrap:70 }}
-                            </pre>
-                        </td>
-                    </tr>
-                    {% endif %}
-                    <tr>
-                        <th class="has-text-weight-bold">{% trans "Approved" %}</th>
-                        <td>{{ version.approved|yesno }}</td>
-                    </tr>
-                    <tr>
-                        <th class="has-text-weight-bold">{% trans "Author" %}</th>
-                        <td>
-                            {% if version.is_from_token %}
-                            Token {{ version.token.description|default:"" }}
-                            {% else %}
-                            {{ version.created_by }}
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <th class="has-text-weight-bold">{% trans "Uploaded" %}</th>
-                        <td>{{ version.created_on|local_timezone }}</td>
-                    </tr>
-                    <tr>
-                        <th class="has-text-weight-bold">{% trans "Minimum QGIS version" %}</th>
-                        <td>{{ version.min_qg_version }}</td>
-                    </tr>
-                    <tr>
-                        <th class="has-text-weight-bold">{% trans "Maximum QGIS version" %}</th>
-                        <td>{{ version.max_qg_version }}</td>
-                    </tr>
-                    <tr>
-                        <th class="has-text-weight-bold">{% trans "External dependencies (PIP install string)" %}</th>
-                        <td>{{ version.external_deps }}</td>
-                    </tr>
-                    <tr {% if version.experimental %}class="has-text-warning"{% endif %}>
-                        <th class="has-text-weight-bold">{% trans "Experimental" %}</th>
-                        <td>{{ version.experimental|yesno }}</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="columns is-multiline">
+                {% if version.changelog %}
+                <div class="column is-full">
+                    <div class="field">
+                        <label class="label has-text-weight-bold">{% trans "Changelog" %}</label>
+                        <div class="control">
+                            <pre>{{ version.changelog|wordwrap:70 }}</pre>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="label has-text-weight-bold">{% trans "Approved" %}</label>
+                        <div class="control">
+                            <p>{{ version.approved|yesno }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="label has-text-weight-bold">{% trans "Author" %}</label>
+                        <div class="control">
+                            <p>
+                                {% if version.is_from_token %}
+                                Token {{ version.token.description|default:"" }}
+                                {% else %}
+                                {{ version.created_by }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="label has-text-weight-bold">{% trans "Uploaded" %}</label>
+                        <div class="control">
+                            <p>{{ version.created_on|local_timezone }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="label has-text-weight-bold">{% trans "Minimum QGIS version" %}</label>
+                        <div class="control">
+                            <p>{{ version.min_qg_version }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="label has-text-weight-bold">{% trans "Maximum QGIS version" %}</label>
+                        <div class="control">
+                            <p>{{ version.max_qg_version }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-full">
+                    <div class="field">
+                        <label class="label has-text-weight-bold">{% trans "External dependencies (PIP install string)" %}</label>
+                        <div class="control">
+                            <p>{{ version.external_deps }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-half" {% if version.experimental %}class="has-text-warning"{% endif %}>
+                    <div class="field">
+                        <label class="label has-text-weight-bold">{% trans "Experimental" %}</label>
+                        <div class="control">
+                            <p>{{ version.experimental|yesno }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="tab-pane" id="manage-tab">
             <h4 class="title is-6 mb-2">{% trans "Version management"%}</h4>

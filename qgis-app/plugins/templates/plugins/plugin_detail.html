@@ -285,113 +285,131 @@
                     <div class="notification is-info">{% trans "This plugin provides an interface for QGIS Server." %}</div>
                     {% endif %}
     
-                    <table class="table is-fullwidth">
-                        <tbody>
-                            {% if object.author %}
-                            <tr>
-                                <td>{% trans "Author" %}</td>
-                                <td>
+                    <div class="columns is-multiline">
+                        {% if object.author %}
+                        <div class="column is-6">
+                            <div class="field">
+                                <label class="label">{% trans "Author" %}:</label>
+                                <div class="control">
                                     <a title="{% trans "Plugins by" %} {{ object.author }}" href="{% url "author_plugins" object.author|urlencode %}">{{ object.author }}</a>
-                                </td>
-                            </tr>
-                            {% endif %}
-                            
-                            {% if object.email and not user.is_anonymous %}
-                            <tr>
-                                <td>{% trans "Author's email" %}</td>
-                                <td><a href="mailto:{{ object.email }}">{{ object.email }}</a></td>
-                            </tr>
-                            {% endif %}
-                            
-                            {% if object.display_created_by %}
-                            <tr>
-                                <td>{% trans "Created by" %}</td>
-                                <td>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if object.email and not user.is_anonymous %}
+                        <div class="column is-6">
+                            <div class="field">
+                                <label class="label">{% trans "Author's email" %}:</label>
+                                <div class="control">
+                                    <a href="mailto:{{ object.email }}">{{ object.email }}</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if object.display_created_by %}
+                        <div class="column is-6">
+                            <div class="field">
+                                <label class="label">{% trans "Created by" %}:</label>
+                                <div class="control">
                                     <a href="{% url "user_details" object.created_by %}">{{ object.created_by }}</a>
-                                </td>
-                            </tr>
-                            {% endif %}
-                            
-                            <tr>
-                                <td>{% trans "Maintainer" %}</td>
-                                <td>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="column is-6">
+                            <div class="field">
+                                <label class="label">{% trans "Maintainer" %}:</label>
+                                <div class="control">
                                     <a href="{% url "user_details" object.maintainer %}">{{ object.maintainer }}</a>
-                                </td>
-                            </tr>
-                            
-                            {% if object.owners.count %}
-                            <tr>
-                                <td>{% trans "Collaborators" %}</td>
-                                <td>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if object.owners.count %}
+                        <div class="column is-6">
+                            <div class="field">
+                                <label class="label">{% trans "Collaborators" %}:</label>
+                                <div class="control">
                                     {% for owner in object.owners.all %}
                                         <a href="{% url "user_details" owner.username %}">{{ owner.username }}</a>{% if not forloop.last %}, {% endif %}
                                     {% endfor %}
-                                </td>
-                            </tr>
-                            {% endif %}
-                            
-                            {% if object.tags.count %}
-                            <tr>
-                                <td>{% trans "Tags" %}</td>
-                                <td>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if object.tags.count %}
+                        <div class="column is-6">
+                            <div class="field">
+                                <label class="label">{% trans "Tags" %}:</label>
+                                <div class="control">
                                     {% for tag in object.tags.all %}
-                                        <a href="{% url "tags_plugins" tag.slug %}" class="tag is-info m-1">{{tag}}</a>
+                                        <a href="{% url "tags_plugins" tag.slug %}" class="tag is-info m-1">{{ tag }}</a>
                                     {% endfor %}
-                                </td>
-                            </tr>
-                            {% endif %}
-                            
-                            {% if object.homepage %}
-                            <tr>
-                                <td>{% trans "Plugin home page" %}</td>
-                                <td><a href="{{ object.homepage }}">{{ object.homepage }}</a></td>
-                            </tr>
-                            {% endif %}
-                            
-                            {% if object.tracker %}
-                            <tr>
-                                <td>{% trans "Tracker" %}</td>
-                                <td><a href="{{ object.tracker }}">{% trans "Browse and report bugs" %}</a></td>
-                            </tr>
-                            {% endif %}
-                            
-                            {% if object.repository %}
-                            <tr>
-                                <td>{% trans "Code repository" %}</td>
-                                <td><a href="{{ object.repository }}">{{ object.repository }}</a></td>
-                            </tr>
-                            {% endif %}
-                            
-                            {% if object.stable %}
-                            <tr>
-                                <td>{% trans "Latest stable version" %}</td>
-                                <td><a title="{% trans "Click to download" %}" href="{% url "version_detail" object.package_name object.stable.version %}">{{ object.stable.version }}</a></td>
-                            </tr>
-                            {% endif %}
-                            
-                            {% if object.experimental %}
-                            <tr>
-                                <td>{% trans "Latest experimental version" %}</td>
-                                <td><a title="{% trans "Click to download" %}" href="{% url "version_detail" object.package_name object.experimental.version %}">{{ object.experimental.version }}</a></td>
-                            </tr>
-                            {% endif %}
-                            
-                            {% if object.pk %}
-                            <tr>
-                                <td>{% trans "Plugin ID" %}</td>
-                                <td class="is-flex is-align-items-center">
-                                    <span>{{ object.pk }}</span>
-                                    <div class="tooltip">
-                                        <button class="button is-light is-small" onclick="copyToClipBoard('{{ object.pk }}')">
-                                            <span class="tooltiptext" id="copyTooltip">{% trans "Copy to clipboard" %}</span>
-                                            <i class="fas fa-copy"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if object.homepage %}
+                        <div class="column is-6">
+                            <div class="field">
+                                <label class="label">{% trans "Plugin home page" %}:</label>
+                                <div class="control">
+                                    <a href="{{ object.homepage }}">{{ object.homepage }}</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if object.tracker %}
+                        <div class="column is-6">
+                            <div class="field">
+                                <label class="label">{% trans "Tracker" %}:</label>
+                                <div class="control">
+                                    <a href="{{ object.tracker }}">{% trans "Browse and report bugs" %}</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if object.repository %}
+                        <div class="column is-6">
+                            <div class="field">
+                                <label class="label">{% trans "Code repository" %}:</label>
+                                <div class="control">
+                                    <a href="{{ object.repository }}">{{ object.repository }}</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if object.stable %}
+                        <div class="column is-6">
+                            <div class="field">
+                                <label class="label">{% trans "Latest stable version" %}:</label>
+                                <div class="control">
+                                    <a title="{% trans "Click to download" %}" href="{% url "version_detail" object.package_name object.stable.version %}">{{ object.stable.version }}</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if object.experimental %}
+                        <div class="column is-6">
+                            <div class="field">
+                                <label class="label">{% trans "Latest experimental version" %}:</label>
+                                <div class="control">
+                                    <a title="{% trans "Click to download" %}" href="{% url "version_detail" object.package_name object.experimental.version %}">{{ object.experimental.version }}</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                    </div>
                 </div>
                 <div class="tab-pane" id="plugin-versions">
                     {% if object.pluginversion_set.count %}
