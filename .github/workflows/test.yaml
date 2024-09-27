@@ -50,6 +50,10 @@ jobs:
       - name: Generate the .env file
         run: cp .env.template .env
 
+
+      - name: Build
+        run: docker compose up build
+        
       - name: Run the containers
         run: docker compose up -d db devweb
     
