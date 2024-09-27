@@ -51,6 +51,9 @@ jobs:
         run: cp .env.template .env
 
 
+      - name: Run docker-compose build
+        run: docker compose build
+
       - name: Run the containers
         run: docker compose up -d db devweb
     
