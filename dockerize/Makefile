@@ -241,7 +241,7 @@ dbseed:
 loadmenu:
 	@echo
 	@echo "------------------------------------------------------------------"
-	@echo "Delete all simplemenu entries and load from fixtures/simplemenu.json"
+	@echo "Delete all simplemenu entries and load from fixtures/all_menu.json"
 	@echo "------------------------------------------------------------------"
 	@docker compose -p $(PROJECT_ID) devweb python manage.py clear_simplemenu
-	@docker compose -p $(PROJECT_ID) devweb python manage.py loaddata fixtures/simplemenu.json
+	@docker compose -p $(PROJECT_ID) devweb python manage.py loaddata fixtures/all_menu.json
