@@ -179,7 +179,7 @@ p {
     &.is-active {
       display: block;
       position: fixed;
-      height: 88dvh;
+      height: calc(100% - 112px);
       overflow: auto;
       left: 0;
       animation: slideInFromLeft 0.3s ease-out forwards;

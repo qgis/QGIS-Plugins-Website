@@ -65,6 +65,12 @@
                             {% endif %}
                         </div>
                     </div>
+                    {% if user.is_authenticated and user.is_staff %}
+                    <a class="navbar-item has-text-weight-semibold is-size-7" href="/admin">
+                        <i class="fas fa-tools mr-3"></i>
+                        {% trans "Admin" %}
+                    </a>
+                    {% endif %}
 
                 </div>
                 <div class="navbar-end">
@@ -78,9 +84,19 @@
                     </div>
                     <div class="navbar-item">
                         {% if user.is_authenticated %}
-                        <a class="button is-danger is-small is-outlined" href="{% url "logout" %}">{% trans "Logout" %}</a>
+                        <a class="button is-danger is-small is-outlined is-fullwidth" href="{% url "logout" %}">
+                            <span class="icon">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </span>
+                            <span>
+                                {% trans "Logout" %}
+                            </span>
+                        </a>
                         {% else %}
-                        <a class="button is-info is-small" href="{% url "login" %}">{% trans "Login" %}</a>
+                        <a class="button is-info is-small" href="{% url "login" %}">
+                            <i class="fas fa-sign-in-alt mr-3"></i>
+                            {% trans "Login" %}
+                        </a>
                         {% endif %}
                         {% block navigation_extra %}
                         {% endblock %}
