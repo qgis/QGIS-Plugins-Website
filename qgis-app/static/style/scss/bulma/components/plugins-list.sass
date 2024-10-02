@@ -36,12 +36,20 @@
     cursor: pointer
 
 .plugins-list-grid
-  .author
-    display: block
-    white-space: nowrap
-    width: 200px
-    overflow: hidden
-    text-overflow: ellipsis
+  .card:hover
+    background-color: #ECF1F4
+    cursor: pointer
+  .card
+    +tablet
+      height: 100%
+    .media-content
+      overflow: hidden
+    .author
+      display: block
+      white-space: nowrap
+      width: 200px
+      overflow: hidden
+      text-overflow: ellipsis
 
 div
   &.plugins-list-table, .versions-list-table

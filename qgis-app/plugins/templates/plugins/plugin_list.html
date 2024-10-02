@@ -84,7 +84,16 @@
         is-half-desktop
         is-one-quarter-widescreen
         is-one-third-fullhd">
-            <div class="card is-flex is-flex-direction-column is-justify-content-space-between" style="height: 100%;">
+            <div 
+                class="
+                    card 
+                    is-flex 
+                    is-flex-direction-column 
+                    is-justify-content-space-between 
+                    {% if object.deprecated %} has-background-danger-light{% endif %}
+                "
+                onclick="window.location.href='{% url "plugin_detail" object.package_name %}';"
+                >
                 <div class="card-content is-flex is-flex-direction-column is-justify-content-space-between" style="height: 100%;">
                     <div class="media">
                         <div class="media-left">
@@ -104,7 +113,7 @@
                                 {% endwith %}
                             {% else %}
                                 <figure class="image is-48x48 m-0">
-                                    <img src="{% static "images/qgis-icon-256x256.png" %}" alt="{% trans "Plugin icon" %}" />
+                                    <img src="{% static "images/large-logo.svg" %}" alt="{% trans "Plugin icon" %}" />
                                 </figure>
                             {% endif %}
                         </div>
@@ -123,23 +132,8 @@
                     </div>
                     <p style="height: 100%;"></p>
                     <div class="content mb-0">
-                        <p>
-                            <div>
-                                <div class="star-ratings">
-                                    <span style="width:{% widthratio object.average_vote 5 100 %}%" class="rating"></span>
-                                </div> ({{ object.rating_votes }})
-                            </div>
-                        </p>
 
                         <div class="columns mt-3">
-                            <p class="column p-1">
-                                <span class="icon-text">
-                                    <span class="icon">
-                                        <i class="fas fa-download"></i>
-                                    </span>
-                                    <span>{{ object.downloads|intcomma }}</span>
-                                </span>
-                            </p>
                             <p class="column p-1">
                                 <span class="icon-text">
                                     <span class="icon">
@@ -148,24 +142,28 @@
                                     <span>{{ object.latest_version_date|local_timezone:"SHORT_NATURAL_DAY" }}</span>
                                 </span>
                             </p>
+                            <div class="column p-1">
+                                <div class="star-ratings">
+                                    <span style="width:{% widthratio object.average_vote 5 100 %}%" class="rating"></span>
+                                </div> ({{ object.rating_votes }})
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <footer class="card-footer">
-                    <a href="{% url "plugin_detail" object.package_name %}" class="card-footer-item">
-                        <i class="fa-solid fa-eye mr-3" title="{% trans "View" %}"></i> {% trans "View" %}
+                    <a href="{% if object.stable %}{{ object.stable.get_download_url }}{% else %}{{ object.experimental.get_download_url }}{% endif %}" class="card-footer-item">
+                        <span class="icon">
+                            <i class="fas fa-download"></i>
+                        </span>
+                        <span>Download</span>
                     </a>
-                    {% if user.is_authenticated %}
-                    {% if user in object.editors or user.is_staff %}
-                        <a class="is-success card-footer-item" href="{% url "plugin_update" object.package_name %}">
-                            <i class="fa-solid fa-pencil mr-3" title="{% trans "Edit" %}"></i> {% trans "Edit" %}
-                        </a>
-                        <a class="has-text-danger card-footer-item" href="{% url "plugin_delete" object.package_name %}">
-                            <i class="fa-solid fa-trash mr-3" title="{% trans "Delete" %}"></i> {% trans "Delete" %}
-                        </a>
-                    {% endif %}
-                    {% endif %}
+                    <p class="card-footer-item m-0">
+                        <span class="icon">
+                            <i class="fas fa-download"></i>
+                        </span>
+                        <span>{{ object.downloads|intcomma }}</span>
+                    </p>
                 </footer>
             </div>
         </div>
