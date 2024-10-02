@@ -290,7 +290,7 @@
                         <div class="column is-6">
                             <div class="field">
                                 <label class="label">{% trans "Author" %}:</label>
-                                <div class="control">
+                                <div class="control truncate">
                                     <a title="{% trans "Plugins by" %} {{ object.author }}" href="{% url "author_plugins" object.author|urlencode %}">{{ object.author }}</a>
                                 </div>
                             </div>
@@ -301,7 +301,7 @@
                         <div class="column is-6">
                             <div class="field">
                                 <label class="label">{% trans "Author's email" %}:</label>
-                                <div class="control">
+                                <div class="control truncate">
                                     <a href="mailto:{{ object.email }}">{{ object.email }}</a>
                                 </div>
                             </div>
@@ -312,7 +312,7 @@
                         <div class="column is-6">
                             <div class="field">
                                 <label class="label">{% trans "Created by" %}:</label>
-                                <div class="control">
+                                <div class="control truncate">
                                     <a href="{% url "user_details" object.created_by %}">{{ object.created_by }}</a>
                                 </div>
                             </div>
@@ -322,7 +322,7 @@
                         <div class="column is-6">
                             <div class="field">
                                 <label class="label">{% trans "Maintainer" %}:</label>
-                                <div class="control">
+                                <div class="control truncate">
                                     <a href="{% url "user_details" object.maintainer %}">{{ object.maintainer }}</a>
                                 </div>
                             </div>
@@ -332,7 +332,7 @@
                         <div class="column is-6">
                             <div class="field">
                                 <label class="label">{% trans "Collaborators" %}:</label>
-                                <div class="control">
+                                <div class="control truncate">
                                     {% for owner in object.owners.all %}
                                         <a href="{% url "user_details" owner.username %}">{{ owner.username }}</a>{% if not forloop.last %}, {% endif %}
                                     {% endfor %}
@@ -358,7 +358,7 @@
                         <div class="column is-6">
                             <div class="field">
                                 <label class="label">{% trans "Plugin home page" %}:</label>
-                                <div class="control">
+                                <div class="control truncate">
                                     <a href="{{ object.homepage }}">{{ object.homepage }}</a>
                                 </div>
                             </div>
@@ -369,7 +369,7 @@
                         <div class="column is-6">
                             <div class="field">
                                 <label class="label">{% trans "Tracker" %}:</label>
-                                <div class="control">
+                                <div class="control truncate">
                                     <a href="{{ object.tracker }}">{% trans "Browse and report bugs" %}</a>
                                 </div>
                             </div>
@@ -380,7 +380,7 @@
                         <div class="column is-6">
                             <div class="field">
                                 <label class="label">{% trans "Code repository" %}:</label>
-                                <div class="control">
+                                <div class="control truncate">
                                     <a href="{{ object.repository }}">{{ object.repository }}</a>
                                 </div>
                             </div>
@@ -391,7 +391,7 @@
                         <div class="column is-6">
                             <div class="field">
                                 <label class="label">{% trans "Latest stable version" %}:</label>
-                                <div class="control">
+                                <div class="control truncate">
                                     <a title="{% trans "Click to download" %}" href="{% url "version_detail" object.package_name object.stable.version %}">{{ object.stable.version }}</a>
                                 </div>
                             </div>
