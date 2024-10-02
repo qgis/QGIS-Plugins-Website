@@ -52,14 +52,11 @@
     <h2>{% if title %}{{title}}{% else %}{% trans "All plugins" %}{% endif %}</h2>
     {# Filtered views menu #}
     {% if object_list.count %}
-    <div id="list_commands">
-        <span class="num_items">{% blocktrans with records_count=page_obj.paginator.count %}{{ records_count }} records found{% endblocktrans %}</span>
-        <!-- <a class="toggle_desc" href="javascript:void(0);" onclick="return toggle_desc()">{% trans "Click to toggle descriptions." %}</a> -->
-    </div>
-    <div class="pagination">
-    {#% include 'sortable_listview/sort_links.html' %#}
-    </div>
-    <div class="field has-addons">
+    
+    <span>
+        {% blocktrans with records_count=page_obj.paginator.count %}{{ records_count }} records found{% endblocktrans %}
+    </span>
+    <div class="field has-addons is-justify-content-center">
         <p class="control">
             <button id="grid-view-btn" class="button is-small is-info">
                 <span class="icon is-small">
