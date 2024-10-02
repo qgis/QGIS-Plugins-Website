@@ -199,6 +199,13 @@ exec:
 	@echo "------------------------------------------------------------------"
 	@docker compose -p $(PROJECT_ID) $(c)
 
+loadmenu:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Delete all simplemenu entries and load from fixtures/all_menu.json"
+	@echo "------------------------------------------------------------------"
+	@docker compose -p $(PROJECT_ID) exec uwsgi python manage.py clear_simplemenu
+	@docker compose -p $(PROJECT_ID) exec uwsgi python manage.py loaddata fixtures/all_menu.json
 # ----------------------------------------------------------------------------
 #    D E V E L O P M E N T    C O M M A N D S
 # ----------------------------------------------------------------------------
@@ -237,11 +244,3 @@ dbseed:
 	@echo "Seed db with JSON data from /fixtures/*.json"
 	@echo "------------------------------------------------------------------"
 	@docker compose -p $(PROJECT_ID) exec devweb bash -c 'python manage.py loaddata fixtures/*.json'
-
-loadmenu:
-	@echo
-	@echo "------------------------------------------------------------------"
-	@echo "Delete all simplemenu entries and load from fixtures/all_menu.json"
-	@echo "------------------------------------------------------------------"
-	@docker compose -p $(PROJECT_ID) devweb python manage.py clear_simplemenu
-	@docker compose -p $(PROJECT_ID) devweb python manage.py loaddata fixtures/all_menu.json
