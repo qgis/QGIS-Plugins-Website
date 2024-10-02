@@ -94,8 +94,12 @@
                         </a>
                         {% else %}
                         <a class="button is-info is-small" href="{% url "login" %}">
-                            <i class="fas fa-sign-in-alt mr-3"></i>
-                            {% trans "Login" %}
+                            <span class="icon">
+                                <i class="fas fa-sign-in-alt"></i>
+                            </span>
+                            <span>
+                                {% trans "Login" %}
+                            </span>
                         </a>
                         {% endif %}
                         {% block navigation_extra %}
