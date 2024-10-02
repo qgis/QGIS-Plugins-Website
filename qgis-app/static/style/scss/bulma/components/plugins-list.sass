@@ -1,18 +1,5 @@
 .plugins-list-table, .versions-list-table
   color: inherit
-  .rm-past
-    color: #4D6370
-    &:hover
-      color: black
-  .rm-future
-    font-weight: 600
-    color: #4D6370
-  .rm-current
-    font-weight: 600
-    color: #3a9800
-  .rm-next
-    font-weight: 600
-    color: #ee7913
   tr:hover
     background-color: #ECF1F4
     cursor: pointer
@@ -50,6 +37,80 @@
       width: 200px
       overflow: hidden
       text-overflow: ellipsis
+  
+  .right-ribbon
+    position: absolute
+    right: -5px
+    top: -5px
+    z-index: 1
+    overflow: hidden
+    width: 150px
+    height: 150px
+    text-align: right
+
+  .right-ribbon span
+    color: #fff
+    text-align: center
+    font-size: 10pt
+    font-weight: 500
+    line-height: 25px
+    transform: rotate(45deg)
+    width: 130px
+    display: block
+    box-shadow: 0 3px 10px -5px rgba(0, 0, 0, 1)
+    position: absolute
+    top: 25px
+    right: -27px
+
+  .right-ribbon
+    .featured
+      background: $success
+    .new
+      background: $info
+    .deprecated
+      background: $danger
+    
+  .right-ribbon span::before
+    content: ''
+    position: absolute
+    left: 0px
+    top: 100%
+    z-index: -1
+    border-right: 3px solid transparent
+    border-bottom: 3px solid transparent
+
+  .right-ribbon .featured::before
+    border-left: 3px solid $success
+    border-top: 3px solid $success
+
+  .right-ribbon .new::before
+    border-left: 3px solid $info
+    border-top: 3px solid $info
+
+  .right-ribbon .deprecated::before
+    border-left: 3px solid $danger
+    border-top: 3px solid $danger
+
+  .right-ribbon span::after
+    content: ''
+    position: absolute
+    right: 0%
+    top: 100%
+    z-index: -1
+    border-left: 3px solid transparent
+    border-bottom: 3px solid transparent
+
+  .right-ribbon .featured::after
+    border-right: 3px solid $success
+    border-top: 3px solid $success
+
+  .right-ribbon .new::after
+    border-right: 3px solid $info
+    border-top: 3px solid $info
+
+  .right-ribbon .deprecated::after
+    border-right: 3px solid $danger
+    border-top: 3px solid $danger
 
 div
   &.plugins-list-table, .versions-list-table
@@ -204,9 +265,9 @@ div
   right: -41px
 
 .right-ribbon
-  .stable
+  .featured
     background: #3a9800
-  .latest
+  .new
     background: #ee7913
   .development
     background: #4D6370
@@ -221,11 +282,11 @@ div
   border-right: 3px solid transparent
   border-bottom: 3px solid transparent
 
-.right-ribbon .stable::before
+.right-ribbon .featured::before
   border-left: 3px solid #3a9800
   border-top: 3px solid #3a9800
 
-.right-ribbon .latest::before
+.right-ribbon .new::before
   border-left: 3px solid #ee7913
   border-top: 3px solid #ee7913
 
@@ -242,11 +303,11 @@ div
   border-left: 3px solid transparent
   border-bottom: 3px solid transparent
 
-.right-ribbon .stable::after
+.right-ribbon .featured::after
   border-right: 3px solid #3a9800
   border-top: 3px solid #3a9800
 
-.right-ribbon .latest::after
+.right-ribbon .new::after
   border-right: 3px solid #ee7913
   border-top: 3px solid #ee7913
 

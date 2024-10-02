@@ -89,11 +89,32 @@
                     card 
                     is-flex 
                     is-flex-direction-column 
-                    is-justify-content-space-between 
-                    {% if object.deprecated %} has-background-danger-light{% endif %}
+                    is-justify-content-space-between
                 "
                 onclick="window.location.href='{% url "plugin_detail" object.package_name %}';"
                 >
+
+                {% if object|is_new and not object.featured and not object.deprecated %}
+                    <div class="right-ribbon">
+                        <span class="new">
+                            <i class="fas fa-bolt mr-1"></i> New
+                        </span>
+                    </div>
+                {% endif %}
+                {% if object.featured and not object.deprecated %}
+                    <div class="right-ribbon">
+                        <span class="featured">
+                            <i class="fas fa-star mr-1"></i> Featured
+                        </span>
+                    </div>
+                {% endif %}
+                {% if object.deprecated %}
+                    <div class="right-ribbon">
+                        <span class="deprecated">
+                            Deprecated
+                        </span>
+                    </div>
+                {% endif %}
                 <div class="card-content is-flex is-flex-direction-column is-justify-content-space-between" style="height: 100%;">
                     <div class="media">
                         <div class="media-left">

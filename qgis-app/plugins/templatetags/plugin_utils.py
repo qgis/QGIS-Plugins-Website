@@ -5,6 +5,7 @@ import os.path
 from django.conf import settings
 from bs4 import BeautifulSoup
 import requests
+import datetime
 
 register = template.Library()
 
@@ -65,6 +66,24 @@ def _validate_image(file_path):
 def feedbacks_not_completed(feedbacks):
     return feedbacks.filter(is_completed=False)
 
+PLUGINS_FRESH_DAYS = getattr(settings, "PLUGINS_FRESH_DAYS", 30)
+@register.filter
+def is_new(plugin, days=PLUGINS_FRESH_DAYS):
+    """
+    A template filter to check if a plugin is new based on the created_on date.
+    Default is to check if the plugin was created within the last 30 days.
+    """
+    if plugin.created_on:
+        now = datetime.datetime.now(datetime.timezone.utc)  # Use timezone-aware datetime
+        created_on = plugin.created_on
+
+        # Ensure created_on is timezone-aware
+        if created_on.tzinfo is None:
+            created_on = created_on.replace(tzinfo=datetime.timezone.utc)
+
+        delta = now - created_on
+        return delta.days <= days  # Returns True if within 'days', False otherwise
+    return False
 
 # inspired by projecta <https://github.com/kartoza/prj.app>
 @register.simple_tag(takes_context=True)
