@@ -1,6 +1,7 @@
 {% load i18n plugin_utils plugins_tagcloud thumbnail static%}
 {% load local_timezone humanize %}
 
+{% if object.package_name %}
 <div class="
 column
 is-medium     
@@ -112,3 +113,4 @@ is-one-third-fullhd">
         </footer>
     </div>
 </div>
+{% endif %}
