@@ -1,4 +1,4 @@
-{% extends 'plugins/plugin_base.html' %}{% load i18n bootstrap_pagination humanize static sort_anchor range_filter thumbnail %}
+{% extends 'plugins/plugin_base.html' %}{% load i18n humanize static sort_anchor range_filter thumbnail %}
 {% load local_timezone %}
 {% load plugin_utils %}
 {% block extrajs %}
@@ -77,117 +77,7 @@
 
     <div id="grid-view" class="columns is-multiline plugins-list-grid">
         {% for object in object_list %}
-        <div class="
-        column
-        is-medium     
-        is-half-tablet
-        is-half-desktop
-        is-one-quarter-widescreen
-        is-one-third-fullhd">
-            <div 
-                class="
-                    card 
-                    is-flex 
-                    is-flex-direction-column 
-                    is-justify-content-space-between
-                "
-                onclick="window.location.href='{% url "plugin_detail" object.package_name %}';"
-                >
-
-                {% if object|is_new and not object.featured and not object.deprecated %}
-                    <div class="right-ribbon">
-                        <span class="new">
-                            <i class="fas fa-bolt mr-1"></i> New
-                        </span>
-                    </div>
-                {% endif %}
-                {% if object.featured and not object.deprecated %}
-                    <div class="right-ribbon">
-                        <span class="featured">
-                            <i class="fas fa-star mr-1"></i> Featured
-                        </span>
-                    </div>
-                {% endif %}
-                {% if object.deprecated %}
-                    <div class="right-ribbon">
-                        <span class="deprecated">
-                            Deprecated
-                        </span>
-                    </div>
-                {% endif %}
-                <div class="card-content is-flex is-flex-direction-column is-justify-content-space-between" style="height: 100%;">
-                    <div class="media">
-                        <div class="media-left">
-                            {% if object.icon and object.icon.file and object.icon|is_image_valid %}
-                                {% with image_extension=object.icon.name|file_extension %}
-                                    {% if image_extension == 'svg' %}
-                                        <figure class="image is-48x48 m-0">
-                                            <img alt="{% trans "Plugin icon" %}" src="{{ object.icon.url }}" />
-                                        </figure>
-                                    {% else %}
-                                        {% thumbnail object.icon "256x256" format="PNG" as im %}
-                                            <figure class="image is-48x48 m-0">
-                                                <img alt="{% trans "Plugin icon" %}" src="{{ im.url }}" />
-                                            </figure>
-                                        {% endthumbnail %}
-                                    {% endif %}
-                                {% endwith %}
-                            {% else %}
-                                <figure class="image is-48x48 m-0">
-                                    <img src="{% static "images/large-logo.svg" %}" alt="{% trans "Plugin icon" %}" />
-                                </figure>
-                            {% endif %}
-                        </div>
-                        <div class="media-content">
-                            <p class="title is-5">{{ object.name }}</p>
-                            <p class="subtitle is-7 author">{% trans "by" %} 
-                                <a title="{% trans "See all plugins by"%} {{ object.author }}" href="{% url "author_plugins" object.author %}">
-                                    {{ object.author }}
-                                </a>
-                            </p>
-                        </div>
-                    </div>
-                    <div class="content mb-0">
-                        <p>{{ object.description|truncatewords:20 }}</p>
-
-                    </div>
-                    <p style="height: 100%;"></p>
-                    <div class="content mb-0">
-
-                        <div class="columns mt-3">
-                            <p class="column p-1">
-                                <span class="icon-text">
-                                    <span class="icon">
-                                        <i class="fas fa-calendar-alt"></i>
-                                    </span>
-                                    <span>{{ object.latest_version_date|local_timezone:"SHORT_NATURAL_DAY" }}</span>
-                                </span>
-                            </p>
-                            <div class="column p-1">
-                                <div class="star-ratings">
-                                    <span style="width:{% widthratio object.average_vote 5 100 %}%" class="rating"></span>
-                                </div> ({{ object.rating_votes }})
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <footer class="card-footer">
-                    <a href="{% if object.stable %}{{ object.stable.get_download_url }}{% else %}{{ object.experimental.get_download_url }}{% endif %}" class="card-footer-item">
-                        <span class="icon">
-                            <i class="fas fa-download"></i>
-                        </span>
-                        <span>Download</span>
-                    </a>
-                    <p class="card-footer-item m-0">
-                        <span class="icon">
-                            <i class="fas fa-download"></i>
-                        </span>
-                        <span>{{ object.downloads|intcomma }}</span>
-                    </p>
-                </footer>
-            </div>
-        </div>
+            {% include "plugins/plugin_list_grid_card.html" %}
         {% endfor %}
     </div>
 
