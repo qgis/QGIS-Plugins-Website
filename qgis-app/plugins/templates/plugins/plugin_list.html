@@ -56,23 +56,30 @@
     <span>
         {% blocktrans with records_count=page_obj.paginator.count %}{{ records_count }} records found{% endblocktrans %}
     </span>
-    <div class="field has-addons is-justify-content-center">
-        <p class="control">
-            <button id="grid-view-btn" class="button is-small is-info">
-                <span class="icon is-small">
-                    <i class="fas fa-th"></i>
-                </span>
-                <span>Grid View</span>
-            </button>
-        </p>
-        <p class="control">
-            <button id="table-view-btn" class="button is-small">
-                <span class="icon is-small">
-                    <i class="fas fa-table"></i>
-                </span>
-                <span>Table View</span>
-            </button>
-        </p>
+    <div class="mt-3 is-flex is-justify-content-space-between is-flex-wrap-wrap">
+        <div>
+            <div class="field has-addons">
+                <p class="control">
+                    <button id="grid-view-btn" class="button is-small is-info">
+                        <span class="icon is-small">
+                            <i class="fas fa-th"></i>
+                        </span>
+                        <span>Grid View</span>
+                    </button>
+                </p>
+                <p class="control">
+                    <button id="table-view-btn" class="button is-small">
+                        <span class="icon is-small">
+                            <i class="fas fa-table"></i>
+                        </span>
+                        <span>Table View</span>
+                    </button>
+                </p>
+            </div>
+        </div>
+        <div>
+            {% include "plugins/plugin_list_sort.html" %}
+        </div>
     </div>
 
     <div id="grid-view" class="columns is-multiline plugins-list-grid">
@@ -86,12 +93,12 @@
             <thead>
                 <tr>
                     <th class="pt-3 pb-3">&nbsp;</th>
-                    <th class="pt-3 pb-3">{% anchor name %}</th>
+                    <th class="pt-3 pb-3">{% trans "Name" %}</th>
                     {% if not user.is_anonymous %}<th class="pt-3 pb-3"><img title="{% trans "Approved" %}" src="{% static "images/tick_16.png" %}" alt="{% trans "Approved" %}"/></th>{% endif %}
-                    <th class="pt-3 pb-3">{% anchor downloads %}</th>
-                    <th class="pt-3 pb-3">{% anchor author "Author" %}</th>
-                    <th class="pt-3 pb-3">{% anchor latest_version_date "Latest Plugin Version" %}</th>
-                    <th class="pt-3 pb-3">{% anchor average_vote "Stars (votes)" %}</th>
+                    <th class="pt-3 pb-3">{% trans "Downloads" %}</th>
+                    <th class="pt-3 pb-3">{% trans "Author" %}</th>
+                    <th class="pt-3 pb-3">{% trans "Latest Plugin Version" %}</th>
+                    <th class="pt-3 pb-3">{% trans "Stars (votes)" %}</th>
                     {% if user.is_authenticated %}<th colspan="2" class="pt-3 pb-3">{% trans "Manage" %}</th>{% endif %}
                 </tr>
             </thead>
