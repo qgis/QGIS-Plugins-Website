@@ -836,18 +836,19 @@ class PluginsList(ListView):
         qs = self.get_filtered_queryset(qs)
 
         # Get the sort and order parameters from the URL (with default values)
-        sort_by = self.request.GET.get('sort', 'name')  # Default sort by name
-        sort_order = self.request.GET.get('order', 'asc')  # Default to ascending order
+        sort_by = self.request.GET.get('sort', None)  # Default sort by name
+        sort_order = self.request.GET.get('order', None)  # Default to ascending order
 
-        # Determine the correct sorting direction
-        if sort_order == 'desc':
-            sort_by = '-' + sort_by  # Prepend '-' to sort in descending order
+        if sort_by and sort_order:
+            # Determine the correct sorting direction
+            if sort_order == 'desc':
+                sort_by = '-' + sort_by  # Prepend '-' to sort in descending order
 
-        # Validate the sort field
-        if sort_by.lstrip('-') in ['average_vote', 'latest_version_date'] or self._is_valid_field(sort_by.lstrip('-')):
-            qs = qs.order_by(sort_by)
-        elif not qs.ordered:
-            qs = qs.order_by(Lower("name"))
+            # Validate the sort field
+            if sort_by.lstrip('-') in ['average_vote', 'latest_version_date'] or self._is_valid_field(sort_by.lstrip('-')):
+                qs = qs.order_by(sort_by)
+            elif not qs.ordered:
+                qs = qs.order_by(Lower("name"))
 
         return qs
 
