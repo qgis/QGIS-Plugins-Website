@@ -159,7 +159,7 @@
   "pk": 20,
   "fields": {
     "name": "Stable",
-    "menu": 4,
+    "menu": 5,
     "rank": 14,
     "urlobj_content_type": null,
     "urlobj_id": null,
