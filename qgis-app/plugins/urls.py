@@ -96,7 +96,12 @@ urlpatterns = [
     url(
         r"^my$",
         login_required(
-            MyPluginsList.as_view(additional_context={"title": _("My Plugins")})
+            MyPluginsList.as_view(
+                additional_context={
+                    "title": _("My Plugins"),
+                    "description": _("List of plugins created or maintained by the current user."),
+                }
+            )
         ),
         name="my_plugins",
     ),
@@ -104,7 +109,10 @@ urlpatterns = [
         r"^featured/$",
         PluginsList.as_view(
             queryset=Plugin.featured_objects.all(),
-            additional_context={"title": _("Featured plugins")},
+            additional_context={
+                "title": _("Featured plugins"),
+                "description": _("List of plugins that are marked as featured."),
+            },
         ),
         name="featured_plugins",
     ),
@@ -113,7 +121,10 @@ urlpatterns = [
         r"^server/$",
         PluginsList.as_view(
             queryset=Plugin.server_objects.all(),
-            additional_context={"title": _("QGIS Server plugins")},
+            additional_context={
+                "title": _("QGIS Server plugins"),
+                "description": _("List of plugins specifically for QGIS Server."),
+            },
         ),
         name="server_plugins",
     ),
@@ -121,7 +132,10 @@ urlpatterns = [
         r"^unapproved/$",
         PluginsList.as_view(
             queryset=Plugin.unapproved_objects.all().order_by("-latest_version_date"),
-            additional_context={"title": _("Unapproved plugins")},
+            additional_context={
+                "title": _("Unapproved plugins"),
+                "description": _("List of plugins that have not been approved yet."),
+            },
         ),
         name="unapproved_plugins",
     ),
@@ -129,7 +143,10 @@ urlpatterns = [
         r"^deprecated/$",
         PluginsList.as_view(
             queryset=Plugin.deprecated_objects.all(),
-            additional_context={"title": _("Deprecated plugins")},
+            additional_context={
+                "title": _("Deprecated plugins"),
+                "description": _("List of plugins that are no longer maintained."),
+            },
         ),
         name="deprecated_plugins",
     ),
@@ -137,7 +154,10 @@ urlpatterns = [
         r"^fresh/$",
         PluginsList.as_view(
             queryset=Plugin.fresh_objects.all(),
-            additional_context={"title": _("New plugins")},
+            additional_context={
+                "title": _("New plugins"),
+                "description": _("List of newly created plugins."),
+            },
         ),
         name="fresh_plugins",
     ),
@@ -145,7 +165,10 @@ urlpatterns = [
         r"^latest/$",
         PluginsList.as_view(
             queryset=Plugin.latest_objects.all(),
-            additional_context={"title": _("Updated plugins")},
+            additional_context={
+                "title": _("Updated plugins"),
+                "description": _("List of plugins that have been recently updated."),
+            },
         ),
         name="latest_plugins",
     ),
@@ -153,7 +176,10 @@ urlpatterns = [
         r"^stable/$",
         PluginsList.as_view(
             queryset=Plugin.stable_objects.all(),
-            additional_context={"title": _("Stable plugins")},
+            additional_context={
+                "title": _("Stable plugins"),
+                "description": _("List of plugins that are marked as stable."),
+            },
         ),
         name="stable_plugins",
     ),
@@ -161,7 +187,10 @@ urlpatterns = [
         r"^experimental/$",
         PluginsList.as_view(
             queryset=Plugin.experimental_objects.all(),
-            additional_context={"title": _("Experimental plugins")},
+            additional_context={
+                "title": _("Experimental plugins"),
+                "description": _("List of plugins that are marked as experimental."),
+            },
         ),
         name="experimental_plugins",
     ),
@@ -169,7 +198,10 @@ urlpatterns = [
         r"^popular/$",
         PluginsList.as_view(
             queryset=Plugin.popular_objects.all(),
-            additional_context={"title": _("Popular plugins")},
+            additional_context={
+                "title": _("Popular plugins"),
+                "description": _("List of plugins sorted by popularity."),
+            },
         ),
         name="popular_plugins",
     ),
@@ -177,7 +209,10 @@ urlpatterns = [
         r"^most_voted/$",
         PluginsList.as_view(
             queryset=Plugin.most_voted_objects.all(),
-            additional_context={"title": _("Most voted plugins")},
+            additional_context={
+                "title": _("Most voted plugins"),
+                "description": _("List of plugins sorted by the number of votes."),
+            },
         ),
         name="most_voted_plugins",
     ),
@@ -185,44 +220,51 @@ urlpatterns = [
         r"^most_downloaded/$",
         PluginsList.as_view(
             queryset=Plugin.most_downloaded_objects.all(),
-            additional_context={"title": _("Most downloaded plugins")},
+            additional_context={
+                "title": _("Most downloaded plugins"),
+                "description": _("List of plugins sorted by the number of downloads."),
+            },
         ),
         name="most_downloaded_plugins",
-    ),
-    url(
-        r"^most_voted/$",
-        PluginsList.as_view(
-            queryset=Plugin.most_voted_objects.all(),
-            additional_context={"title": _("Most voted plugins")},
-        ),
-        name="most_voted_plugins",
     ),
     url(
         r"^most_rated/$",
         PluginsList.as_view(
             queryset=Plugin.most_rated_objects.all(),
-            additional_context={"title": _("Most rated plugins")},
+            additional_context={
+                "title": _("Most rated plugins"),
+                "description": _("List of plugins sorted by the rating score."),
+            },
         ),
         name="most_rated_plugins",
     ),
     url(
         r"^feedback_completed/$",
         FeedbackCompletedPluginsList.as_view(
-            additional_context={"title": _("Reviewed Plugins (Resolved)")}
+            additional_context={
+                "title": _("Reviewed Plugins (Resolved)"),
+                "description": _("List of plugins with resolved feedback."),
+            }
         ),
         name="feedback_completed_plugins",
     ),
     url(
         r"^feedback_pending/$",
         FeedbackPendingPluginsList.as_view(
-            additional_context={"title": _("Awaiting review")}
+            additional_context={
+                "title": _("Awaiting review"),
+                "description": _("List of plugins awaiting feedback review."),
+            }
         ),
         name="feedback_pending_plugins",
     ),
     url(
         r"^feedback_received/$",
         FeedbackReceivedPluginsList.as_view(
-            additional_context={"title": _("Reviewed Plugins (Pending)")}
+            additional_context={
+                "title": _("Reviewed Plugins (Pending)"),
+                "description": _("List of plugins with pending feedback."),
+            }
         ),
         name="feedback_received_plugins",
     ),
