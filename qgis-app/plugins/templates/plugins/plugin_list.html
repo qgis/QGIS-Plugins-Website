@@ -59,22 +59,22 @@
     <div class="mt-3 is-flex is-justify-content-space-between is-flex-wrap-wrap">
         <div>
             <div class="field has-addons">
-                <p class="control">
-                    <button id="grid-view-btn" class="button is-small is-info">
-                        <span class="icon is-small">
-                            <i class="fas fa-th"></i>
-                        </span>
-                        <span>Grid View</span>
-                    </button>
-                </p>
-                <p class="control">
-                    <button id="table-view-btn" class="button is-small">
-                        <span class="icon is-small">
-                            <i class="fas fa-table"></i>
-                        </span>
-                        <span>Table View</span>
-                    </button>
-                </p>
+            <p class="control">
+                <button id="grid-view-btn" class="button is-small is-info">
+                <span class="icon is-small">
+                    <i class="fas fa-th"></i>
+                </span>
+                <span>Grid View</span>
+                </button>
+            </p>
+            <p class="control">
+                <button id="table-view-btn" class="button is-small">
+                <span class="icon is-small">
+                    <i class="fas fa-table"></i>
+                </span>
+                <span>Table View</span>
+                </button>
+            </p>
             </div>
         </div>
         <div>
@@ -82,23 +82,26 @@
         </div>
     </div>
 
-    <div id="grid-view" class="columns is-multiline plugins-list-grid">
+    <div id="grid-view" class="columns is-multiline plugins-list-grid is-hidden">
         {% for object in object_list %}
             {% include "plugins/plugin_list_grid_card.html" %}
         {% endfor %}
     </div>
 
-    <div id="table-view" class="table_container box-content is-hidden">
+    <div id="table-view" class="table-container is-hidden pt-0">
         <table class="table plugins-list-table">
             <thead>
                 <tr>
                     <th class="pt-3 pb-3">&nbsp;</th>
                     <th class="pt-3 pb-3">{% trans "Name" %}</th>
                     {% if not user.is_anonymous %}<th class="pt-3 pb-3"><img title="{% trans "Approved" %}" src="{% static "images/tick_16.png" %}" alt="{% trans "Approved" %}"/></th>{% endif %}
-                    <th class="pt-3 pb-3">{% trans "Downloads" %}</th>
+                    <th class="pt-3 pb-3"><i class="fas fa-download" title="{% trans "Downloads" %}"></i></th>
                     <th class="pt-3 pb-3">{% trans "Author" %}</th>
-                    <th class="pt-3 pb-3">{% trans "Latest Plugin Version" %}</th>
+                    <th class="pt-3 pb-3">{% trans "Latest Version" %}</th>
+                    <th class="pt-3 pb-3">{% trans "Created On" %}</th>
                     <th class="pt-3 pb-3">{% trans "Stars (votes)" %}</th>
+                    <th><i class="fas fa-check" title="{% trans "Stable" %}"></i></th>
+                    <th><i class="fas fa-flask" title="{% trans "Experimental" %}"></i></th>
                     {% if user.is_authenticated %}<th colspan="2" class="pt-3 pb-3">{% trans "Manage" %}</th>{% endif %}
                 </tr>
             </thead>
@@ -125,7 +128,7 @@
                         </span>
                     </td>
                     {% if not user.is_anonymous %}<td>{% if object.approved %}<img src="{% static "images/tick_16.png" %}" />{% else %}&mdash;{% endif %}</td>{% endif %}
-                    <td>{{ object.downloads }}</td>
+                    <td class="has-text-right">{{ object.downloads|intcomma }}</td>
                     {% if object.author %}
                     <td>
                         <a class="author" title="{% trans "See all plugins by"%} {{ object.author }}" href="{% url "author_plugins" object.author %}">
@@ -134,7 +137,11 @@
                     </td>
                     {% endif %}
                     <td>{{ object.latest_version_date|local_timezone:"SHORT_NATURAL_DAY" }}</td>
+                    <td>{{ object.created_on|local_timezone:"SHORT" }}</td>
                     <td><div><div class="star-ratings"><span style="width:{% widthratio object.average_vote 5 100 %}%" class="rating"></span></div> ({{ object.rating_votes }})</div></td>
+                    
+                    <td>{% if object.stable %}<a href="{% url "version_download" object.package_name object.stable.version %}" title="{% trans "Download the stable version" %}" >{{ object.stable.version }}</a>{% else %}&mdash;{% endif %}</td>
+                    <td>{% if object.experimental %}<a href="{% url "version_download" object.package_name object.experimental.version %}" title="{% trans "Download the experimental version" %}" >{{ object.experimental.version }}</a>{% else %}&mdash;{% endif %}</td>
                     {% if user.is_authenticated %}
                         {% if user in object.editors or user.is_staff %}
                         <td>
@@ -161,18 +168,35 @@
 
 
     <script>
-        document.getElementById('table-view-btn').addEventListener('click', function() {
-            document.getElementById('table-view').classList.remove('is-hidden');
-            document.getElementById('grid-view').classList.add('is-hidden');
-            this.classList.add('is-info');
-            document.getElementById('grid-view-btn').classList.remove('is-info');
+        $('#table-view-btn').on('click', function() {
+            $('#table-view').removeClass('is-hidden');
+            $('#grid-view').addClass('is-hidden');
+            $(this).addClass('is-info');
+            $('#grid-view-btn').removeClass('is-info');
+            localStorage.setItem('view', 'table');
         });
 
-        document.getElementById('grid-view-btn').addEventListener('click', function() {
-            document.getElementById('grid-view').classList.remove('is-hidden');
-            document.getElementById('table-view').classList.add('is-hidden');
-            this.classList.add('is-info');
-            document.getElementById('table-view-btn').classList.remove('is-info');
+        $('#grid-view-btn').on('click', function() {
+            $('#grid-view').removeClass('is-hidden');
+            $('#table-view').addClass('is-hidden');
+            $(this).addClass('is-info');
+            $('#table-view-btn').removeClass('is-info');
+            localStorage.setItem('view', 'grid');
+        });
+
+        $(document).ready(function() {
+            const view = localStorage.getItem('view');
+            if (view === 'table') {
+            $('#table-view').removeClass('is-hidden');
+            $('#grid-view').addClass('is-hidden');
+            $('#table-view-btn').addClass('is-info');
+            $('#grid-view-btn').removeClass('is-info');
+            } else {
+            $('#grid-view').removeClass('is-hidden');
+            $('#table-view').addClass('is-hidden');
+            $('#grid-view-btn').addClass('is-info');
+            $('#table-view-btn').removeClass('is-info');
+            }
         });
     </script>
     <div class="mt-3 mb-3">
