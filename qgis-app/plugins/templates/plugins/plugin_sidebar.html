@@ -103,6 +103,28 @@
       {% endif %}
   
       <li>
+        <div class="has-child">
+            <a onclick="toggleSubMenu('docs')">
+            <i class="fas fa-book mr-3"></i>
+            Documentation
+            </a>
+          <span onclick="toggleSubMenu('docs')" class="drop-arrow"><img src="{% static "images/arrow.svg" %}"/></span>
+        </div>
+        <ul class="collapsed" id="docs">
+            {% url 'docs_publish' as docs_publish_url %}
+            <li class="has-child {% if request.path == docs_publish_url %}is-active{% endif %}">
+              <a href="{{ docs_publish_url }}">
+                Publish a plugin
+              </a>
+            </li>
+            {% comment %} <li class="has-child {% if request.path == '/docs/manage' %}is-active{% endif %}">
+              <a href="/docs/manage">
+                Manage a plugin
+              </a>
+            </li> {% endcomment %}
+        </ul>
+      </li>
+      <li>
         <div>
         {% include_plugins_tagcloud_modal 'plugins.plugin' %}
         </div>

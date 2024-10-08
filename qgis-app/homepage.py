@@ -29,3 +29,13 @@ def homepage(request):
             "title": "QGIS plugins web portal"
         },
     )
+
+def documentation(request):
+    """
+    Renders the documentation page
+    """
+    return render(
+        request,
+        "flatpages/documentation.html",
+        {},
+    )

@@ -14,6 +14,7 @@ from drf_yasg.views import get_schema_view
 # to find users app views
 # from users.views import *
 from homepage import homepage
+from docs import docs_publish
 from rest_framework import permissions
 
 admin.autodiscover()
@@ -67,14 +68,15 @@ urlpatterns += [
 ]
 
 # tinymce
-urlpatterns += [
-    url(r"^tinymce/", include("tinymce.urls")),
-]
+# urlpatterns += [
+#     url(r"^tinymce/", include("tinymce.urls")),
+# ]
 
 
-# Home
+# Home and documentation pages
 urlpatterns += [
-    url(r"^$", homepage),
+    url(r"^$", homepage, name="homepage"),
+    url(r"^docs/publish", docs_publish, name="docs_publish"),
 ]
 
 
