@@ -149,16 +149,6 @@
         document.getElementById('sidebar').classList.toggle('visible');
         document.getElementById('hamburger-btn').classList.toggle('open');
     }
-
-    // compose title for menu button: contatenate parent section titles
-    {% comment %} let activeListItem = document.getElementsByClassName('is-active')[0];
-    let ham = document.getElementById('ham-title');
-    let hamTitle = activeListItem.querySelector('a').textContent;
-    if (activeListItem.parentElement.previousElementSibling != null) {
-        hamTitle = activeListItem.parentElement.previousElementSibling.querySelector('a').textContent + ' / ' + hamTitle;
-    }
-    ham.textContent = hamTitle; {% endcomment %}
-
     // expand active section
     document.querySelectorAll('li.is-active,li:has(.is-active)').forEach(li => {
         if (e = li.querySelector('ul')) {
