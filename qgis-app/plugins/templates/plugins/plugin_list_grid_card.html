@@ -81,8 +81,8 @@ is-one-third-fullhd">
             <p style="height: 100%;"></p>
             <div class="content mb-0">
 
-                <div class="columns mt-3">
-                    <p class="column p-1">
+                <div class="is-flex is-justify-content-space-between mt-3">
+                    <p class="is-flex is-align-items-center p-1 mb-0">
                         <span class="icon-text">
                             <span class="icon">
                                 <i class="fas fa-calendar-alt"></i>
@@ -90,7 +90,7 @@ is-one-third-fullhd">
                             <span>{{ object.latest_version_date|local_timezone:"SHORT_NATURAL_DAY" }}</span>
                         </span>
                     </p>
-                    <div class="column p-1">
+                    <div class="is-flex is-align-items-center p-1">
                         <div class="star-ratings">
                             <span style="width:{% widthratio object.average_vote 5 100 %}%" class="rating"></span>
                         </div> ({{ object.rating_votes }})
