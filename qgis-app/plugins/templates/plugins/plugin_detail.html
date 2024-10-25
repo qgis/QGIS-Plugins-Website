@@ -446,13 +446,13 @@
                                     {% endif %}
                                     <td class="has-text-centered">
                                         {% if version.experimental %}
-                                            <i class="fas fa-check-circle has-text-success"></i>
+                                            <i class="fas fa-flask has-text-warning"></i>
                                         {% else %}
-                                            <i class="fas fa-times-circle has-text-danger"></i>
+                                            -
                                         {% endif %}
                                     </td>
-                                    <td class="has-text-centered"><span class="tag is-info">{{ version.min_qg_version }}</span></td>
-                                    <td class="has-text-centered"><span class="tag is-success">{{ version.max_qg_version }}</span></td>
+                                    <td class="has-text-centered">{{ version.min_qg_version }}</td>
+                                    <td class="has-text-centered">{{ version.max_qg_version }}</td>
                                     <td class="downloads">{{ version.downloads }}</td>
                                     {% if version.is_from_token %}
                                     <td class="has-text-centered">Token {{ version.token.description|default:"" }}</td>
