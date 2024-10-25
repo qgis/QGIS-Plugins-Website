@@ -92,7 +92,12 @@ urlpatterns = [
         UserDetailsPluginsList.as_view(),
         name="user_details",
     ),
-    url(r"^$", PluginsList.as_view(), name="approved_plugins"),
+    url(r"^$", PluginsList.as_view(
+        additional_context={
+            "title": _("All Plugins"),
+            "description": _("List of all approved plugins."),
+        }
+    ), name="approved_plugins"),
     url(
         r"^my$",
         login_required(
