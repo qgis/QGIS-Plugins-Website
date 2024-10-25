@@ -13,12 +13,12 @@ $container-max-width: $fullhd !default
     // padding-left: $gap
     // padding-right: $gap
     width: 100%
-  +tablet  
-    max-width: $tablet - $container-offset
-  +until-tablet
-    max-width: min($tablet, $container-max-width) - $container-offset
-  +desktop
-    max-width: $desktop - $container-offset
+  // +tablet  
+  //   max-width: $tablet - $container-offset
+  // +until-tablet
+  //   max-width: min($tablet, $container-max-width) - $container-offset
+  // +desktop
+  //   max-width: $desktop - $container-offset
   +until-widescreen
     &.is-widescreen:not(.is-max-desktop)
       max-width: min($widescreen, $container-max-width) - $container-offset
