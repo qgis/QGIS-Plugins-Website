@@ -812,6 +812,9 @@ def plugin_token_delete(request, package_name, token_id):
 
 
 class PluginsList(ListView):
+    """
+    List of approved plugins.
+    """
     model = Plugin
     queryset = Plugin.approved_objects.all()
     title = _("All plugins")
@@ -906,6 +909,9 @@ class PluginsList(ListView):
 
 
 class MyPluginsList(PluginsList):
+    """
+    List of plugins created by the user
+    """
     def get_filtered_queryset(self, qs):
         return (
             Plugin.base_objects.filter(owners=self.request.user).distinct()
@@ -914,12 +920,18 @@ class MyPluginsList(PluginsList):
 
 
 class UserPluginsList(PluginsList):
+    """
+    List of plugins created by a specific user
+    """
     def get_filtered_queryset(self, qs):
         user = get_object_or_404(User, username=self.kwargs["username"])
         return qs.filter(created_by=user)
 
 
 class AuthorPluginsList(PluginsList):
+    """
+    List of plugins created by a specific author
+    """
     def get_filtered_queryset(self, qs):
         return qs.filter(author=unquote(self.kwargs["author"]))
 
