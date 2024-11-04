@@ -848,7 +848,7 @@ class PluginsList(ListView):
                 sort_by = '-' + sort_by  # Prepend '-' to sort in descending order
 
             # Validate the sort field
-            if sort_by.lstrip('-') in ['average_vote', 'latest_version_date'] or self._is_valid_field(sort_by.lstrip('-')):
+            if sort_by.lstrip('-') in ['average_vote', 'latest_version_date', 'weighted_rating'] or self._is_valid_field(sort_by.lstrip('-')):
                 qs = qs.order_by(sort_by)
             elif not qs.ordered:
                 qs = qs.order_by(Lower("name"))

@@ -9,7 +9,7 @@
                 <option value="downloads" {% if request.GET.sort == 'downloads' %}selected{% endif %}>{% trans "Downloads" %}</option>
                 <option value="author" {% if request.GET.sort == 'author' %}selected{% endif %}>{% trans "Author" %}</option>
                 <option value="latest_version_date" {% if request.GET.sort == 'latest_version_date' %}selected{% endif %}>{% trans "Latest Version" %}</option>
-                <option value="average_vote" {% if request.GET.sort == 'average_vote' %}selected{% endif %}>{% trans "Stars" %}</option>
+                <option value="weighted_rating" {% if request.GET.sort == 'weighted_rating' %}selected{% endif %}>{% trans "Stars" %}</option>
             </select>
         </span>
     </p>
