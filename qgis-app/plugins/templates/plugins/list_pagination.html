@@ -2,39 +2,46 @@
 {% if is_paginated %}
   <nav class="pagination is-centered mb-0" role="navigation" aria-label="pagination">
     {% if page_obj.has_previous %}
-      <a class="pagination-previous" href="?page=1&amp;{{ current_sort_query }}&amp;{{ current_querystring }}">First</a>
       <a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}&amp;{{ current_sort_query }}&amp;{{ current_querystring }}">Prev</a>
     {% else %}
-      <a class="pagination-previous" disabled>First</a>
       <a class="pagination-previous" disabled>Prev</a>
     {% endif %}
 
     {% if page_obj.has_next %}
       <a class="pagination-next" href="?page={{ page_obj.next_page_number }}&amp;{{ current_sort_query }}&amp;{{ current_querystring }}">Next</a>
-      <a class="pagination-next" href="?page={{ page_obj.paginator.num_pages }}&amp;{{ current_sort_query }}&amp;{{ current_querystring }}">Last</a>
     {% else %}
       <a class="pagination-next" disabled>Next</a>
-      <a class="pagination-next" disabled>Last</a>
     {% endif %}
 
     <ul class="pagination-list m-0">
-      {% if not page_obj.has_next and page_obj.number >= 3 %}
+      {% if page_obj.number > 3 and page_obj.number != 1 %}
+        <li class="m-0"><a class="pagination-link" href="?page=1&amp;{{ current_sort_query }}&amp;{{ current_querystring }}">1</a></li>
+      {% endif %}
+      {% if page_obj.number > 3 %}
+        <li class="m-0"><span class="pagination-ellipsis">&hellip;</span></li>
+      {% endif %}
+      {% if page_obj.number >= 3 %}
         <li class="m-0"><a class="pagination-link" href="?page={{ page_obj.number|add:'-2' }}&amp;{{ current_sort_query }}&amp;{{ current_querystring }}">{{ page_obj.number|add:'-2' }}</a></li>
       {% endif %}
       {% if page_obj.has_previous %}
         <li class="m-0"><a class="pagination-link" href="?page={{ page_obj.previous_page_number }}&amp;{{ current_sort_query }}&amp;{{ current_querystring }}">{{ page_obj.previous_page_number }}</a></li>
       {% endif %}
-      <li class="m-0"><a class="pagination-link is-current">{{ page_obj.number }}</a></li>
+      <li class="m-0"><a class="pagination-link is-current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</a></li>
       {% if page_obj.has_next %}
         <li class="m-0"><a class="pagination-link" href="?page={{ page_obj.next_page_number }}&amp;{{ current_sort_query }}&amp;{{ current_querystring }}">{{ page_obj.next_page_number }}</a></li>
       {% endif %}
-      {% if not page_obj.has_previous and page_obj.paginator.num_pages >= 3 %}
+      {% if page_obj.number <= page_obj.paginator.num_pages|add:'-2' %}
         <li class="m-0"><a class="pagination-link" href="?page={{ page_obj.number|add:'2' }}&amp;{{ current_sort_query }}&amp;{{ current_querystring }}">{{ page_obj.number|add:'2' }}</a></li>
+      {% endif %}
+      {% if page_obj.number < page_obj.paginator.num_pages|add:'-3' %}
+        <li class="m-0"><span class="pagination-ellipsis">&hellip;</span></li>
+      {% endif %}
+      {% if page_obj.number < page_obj.paginator.num_pages|add:'-2' and page_obj.number != page_obj.paginator.num_pages %}
+        <li class="m-0"><a class="pagination-link" href="?page={{ page_obj.paginator.num_pages }}&amp;{{ current_sort_query }}&amp;{{ current_querystring }}">{{ page_obj.paginator.num_pages }}</a></li>
       {% endif %}
     </ul>
   </nav>
   
-
   <div class="is-flex is-justify-content-space-between is-flex-wrap-wrap">
     <div class="mt-3 mb-3">
           {% if show_more_items_number <= page_obj.paginator.count %}
