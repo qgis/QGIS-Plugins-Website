@@ -150,7 +150,11 @@ CELERY_BEAT_SCHEDULE = {
     'rebuild_search_index': {
         'task': 'plugins.tasks.rebuild_search_index.rebuild_search_index',
         'schedule': crontab(minute=0, hour=3),  # Execute every day at 3 AM.
-    }
+    },
+    'get_sustaining_members': {
+        'task': 'plugins.tasks.get_sustaining_members.get_sustaining_members',
+        'schedule': crontab(minute='*/30'),  # Execute every 30 minutes.
+    },
 }
 # Set plugin token access and refresh validity to a very long duration
 SIMPLE_JWT = {

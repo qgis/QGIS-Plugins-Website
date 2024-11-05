@@ -101,20 +101,11 @@ def version_tag(context):
 @register.simple_tag
 def get_sustaining_members_section():
     """
-    Get the Sustaining members HTML section from the new website
+    Get the Sustaining members HTML from the template file
     """
+    template_path = os.path.join(settings.SITE_ROOT, 'templates/flatpages/sustaining_members.html')
     try:
-        url = 'https://qgis.org'
-        response = requests.get(url)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
-
-        # Extract the section by the specified class name
-        section = soup.select_one('section.section')
-
-        if section:
-            return section.prettify()  # Returning HTML content
-        else:
-            return "Section not found"
-    except requests.RequestException as e:
-        return f"Error: {e}"
+        with open(template_path, 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        return ""
