@@ -199,6 +199,13 @@ exec:
 	@echo "------------------------------------------------------------------"
 	@docker compose -p $(PROJECT_ID) $(c)
 
+loadmenu:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Delete all simplemenu entries and load from fixtures/all_menu.json"
+	@echo "------------------------------------------------------------------"
+	@docker compose -p $(PROJECT_ID) exec uwsgi python manage.py clear_simplemenu
+	@docker compose -p $(PROJECT_ID) exec uwsgi python manage.py loaddata fixtures/all_menu.json
 # ----------------------------------------------------------------------------
 #    D E V E L O P M E N T    C O M M A N D S
 # ----------------------------------------------------------------------------
@@ -222,7 +229,7 @@ devweb: db
 	@echo "------------------------------------------------------------------"
 	@echo "Running in DEVELOPMENT mode"
 	@echo "------------------------------------------------------------------"
-	@docker compose -p $(PROJECT_ID) up --no-deps -d devweb rabbitmq worker beat
+	@docker compose -p $(PROJECT_ID) up --no-deps -d devweb rabbitmq worker beat webpack
 
 devweb-runserver: devweb
 	@echo

@@ -179,3 +179,7 @@ make devweb-runserver
 make dbseed
 ```
 
+- **loadmenu:** Clear all menu entries and load menu from JSON file at `fixtures/simplemenu.json`.
+```sh
+make loadmenu
+```

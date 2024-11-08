@@ -1,0 +1,158 @@
+{% load i18n plugins_tagcloud simplemenu_tags static %}
+<nav id="sidebar" class="sidebar">
+    <ul class="content-wrapper">
+      <li>
+        <a class="button is-success is-medium" href="{% url "plugin_upload" %}">
+            <i class="fas fa-upload"></i>
+            {% trans "Upload a plugin" %}
+        </a>
+      </li>
+      <hr/>
+      {% get_namedmenu Navigation as menu %}
+      {% for item in menu %}
+        <li class="{% if request.path == item.page.url %}is-active{% endif %}">
+          <a href="{{ item.page.url }}">
+            {% if item.page.url == "/" %}
+                <i class="fas fa-home mr-3"></i>
+            {% elif item.page.url == "/plugins/" %}
+                <i class="fas fa-plug mr-3"></i>
+            {% elif item.page.url == "/plugins/my" %}
+                <i class="fas fa-user mr-3"></i>
+            {% endif %}
+            {{ item.name }}
+          </a>
+        </li>
+      {% endfor %}
+      <li>
+        <div class="has-child">
+          <a onclick="toggleSubMenu('news')">
+            <i class="fas fa-newspaper mr-3"></i>
+            New & Updated
+          </a>
+          <span onclick="toggleSubMenu('news')" class="drop-arrow"><img src="{% static "images/arrow.svg" %}"/></span>
+        </div>
+        <ul class="collapsed"  id="news">
+          {% get_namedmenu New as new %}
+          {% for item in new %}
+            <li class="has-child {% if request.path == item.page.url %}is-active{% endif %}">
+              <a href="{{ item.page.url }}">
+                {{ item.name }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </li>
+      <li>
+        <div class="has-child">
+          <a onclick="toggleSubMenu('top')">
+            <i class="fas fa-star mr-3"></i>
+            Top
+          </a>
+          <span onclick="toggleSubMenu('top')" class="drop-arrow"><img src="{% static "images/arrow.svg" %}"/></span>
+        </div>
+        <ul class="collapsed" id="top">
+          {% get_namedmenu Top as Top %}
+          {% for item in Top %}
+            <li class="has-child {% if request.path == item.page.url %}is-active{% endif %}">
+              <a href="{{ item.page.url }}">
+                {{ item.name }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </li>
+      <li>
+        <div class="has-child">
+          <a onclick="toggleSubMenu('category')">
+            <i class="fas fa-list mr-3"></i>
+            Category
+          </a>
+          <span onclick="toggleSubMenu('category')" class="drop-arrow"><img src="{% static "images/arrow.svg" %}"/></span>
+        </div>
+        <ul class="collapsed" id="category">
+          {% get_namedmenu Category as Category %}
+          {% for item in Category %}
+            <li class="has-child {% if request.path == item.page.url %}is-active{% endif %}">
+              <a href="{{ item.page.url }}">
+                {{ item.name }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </li>
+      {% if user.is_authenticated and user.is_staff %}
+      <li>
+        <div class="has-child">
+          <a onclick="toggleSubMenu('unapproved')">
+            <i class="fas fa-check-circle mr-3"></i>
+            Under review
+          </a>
+          <span onclick="toggleSubMenu('unapproved')" class="drop-arrow"><img src="{% static "images/arrow.svg" %}"/></span>
+        </div>
+        <ul class="collapsed" id="unapproved">
+          {% get_namedmenu Unapproved as Unapproved %}
+          {% for item in Unapproved %}
+            <li class="has-child {% if request.path == item.page.url %}is-active{% endif %}">
+              <a href="{{ item.page.url }}">
+                {{ item.name }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </li>
+      {% endif %}
+  
+      <li>
+        <div class="has-child">
+            <a onclick="toggleSubMenu('docs')">
+            <i class="fas fa-book mr-3"></i>
+            Documentation
+            </a>
+          <span onclick="toggleSubMenu('docs')" class="drop-arrow"><img src="{% static "images/arrow.svg" %}"/></span>
+        </div>
+        <ul class="collapsed" id="docs">
+            {% url 'docs_publish' as docs_publish_url %}
+            <li class="has-child {% if request.path == docs_publish_url %}is-active{% endif %}">
+              <a href="{{ docs_publish_url }}">
+                Publish a plugin
+              </a>
+            </li>
+            {% comment %} <li class="has-child {% if request.path == '/docs/manage' %}is-active{% endif %}">
+              <a href="/docs/manage">
+                Manage a plugin
+              </a>
+            </li> {% endcomment %}
+        </ul>
+      </li>
+      <li>
+        <div>
+        {% include_plugins_tagcloud_modal 'plugins.plugin' %}
+        </div>
+      </li>
+    </ul>
+</nav>
+  
+  
+<script>
+    function rotateArrow(e) {
+        e.previousElementSibling.querySelector('img').classList.toggle('rotated');
+    }
+
+    function toggleSubMenu(listId) {
+        console.log(listId)
+        let e = document.getElementById(listId);
+        e.classList.toggle('unfolded');
+        rotateArrow(e);
+    }
+
+    function toggleMenu() {
+        document.getElementById('sidebar').classList.toggle('visible');
+        document.getElementById('hamburger-btn').classList.toggle('open');
+    }
+    // expand active section
+    document.querySelectorAll('li.is-active,li:has(.is-active)').forEach(li => {
+        if (e = li.querySelector('ul')) {
+            e.classList.toggle('unfolded');
+        }
+    });
+</script>

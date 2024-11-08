@@ -14,6 +14,7 @@ from drf_yasg.views import get_schema_view
 # to find users app views
 # from users.views import *
 from homepage import homepage
+from docs import docs_publish
 from rest_framework import permissions
 
 admin.autodiscover()
@@ -67,14 +68,15 @@ urlpatterns += [
 ]
 
 # tinymce
-urlpatterns += [
-    url(r"^tinymce/", include("tinymce.urls")),
-]
+# urlpatterns += [
+#     url(r"^tinymce/", include("tinymce.urls")),
+# ]
 
 
-# Home
+# Home and documentation pages
 urlpatterns += [
-    url(r"^$", homepage),
+    url(r"^$", homepage, name="homepage"),
+    url(r"^docs/publish", docs_publish, name="docs_publish"),
 ]
 
 
@@ -88,7 +90,29 @@ if settings.DEBUG:
 
 simplemenu.register(
     "/admin/",
+    # All plugins
     "/plugins/",
+    # My plugins
+    "/plugins/my",
+    # Unapproved plugins
+    "/plugins/unapproved/",
+    "/plugins/feedback_completed/",
+    "/plugins/feedback_received/",
+    "/plugins/feedback_pending/",
+    # New plugins
+    "/plugins/fresh/",
+    "/plugins/latest/",
+    # Top plugins
+    "/plugins/featured/",
+    "/plugins/popular/",
+    "/plugins/most_voted/",
+    "/plugins/most_downloaded/",
+    "/plugins/most_rated/",
+    # Category
+    "/plugins/stable/",
+    "/plugins/experimental/",
+    "/plugins/server/",
+    "/plugins/deprecated/",
     FlatPage.objects.all(),
     simplemenu.models.URLItem.objects.all(),
 )

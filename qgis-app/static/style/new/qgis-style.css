@@ -33,81 +33,13 @@
     min-height: 30px;
     width: 100%;
 }
-@font-face {
-    font-family: "Inconsolata";
-    font-style: normal;
-    font-weight: normal;
-    src: url("fonts/inconsolata-regular-webfont.eot?#iefix") format("embedded-opentype"), url("fonts/inconsolata-regular-webfont.woff") format("woff"), url("fonts/inconsolata-regular-webfont.ttf") format("truetype"), url("fonts/inconsolata-regular-webfont.svg#Inconsolata") format("svg");
-}
-@font-face {
-    font-family: "Inconsolata";
-    font-style: normal;
+/* h1, h2, h3, h4, h5 {
     font-weight: bold;
-    src: url("fonts/inconsolata-bold-webfont.eot?#iefix") format("embedded-opentype"), url("fonts/inconsolata-bold-webfont.woff") format("woff"), url("fonts/inconsolata-bold-webfont.ttf") format("truetype"), url("fonts/inconsolata-bold-webfont.svg#Inconsolata") format("svg");
-}
-@font-face {
-    font-family: "OpenSans";
-    font-style: normal;
-    font-weight: normal;
-    src: url("fonts/OpenSans-Regular-webfont.eot?#iefix") format("embedded-opentype"), url("fonts/OpenSans-Regular-webfont.woff") format("woff"), url("fonts/OpenSans-Regular-webfont.ttf") format("truetype"), url("fonts/OpenSans-Regular-webfont.svg#OpenSans") format("svg");
-}
-@font-face {
-    font-family: "OpenSans";
-    font-style: italic;
-    font-weight: normal;
-    src: url("fonts/OpenSans-Italic-webfont.eot?#iefix") format("embedded-opentype"), url("fonts/OpenSans-Italic-webfont.woff") format("woff"), url("fonts/OpenSans-Italic-webfont.ttf") format("truetype"), url("fonts/OpenSans-Italic-webfont.svg#OpenSans") format("svg");
-}
-@font-face {
-    font-family: "OpenSans";
-    font-style: normal;
-    font-weight: bold;
-    src: url("fonts/OpenSans-Bold-webfont.eot?#iefix") format("embedded-opentype"), url("fonts/OpenSans-Bold-webfont.woff") format("woff"), url("fonts/OpenSans-Bold-webfont.ttf") format("truetype"), url("fonts/OpenSans-Bold-webfont.svg#OpenSans") format("svg");
-}
-@font-face {
-    font-family: "OpenSans";
-    font-style: italic;
-    font-weight: bold;
-    src: url("fonts/OpenSans-BoldItalic-webfont.eot?#iefix") format("embedded-opentype"), url("fonts/OpenSans-BoldItalic-webfont.woff") format("woff"), url("fonts/OpenSans-BoldItalic-webfont.ttf") format("truetype"), url("fonts/OpenSans-BoldItalic-webfont.svg#OpenSans") format("svg");
-}
-@font-face {
-    font-family: "OpenSans";
-    font-style: normal;
-    font-weight: 300;
-    src: url("fonts/OpenSans-Light-webfont.eot?#iefix") format("embedded-opentype"), url("fonts/OpenSans-Light-webfont.woff") format("woff"), url("fonts/OpenSans-Light-webfont.ttf") format("truetype"), url("fonts/OpenSans-Light-webfont.svg#OpenSans") format("svg");
-}
-@font-face {
-    font-family: "OpenSans";
-    font-style: italic;
-    font-weight: 300;
-    src: url("fonts/OpenSans-LightItalic-webfont.eot?#iefix") format("embedded-opentype"), url("fonts/OpenSans-LightItalic-webfont.woff") format("woff"), url("fonts/OpenSans-LightItalic-webfont.ttf") format("truetype"), url("fonts/OpenSans-LightItalic-webfont.svg#OpenSans") format("svg");
-}
-@font-face {
-    font-family: "OpenSans";
-    font-style: normal;
-    font-weight: 600;
-    src: url("fonts/OpenSans-Semibold-webfont.eot?#iefix") format("embedded-opentype"), url("fonts/OpenSans-Semibold-webfont.woff") format("woff"), url("fonts/OpenSans-Semibold-webfont.ttf") format("truetype"), url("fonts/OpenSans-Semibold-webfont.svg#OpenSans") format("svg");
-}
-@font-face {
-    font-family: "OpenSans";
-    font-style: italic;
-    font-weight: 600;
-    src: url("fonts/OpenSans-SemiboldItalic-webfont.eot?#iefix") format("embedded-opentype"), url("fonts/OpenSans-SemiboldItalic-webfont.woff") format("woff"), url("fonts/OpenSans-SemiboldItalic-webfont.ttf") format("truetype"), url("fonts/OpenSans-SemiboldItalic-webfont.svg#OpenSans") format("svg");
-}
-body {
-    font-family: "Open Sans","Helvetica Neue",Ubuntu,Arial,sans-serif;
-    padding-top: 60px !important;
-}
-h1, h2, h3, h4, h5 {
-    font-weight: bold;
-}
-p, li, .button {
+} */
+/* p, li, .button {
     font-size: 0.9rem;
     line-height: 1.4rem;
-}
-pre, code {
-    font-family: "Andale Mono","Ubuntu Mono","Courier New",Courier,monospace;
-    line-height: 1.2rem;
-}
+} */
 @media (max-width: 979px) {
 .navbar-fixed-top {
     margin-bottom: 0 !important;
@@ -247,7 +179,7 @@ select#languages option {
     right: 25px;
     top: 75px;
 }
-.footer {
+/* .footer {
     background: none repeat scroll 0 0 #1C2028;
     border: 0 none !important;
     color: #FFFFFF;
@@ -272,7 +204,7 @@ select#languages option {
 }
 .footer #github {
     background: url("images/footer-github.png") no-repeat scroll 0 0 transparent;
-}
+} */
 .current.reference.internal {
     background-color: #D3D3D3;
 }

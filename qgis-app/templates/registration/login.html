@@ -1,32 +1,118 @@
-{% extends "base.html" %}{% load i18n %}
+{% extends "base.html" %}{% load i18n static %}
 
-{% block content %}
-    <p>{% trans "Login using your OSGEO id." %}</p>
-    <p><b>{% trans "Please note that you do not need a login to download a plugin." %}</b></p>
-    <p>
-       {% trans 'You can create a new OSGEO id on <a href="http://www.osgeo.org/osgeo_userid">OSGEO web portal.</a>' %}
-    </p>
-   {% if form.errors or form.non_field_errors %}
-    <div class="alert alert-error">
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
-        {% for error in form.non_field_errors %}
-            <p>{{ error }}</p>
-        {% endfor %}
-        {% for error in form.field_errors %}
-            <p>{{ error }}</p>
-        {% endfor %}
+{% block pagetitle %}
+  <section class="hero is-dark is-medium has-bg-img" style="background: url({% static "images/hegobg1.webp" %});
+  background-position: 50%;
+  background-size: cover;">
+  <div class="hero-body" style="height: 100dvh;">
+    <div class="columns is-vcentered is-centered">
+      <div class="column is-4 p-6 login-container" >
+        <div class="has-text-centered">
+          <h3 class="title">{% trans "Login using your OSGEO id." %}</h3>
+          <hr class="login-hr" />
+          <p class="subtitle">
+            {% trans "Please note that you do not need a login to download a plugin." %}
+          </p>
+          <p class="subtitle">
+            {% trans 'You can create a new OSGEO id on <a class="has-text-success	" href="http://www.osgeo.org/osgeo_userid">OSGEO web portal.</a>' %}
+          </p>
+          
+          <div>
+            <form action='.' method="POST">
+              {% csrf_token %}
+              <div class="field">
+                <div class="control has-icons-left">
+                  <input
+                    class="input is-large"
+                    type="text"
+                    placeholder="Username"
+                    autofocus=""
+                    id="username"
+                    name="username"
+                  />
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-user"></i>
+                  </span>
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="control has-icons-left">
+                  <input
+                    class="input is-large"
+                    type="password"
+                    placeholder="Password"
+                    id="password"
+                    name="password"
+                  />
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-lock"></i>
+                  </span>
+                </div>
+              </div>
+
+              {% if form.errors or form.non_field_errors %}
+              <div class="notification is-danger is-light">
+                  {% for error in form.non_field_errors %}
+                      {{ error }} <br/>
+                  {% endfor %}
+                  {% for error in form.field_errors %}
+                    {{ error }} <br/>
+                  {% endfor %}
+              </div>
+              {% endif %}
+
+                <div class="field">
+                <div class="control">
+                  <button 
+                  class="button is-success is-large is-fullwidth"
+                  type="submit" 
+                  value="login" 
+                  id="submit-button"
+                  >
+                  <span class="icon">
+                    <i class="fa fa-sign-in" aria-hidden="true"></i>
+                  </span>
+                  <span>
+                    Login
+                  </span>
+                  </button>
+                </div>
+                </div>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
-    {% endif %}
-
-  <form class="horizontal" action='.' method='post'>{% csrf_token %}
-    <p><label for="username">{% trans "User name" %}:</label>
-    <input type="text" name="username" value="" id="username"></p>
-    <p><label for="password">{% trans "Password" %}:</label>
-    <input type="password" name="password" value="" id="password"></p>
-
-    <p><input class="btn btn-primary" type="submit" value="login" />
-    <input type="hidden" name="next" value="{{ next }}" /></p>
   </form>
+  </div>
+  </section>
+{% endblock %}
 
+<!-- Specific JS goes HERE -->
+{% block extrajs %}
+{{ block.super }}
+<script>
+  $(document).ready(function () {
+    // Function to update the button state
+    function updateButtonState() {
+      var usernameIsEmpty = $("#username").val() === "";
+      var passwordIsEmpty = $("#password").val() === "";
 
+      if (usernameIsEmpty || passwordIsEmpty) {
+        $("#submit-button").prop("disabled", true);
+      } else {
+        $("#submit-button").prop("disabled", false);
+      }
+    }
+
+    // Call the function when the page loads
+    updateButtonState();
+
+    // Call the function when the field changes or the form is submitted
+    $("#username").on("input", updateButtonState);
+    $("#password").on("input", updateButtonState);
+    $("form").on("submit", updateButtonState);
+  });
+</script>
 {% endblock %}

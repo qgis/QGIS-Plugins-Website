@@ -53,11 +53,7 @@ div.tag_cloud a {
     width: inherit !important;
 }
 
-img.plugin-icon {
-    max-width: inherit;
-}
-
-.required label:after { content:" *"; color: red; }
+label.required:after { content:" *"; color: red; }
 
 /* HUB style */
 .dropdown-menu {
@@ -86,12 +82,3 @@ img.plugin-icon {
   }
 }
 
-.modal {
-  /* make modal fullscreen */
-  bottom: 20px;
-}
-
-.modal-header {
-  border-bottom: none;
-  text-align: center;
-}

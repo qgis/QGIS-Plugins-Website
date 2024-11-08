@@ -77,7 +77,9 @@ INSTALLED_APPS = [
     "sorl_thumbnail_serializer",  # serialize image
     "drf_multiple_model",
     "drf_yasg",
-    "matomo"
+    "matomo",
+    # Webpack
+    "webpack_loader"
 ]
 
 DATABASES = {
@@ -148,7 +150,11 @@ CELERY_BEAT_SCHEDULE = {
     'rebuild_search_index': {
         'task': 'plugins.tasks.rebuild_search_index.rebuild_search_index',
         'schedule': crontab(minute=0, hour=3),  # Execute every day at 3 AM.
-    }
+    },
+    'get_sustaining_members': {
+        'task': 'plugins.tasks.get_sustaining_members.get_sustaining_members',
+        'schedule': crontab(minute='*/30'),  # Execute every 30 minutes.
+    },
 }
 # Set plugin token access and refresh validity to a very long duration
 SIMPLE_JWT = {
@@ -176,3 +182,11 @@ if SENTRY_DSN and SENTRY_DSN != "":
         # of transactions for performance monitoring.
         traces_sample_rate=SENTRY_RATE,
     )
+
+# Webpack
+WEBPACK_LOADER = {
+    'DEFAULT': {
+        'BUNDLE_DIR_NAME': 'bundles',
+        'STATS_FILE': os.path.join(SITE_ROOT, 'webpack-stats.json'),
+    }
+}

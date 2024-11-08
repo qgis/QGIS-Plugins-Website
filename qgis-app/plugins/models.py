@@ -28,6 +28,11 @@ VERSION_RE = r"(^|(?<=\.))0+(?!(\.|$|-))|\.#+"
 class BasePluginManager(models.Manager):
     """
     Adds a score
+    * average_vote provides a simple average rating.
+    * latest_version_date fetches the date of the 
+    most recent approved plugin version.
+    * weighted_rating uses the Bayesian Average formula
+    to provide a more balanced rating that mitigates the effect of low vote counts.
     """
 
     def get_queryset(self):
@@ -36,12 +41,17 @@ class BasePluginManager(models.Manager):
             .get_queryset()
             .extra(
                 select={
-                    "average_vote": "rating_score/(rating_votes+0.001)",
+                    "average_vote": "rating_score / (rating_votes + 0.001)",
                     "latest_version_date": (
                         "SELECT created_on FROM plugins_pluginversion WHERE "
                         "plugins_pluginversion.plugin_id = plugins_plugin.id "
                         "AND approved = TRUE "
                         "ORDER BY created_on DESC LIMIT 1"
+                    ),
+                    "weighted_rating": (
+                        "((rating_votes::FLOAT / (rating_votes + 5)) * "
+                        "(rating_score::FLOAT / (rating_votes + 0.001))) + "
+                        "((5::FLOAT / (rating_votes + 5)) * 3)"
                     ),
                 }
             )
@@ -172,11 +182,16 @@ class UnapprovedPlugins(BasePluginManager):
             .filter(pluginversion__approved=False, deprecated=False)
             .extra(
                 select={
-                    "average_vote": "rating_score/(rating_votes+0.001)",
+                    "average_vote": "rating_score / (rating_votes + 0.001)",
                     "latest_version_date": (
                         "SELECT created_on FROM plugins_pluginversion WHERE "
                         "plugins_pluginversion.plugin_id = plugins_plugin.id "
                         "ORDER BY created_on DESC LIMIT 1"
+                    ),
+                    "weighted_rating": (
+                        "((rating_votes::FLOAT / (rating_votes + 5)) * "
+                        "(rating_score::FLOAT / (rating_votes + 0.001))) + "
+                        "((5::FLOAT / (rating_votes + 5)) * 3)"
                     ),
                 }
             )
@@ -258,7 +273,7 @@ class MostRatedPlugins(ApprovedPlugins):
             super(MostRatedPlugins, self)
             .get_queryset()
             .filter(deprecated=False)
-            .order_by("-average_vote")
+            .order_by("-weighted_rating")
             .distinct()
         )
 
@@ -314,11 +329,16 @@ class FeedbackCompletedPlugins(models.Manager):
             )
             .extra(
                 select={
-                    "average_vote": "rating_score/(rating_votes+0.001)",
+                    "average_vote": "rating_score / (rating_votes + 0.001)",
                     "latest_version_date": (
                         "SELECT created_on FROM plugins_pluginversion WHERE "
                         "plugins_pluginversion.plugin_id = plugins_plugin.id "
                         "ORDER BY created_on DESC LIMIT 1"
+                    ),
+                    "weighted_rating": (
+                        "((rating_votes::FLOAT / (rating_votes + 5)) * "
+                        "(rating_score::FLOAT / (rating_votes + 0.001))) + "
+                        "((5::FLOAT / (rating_votes + 5)) * 3)"
                     ),
                 }
             ).distinct()
@@ -351,11 +371,16 @@ class FeedbackReceivedPlugins(models.Manager):
             )
             .extra(
                 select={
-                    "average_vote": "rating_score/(rating_votes+0.001)",
+                    "average_vote": "rating_score / (rating_votes + 0.001)",
                     "latest_version_date": (
                         "SELECT created_on FROM plugins_pluginversion WHERE "
                         "plugins_pluginversion.plugin_id = plugins_plugin.id "
                         "ORDER BY created_on DESC LIMIT 1"
+                    ),
+                    "weighted_rating": (
+                        "((rating_votes::FLOAT / (rating_votes + 5)) * "
+                        "(rating_score::FLOAT / (rating_votes + 0.001))) + "
+                        "((5::FLOAT / (rating_votes + 5)) * 3)"
                     ),
                 }
             ).distinct()
@@ -382,11 +407,16 @@ class FeedbackPendingPlugins(models.Manager):
             )
             .extra(
                 select={
-                    "average_vote": "rating_score/(rating_votes+0.001)",
+                    "average_vote": "rating_score / (rating_votes + 0.001)",
                     "latest_version_date": (
                         "SELECT created_on FROM plugins_pluginversion WHERE "
                         "plugins_pluginversion.plugin_id = plugins_plugin.id "
                         "ORDER BY created_on DESC LIMIT 1"
+                    ),
+                    "weighted_rating": (
+                        "((rating_votes::FLOAT / (rating_votes + 5)) * "
+                        "(rating_score::FLOAT / (rating_votes + 0.001))) + "
+                        "((5::FLOAT / (rating_votes + 5)) * 3)"
                     ),
                 }
             ).distinct()

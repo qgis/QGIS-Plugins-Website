@@ -1,0 +1,47 @@
+{% load i18n %}
+<div class="field is-grouped">
+    <p class="control">
+        <label for="sort-options">{% trans "Sort by:" %}</label>
+        <span class="select is-small">
+            <select id="sort-options" onchange="updateSorting('sort', this.value);">
+                <option value=""{% if not request.GET.sort %}selected{% endif %}>-</option>
+                <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>{% trans "Name" %}</option>
+                <option value="downloads" {% if request.GET.sort == 'downloads' %}selected{% endif %}>{% trans "Downloads" %}</option>
+                <option value="author" {% if request.GET.sort == 'author' %}selected{% endif %}>{% trans "Author" %}</option>
+                <option value="latest_version_date" {% if request.GET.sort == 'latest_version_date' %}selected{% endif %}>{% trans "Latest Version" %}</option>
+                <option value="weighted_rating" {% if request.GET.sort == 'weighted_rating' %}selected{% endif %}>{% trans "Stars" %}</option>
+            </select>
+        </span>
+    </p>
+    <p class="control">
+        <span class="select is-small">
+            <select id="order-options" onchange="updateSorting('order', this.value);">
+                <option value="" {% if not request.GET.order %}selected{% endif %}>-</option>
+                <option value="asc" {% if request.GET.order == 'asc' %}selected{% endif %}>{% trans "Ascending" %}</option>
+                <option value="desc" {% if request.GET.order == 'desc' %}selected{% endif %}>{% trans "Descending" %}</option>
+            </select>
+        </span>
+    </p>
+</div>
+
+<script>
+    function updateSorting(key, value) {
+        if (value) {
+            // Get current URL parameters
+            let params = new URLSearchParams(window.location.search);
+            
+            // Update the relevant parameter (sort/order) based on the selection
+            params.set(key, value);
+    
+            // Preserve the other sorting option (sort/order)
+            if (key === 'sort' && !params.has('order')) {
+                params.set('order', 'asc');  // Default to ascending if no order is selected
+            } else if (key === 'order' && !params.has('sort')) {
+                params.set('sort', 'name');  // Default to sorting by name if no sort field is selected
+            }
+    
+            // Redirect to the updated URL
+            window.location.search = params.toString();
+        }
+    }
+</script>

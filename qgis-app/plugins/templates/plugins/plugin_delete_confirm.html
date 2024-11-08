@@ -1,9 +1,25 @@
 {% extends 'plugins/plugin_base.html' %}{% load i18n %}
 {% block content %}
-    <h2>{% trans "Delete plugin"%}: {{ plugin.title }}</h2>
-    <form action="" method="post">{% csrf_token %}
-        <p class="alert alert-danger">{% trans "You asked to delete the plugin and all its versions. The plugin will be permanently deleted. This action cannot be undone. Please confirm."%}</p>
-        <p><input type="submit" class="btn btn-danger" name="delete_confirm" value="{% trans "Ok" %}" /> <a class="btn btn-primary" href="javascript:history.back()">{% trans "Cancel" %}</a></p>
+    <h2 class="title is-4">{% trans "Delete plugin" %}: {{ plugin.title }}</h2>
+    <form action="" method="post">
+        {% csrf_token %}
+        <div class="notification">
+            <p>{% trans "You asked to delete the plugin and all its versions. The plugin will be permanently deleted. This action cannot be undone. Please confirm." %}</p>
+        </div>
+        <div class="field is-grouped">
+            <p class="control">
+                <button type="submit" class="button is-danger" name="delete_confirm">
+                    <span class="icon"><i class="fas fa-trash"></i></span>
+                    <span>{% trans "Ok" %}</span>
+                </button>
+            </p>
+            <p class="control">
+                <a class="button is-success" href="javascript:history.back()">
+                    <span class="icon"><i class="fas fa-undo"></i></span>
+                    <span>{% trans "Cancel" %}</span>
+                </a>
+            </p>
+        </div>
     </form>
 
 {% endblock %}

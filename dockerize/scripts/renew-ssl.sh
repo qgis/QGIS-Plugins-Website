@@ -11,7 +11,7 @@
 #    2021-11-12 11:10:00 UTC
 #    ...etc
 
-#25 11 * * * /bin/bash /home/web/QGID-Plugins-Website/dockerize/scripts/renew_ssl.sh > /tmp/ssl-renewal-logs.txt
+#25 11 * * * /bin/bash /home/web/QGIS-Plugins-Website/dockerize/scripts/renew_ssl.sh > /tmp/ssl-renewal-logs.txt
 
 
-docker compose -f /home/web/QGID-Plugins-Website/dockerize/docker-compose.yml -p qgis-plugins run certbot renew
+docker compose -f /home/web/QGIS-Plugins-Website/dockerize/docker-compose.yml -p qgis-plugins run certbot renew

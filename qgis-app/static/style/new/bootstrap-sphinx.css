@@ -42,11 +42,11 @@ table {
 table.field-list {
     width: auto;
 }
-.footer {
+/* .footer {
     border-top: 1px solid #CCCCCC;
     padding-top: 10px;
     width: 100%;
-}
+} */
 @media (min-width: 1200px) {
 .bs-sidenav {
     width: 258px;

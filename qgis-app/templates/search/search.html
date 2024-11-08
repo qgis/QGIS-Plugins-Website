@@ -1,88 +1,60 @@
 {% extends 'base.html' %}
-{% load i18n plugin_utils plugins_tagcloud %}
+{% load i18n plugin_utils%}
 
 {% block menu %}
 {{ block.super }}
-    <div class="module_menu">
-        <h3>{% trans "Plugin tags" %}</h3>
-        {% include_plugins_tagcloud 'plugins.plugin' %}
-    </div>
-
+    {% include "plugins/plugin_sidebar.html" %}
 {% endblock %}
 
 {% block content %}
-    <h2>Search</h2>
+    {% if query %}
+        <h2>Search results for "{{query}}" ({{paginator.count}} items found)</h2>
 
-    <form class="horizontal advancedsearch" method="get" action=".">
-        {% for field in form %}
-        <div class="fieldWrapper">
-            {{ field.errors }}
-            {% if field.field.widget|klass == 'CheckboxSelectMultiple' %}
-            {% comment %}
-<!--
-            ABP: does not work!
--->
-            <fieldset>
-            <label for="{{ field.html_name }}">
-                {{ field.label }}
-                {% for x,y in field.field.widget.choices %}
-                {{ field.field.widget.value|pprint }}
-                <div class="fieldWrapper">
-                    <label for="{{ field.html_name }}">{{ y }}
-                    <input type="checkbox" id="{{ field.html_name }}" name="{{ field.html_name }}" value="{{ x }}" {% if field.field.widget.value == x %}checked="checked"{% endif %}/></label>
-                </div>
-                {% endfor %}
-            </label>
-            </fieldset>
-            {% endcomment %}
-            {% else %}
-            {{ field.label_tag }}{{ field }}
-            {% endif %}
-            <div class="help">{{ field.help_text }}</div>
-        </div>
-        {% endfor %}
-        <div class="form-actions">
-            <input type="submit" class="btn btn-primary" value="Search">
-        </div>
-
-        {% if query %}
-            <h3>Search results for "{{query}}" ({{paginator.count}} items found)</h3>
-
+        <div id="grid-view" class="columns is-multiline plugins-list-grid">
             {% for result in page.object_list %}
-                <p class="search-item">
-                    <a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a>
-                </p>
+                {% with object=result.object %}
+                    {% include "plugins/plugin_list_grid_card.html" %}
+                {% endwith %}
             {% empty %}
-                <p>No results found.</p>
+            <div class="notification">
+                <i class="fas fa-info mr-3"></i>
+                {% trans "No results found." %}
+            </div>
             {% endfor %}
+        </div>
 
-            {% if page.has_previous or page.has_next %}
-                <div class="pagination">
-                    {% if page.has_previous %}
-                        <a href="?q={{ query }}&amp;page=1">
-                    {% endif %}&laquo; First
-                    {% if page.has_previous %}</a>{% endif %}
-                    |
-                    {% if page.has_previous %}
-                        <a href="?q={{ query }}&amp;page={{ page.previous_page_number }}">
-                    {% endif %}Previous
-                    {% if page.has_previous %}</a>{% endif %}
-                    |
-                    Page {{ page.number }} of {{ paginator.num_pages }}
-                    |
-                    {% if page.has_next %}
-                        <a href="?q={{ query }}&amp;page={{ page.next_page_number }}">
-                    {% endif %}Next
-                    {% if page.has_next %}</a>{% endif %}
-                    |
-                    {% if page.has_next %}
-                        <a href="?q={{ query }}&amp;page={{ paginator.num_pages }}">
-                    {% endif %}Last &raquo;
-                    {% if page.has_next %}</a>{% endif %}
-                </div>
-            {% endif %}
-        {% else %}
-            {# Show some example queries to run, maybe query syntax, something else? #}
+        {% if page.has_previous or page.has_next %}
+            <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+                <ul class="pagination-list">
+                    <li class="m-0">
+                        <a class="pagination-link" href="?q={{ query }}&amp;page=1" aria-label="Goto page 1" {% if not page.has_previous %}disabled{% endif %}>
+                            <span class="icon"><i class="fas fa-angle-double-left"></i></span> First
+                        </a>
+                    </li>
+                    <li class="m-0">
+                        <a class="pagination-previous" href="?q={{ query }}&amp;{% if page.has_previous %}page={{ page.previous_page_number }}{% endif %}" {% if not page.has_previous %}disabled{% endif %}>
+                            <span class="icon"><i class="fas fa-angle-left"></i></span> Previous
+                        </a>
+                    </li>
+                    <li class="m-0">
+                        <a class="pagination-link is-current" aria-label="Page {{ page.number }}" aria-current="page">
+                            Page {{ page.number }} of {{ paginator.num_pages }}
+                        </a>
+                    </li>
+                    <li class="m-0">
+                        <a class="pagination-next" href="?q={{ query }}&amp;{% if page.has_next %}page={{ page.next_page_number }}{% endif %}" {% if not page.has_next %}disabled{% endif %}>
+                            Next page <span class="icon"><i class="fas fa-angle-right"></i></span>
+                        </a>
+                    </li>
+                    <li class="m-0">
+                        <a class="pagination-link" href="?q={{ query }}&amp;{% if page.has_next %}page={{ paginator.num_pages }}{% endif %}" aria-label="Goto page {{ paginator.num_pages }}" {% if not page.has_next %}disabled{% endif %}>
+                            Last <span class="icon"><i class="fas fa-angle-double-right"></i></span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
         {% endif %}
-    </form>
+    {% else %}
+        {# Show some example queries to run, maybe query syntax, something else? #}
+    {% endif %}
 {% endblock %}

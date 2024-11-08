@@ -1,29 +1,53 @@
 {% extends 'plugins/plugin_base.html' %}{% load i18n %}
 {% block content %}
     <h2>{% trans "Upload a plugin" %}</h2>
-    <p class="help">{% trans "To upload a new plugin or update an existing one, you can specify the zipped file in this form." %}</p>
-    <p>{% trans "Alternatively, to update an existing plugin, you can also open the plugin's details view and add a new version from there." %}</p>
+    
+    <div class="container rich">
+        <div class="cont coloring-6">
+            <p>{% trans "To upload a new plugin or update an existing one, you can specify the zipped file in this form." %}</p>
+            <p>{% trans "Alternatively, to update an existing plugin, you can also open the plugin's details view and add a new version from there." %}</p>
+        </div>
+    </div>
     {% if form.non_field_errors %}
-    <div class="alert alert-error">
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    <div class="notification is-danger is-light">
+        <button class="delete" data-dismiss="alert">&times;</button>
         {% for error in form.non_field_errors %}
-            <p>{{ error }}</p>
+            {{ error }}<br />
         {% endfor %}
     </div>
     {% endif %}
+
     <form action="" method="post" enctype="multipart/form-data" class="horizontal">{% csrf_token %}
         {% include "plugins/form_snippet.html" %}
-        <div class="alert alert-info">
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
-            {% blocktrans %} 
-                Please note that by uploading a plugin to the official QGIS plugin repository, 
-                you agree that we will use your email to contact you. We will only contact 
-                you for matters relating to the management of plugins and will not make 
-                your email available to third parties for marketing purposes.
-            {% endblocktrans %}
+        <div class="mt-3 has-text-centered">
+            <button class="button is-success is-large" type="submit">
+                <span class="icon is-small">
+                    <i class="fas fa-upload"></i>
+                </span>
+                <span>
+                    {% trans "Upload" %}
+                </span>
+            </button>
         </div>
-        <div class="alert alert-info">
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </form>
+    <div class="m-5">
+    </div>
+    <div class="container rich">
+        <div class="cont coloring-2">
+            <p>
+                {% blocktrans %} 
+                    Please note that by uploading a plugin to the official QGIS plugin repository, 
+                    you agree that we will use your email to contact you. We will only contact 
+                    you for matters relating to the management of plugins and will not make 
+                    your email available to third parties for marketing purposes.
+                {% endblocktrans %}
+
+            </p>
+        </div>
+    </div>
+    <div class="container rich">
+        <div class="cont coloring-2">
+            <p>
                 {% blocktrans %} 
                     By uploading your plugin to the QGIS plugin repository, 
                     you agree to keep your email address current and to be 
@@ -36,10 +60,8 @@
                     where the plugin author is not contactable and there 
                     are issues reported about a plugin.
                 {% endblocktrans %}
+            </p>
         </div>
-        <div class="form-actions">
-            <button class="btn btn-primary" type="submit">{% trans "Upload" %}</button>
-        </div>
-    </form>
+    </div>
 
 {% endblock %}

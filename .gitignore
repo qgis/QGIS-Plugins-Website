@@ -55,3 +55,12 @@ qgis-app/api/tests/*/
 qgis-app/whoosh_index/
 docker-compose.override.yml
 .env
+
+# Webpack
+node_modules
+qgis-app/static/bundles
+qgis-app/package-lock.json
+qgis-app/webpack-stats.json
+
+# Sustaining members template
+qgis-app/templates/flatpages/sustaining_members.html

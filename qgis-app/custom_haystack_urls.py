@@ -28,9 +28,19 @@ class SearchWithRequest(SearchView):
 
     def get_results(self):
         """
-        Fetches the results
+        Fetches the search results and sorts them in descending order based on the 'downloads' attribute.
+        If the 'downloads' attribute is not present or the object is None, it defaults to 0.
         """
-        return self.form.searchqueryset
+        results = self.form.searchqueryset
+        sort_by = 'downloads'
+        results = sorted(
+            results, 
+            key=lambda x: int(
+                getattr(x.object, sort_by)
+            ) if x.object is not None else 0,
+            reverse=True  # Reverse the sort order
+        )
+        return results
 
 
 urlpatterns = [

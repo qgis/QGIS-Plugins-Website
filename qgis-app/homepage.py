@@ -10,9 +10,9 @@ def homepage(request):
     """
     Renders the home page
     """
-    latest = Plugin.latest_objects.all()[:10]
-    featured = Plugin.featured_objects.all()[:10]
-    popular = Plugin.popular_objects.all()[:10]
+    latest = Plugin.latest_objects.all()[:5]
+    featured = Plugin.featured_objects.all()[:5]
+    popular = Plugin.popular_objects.all()[:5]
     try:
         content = FlatPage.objects.get(url="/").content
     except FlatPage.DoesNotExist:
@@ -26,5 +26,16 @@ def homepage(request):
             "latest": latest,
             "popular": popular,
             "content": content,
+            "title": "QGIS plugins web portal"
         },
+    )
+
+def documentation(request):
+    """
+    Renders the documentation page
+    """
+    return render(
+        request,
+        "flatpages/documentation.html",
+        {},
     )

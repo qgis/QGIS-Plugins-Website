@@ -11,15 +11,31 @@
         <li>{% trans "Email: " %} {{ plugin_user.email }}</li>{% endif %}
     </ul>
     <form method="post" action="{% url "user_permissions_manage" plugin_user.username %}">{% csrf_token %}
-    <div class="form-actions">
-            {% if plugin_user.is_active %}
-            <input class="btn btn-danger" type="submit" id="user_block" name="user_block" value="{% trans "Block author" %}" />{% else %}
-                <input class="btn btn-warning"  type="submit" id="user_unblock" name="user_unblock" value="{% trans "Unblock author" %}" />
+    <div class="form-actions mt-3">
+        {% if plugin_user.is_active %}
+            <button class="button is-danger" type="submit" id="user_block" name="user_block" value="1">
+                <span class="icon"><i class="fas fa-ban"></i></span>
+                <span>{% trans "Block author" %}</span>
+            </button>
+        {% else %}
+            <button class="button is-warning" type="submit" id="user_unblock" name="user_unblock" value="1">
+                <span class="icon"><i class="fas fa-check"></i></span>
+                <span>{% trans "Unblock author" %}</span>
+            </button>
+        {% endif %}
+        {% if plugin_user.is_active %}
+            {% if not user_is_trusted %}
+                <button class="button is-success" type="submit" id="user_trust" name="user_trust" value="1">
+                    <span class="icon"><i class="fas fa-thumbs-up"></i></span>
+                    <span>{% trans "Trust author" %}</span>
+                </button>
+            {% else %}
+                <button class="button is-danger" type="submit" id="user_untrust" name="user_untrust" value="1">
+                    <span class="icon"><i class="fas fa-thumbs-down"></i></span>
+                    <span>{% trans "Untrust author" %}</span>
+                </button>
             {% endif %}
-            {% if plugin_user.is_active %}
-            {% if not user_is_trusted %}<input class="btn btn-success" type="submit" id="user_trust" name="user_trust" value="{% trans "Trust author" %}" />{% else %}
-            <input class="btn btn-danger" type="submit" id="user_untrust" name="user_untrust" value="{% trans "Untrust author" %}" />{% endif %}
-            {% endif %}
+        {% endif %}
     </div>
     </form>
     {% endif %}

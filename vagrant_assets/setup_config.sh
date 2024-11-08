@@ -3,7 +3,7 @@
 
 export INSTALL_DIR=/var/qgis_plugins
 export MEDIA_ROOT=${INSTALL_DIR}/vagrant_static/
-# Set to something different than "0" to install QGID-Plugins-Website from GIT instead of
+# Set to something different than "0" to install QGIS-Plugins-Website from GIT instead of
 # using the local repo (mounted from Vagrant)
 export FETCH_FROM_GIT="0"
 export DB_NAME="qgis_django"

@@ -1,65 +1,98 @@
 {% extends 'plugins/plugin_base.html' %}{% load i18n %}
 {% block content %}
     {% if form.errors %}
-    <div class="alert alert-error">
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
-        <p>{% trans "The form contains errors and cannot be submitted, please check the fields highlighted in red." %}</p>
+    <div class="notification is-danger is-light">
+        <button class="delete" data-dismiss="alert">&times;</button>
+        {% trans "The form contains errors and cannot be submitted, please check the fields highlighted in red." %}
     </div>
     {% endif %}
     {% if form.non_field_errors %}
-    <div class="alert alert-error">
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    <div class="notification is-danger is-light">
+        <button class="delete" data-dismiss="alert">&times;</button>
         {% for error in form.non_field_errors %}
-            <p>{{ error }}</p>
+            {{ error }} <br/>
         {% endfor %}
     </div>
     {% endif %}
     <h2>{% trans "Feedback Plugin" %} {{ version.plugin.name }} {{ version.version }}</h2>
     <div class="feedback-list">
-        <p>Please tick the checkbox when the task is completed and click the "Update" button to update status.</p>
-        {% for feedback in feedbacks %}
-        <div class="previous-feedback {% if feedback.reviewer == request.user %}with-box{% endif %}" data-feedback-id="{{ feedback.id }}">
-            <span style="font-weight: bolder;"> 
-                {% if feedback.reviewer.first_name %}
-                    {{ feedback.reviewer.first_name }} {{ feedback.reviewer.last_name }}
-                {% else %}
-                    {{ feedback.reviewer.username }}
-                {% endif %}
-            </span>
-            <span class="feedback-info">wrote {{ feedback.created_on|timesince }} ago</span>
-            <div>
-                <input type="checkbox" class="statusCheckbox pull-left" name="statusCheckbox" data-feedback-id="{{ feedback.id }}" {% if feedback.is_completed %}checked disabled{% endif %}>
-                <label class="feedback">
-                    <span id="feedbackTask">{{ feedback.task }}</span>
-                    <span id="editedOn" class="feedback-info">
-                        {% if feedback.modified_on %}
-                            &mdash; (edited) {{ feedback.modified_on|timesince }} ago
-                        {% endif %}
-                    </span>
-                </label>
-                {% if feedback.reviewer == request.user %}
-                <div class="pull-right">
-                    <button type="button" id="editButton" class="btn btn-primary btn-mini" data-feedback-id="{{ feedback.id }}"><i class="icon-pencil"></i></button>
-                    <button type="button" class="btn btn-danger btn-mini deleteButton" data-feedback-id="{{ feedback.id }}"><i class="icon-remove"></i></button>
+        <div class="notification is-success is-light">
+            <button class="delete" data-dismiss="alert">&times;</button>
+            <p>Please tick the checkbox when the task is completed and click the "Update" button to update status.</p>
+        </div>
+        <div class="box-content">
+            {% for feedback in feedbacks %}
+            <div class="previous-feedback with-box" data-feedback-id="{{ feedback.id }}">
+                <div class="field ">
+                    <label class="checkbox">
+                        <input type="checkbox" class="statusCheckbox" name="statusCheckbox" data-feedback-id="{{ feedback.id }}" {% if feedback.is_completed %}checked disabled{% endif %}>
+                        <span class="has-text-weight-bold"> 
+                            {% if feedback.reviewer.first_name %}
+                                {{ feedback.reviewer.first_name }} {{ feedback.reviewer.last_name }}
+                            {% else %}
+                                {{ feedback.reviewer.username }}
+                            {% endif %}
+                        </span>
+                        <span class="feedback-info">wrote {{ feedback.created_on|timesince }} ago</span>
+                    </label>
+                    <p class="control is-expanded mt-3">
+                        <label class="feedback">
+                            <span id="feedbackTask">{{ feedback.task }}</span>
+                            <span id="editedOn" class="feedback-info">
+                                {% if feedback.modified_on %}
+                                    &mdash; (edited) {{ feedback.modified_on|timesince }} ago
+                                {% endif %}
+                            </span>
+                        </label>
+                    </p>
+                    {% if feedback.reviewer == request.user %}
+                    <div class="control has-text-right">
+                        <button type="button" id="editButton" class="button is-small is-outlined is-success" data-feedback-id="{{ feedback.id }}">
+                            <span class="icon is-small">
+                                <i class="fas fa-pencil-alt"></i>
+                            </span>
+                        </button>
+                        <button type="button" class="button is-small is-outlined is-danger deleteButton" data-feedback-id="{{ feedback.id }}">
+                            <span class="icon is-small">
+                                <i class="fas fa-trash-alt"></i>
+                            </span>
+                        </button>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
+            {% endfor %}
+            {% if feedbacks %}
+            <div class="has-text-centered update-feedback">
+                <button type="button" id="updateButton" class="button is-success">
+                <span class="icon">
+                    <i class="fas fa-check"></i>
+                </span>
+                <span>Update</span>
+                </button>
+            </div>
+            {% endif %}
         </div>
-        {% endfor %}
-        {% if feedbacks %}
-        <div class="text-center update-feedback">
-            <button type="button" id="updateButton" class="btn btn-primary">Update</button>
-        </div>
-        {% endif %}
 
         {% if is_user_has_approval_rights %}
         <div class="new-feedback">
             <form method="post" action="{% url 'version_feedback' version.plugin.package_name version.version %}">{% csrf_token %}
-                <b>New Feedback</b>
-                    {{ form.feedback }}
-                    <div class="text-right">
-                        <button class="btn btn-primary" type="submit">{% trans "Submit New Feedback" %}</button>
+                <div class="field">
+                    <label class="label">{% trans "New Feedback" %}</label>
+                    <div class="control">
+                        {{ form.feedback}}
                     </div>
+                </div>
+                <div class="field has-text-right mt-3">
+                    <div class="control">
+                        <button class="button is-success" type="submit">
+                            <span class="icon">
+                                <i class="fas fa-paper-plane"></i>
+                            </span>
+                            <span>{% trans "Submit New Feedback" %}</span>
+                        </button>
+                    </div>
+                </div>
             </form>
         </div>
         {% endif %}
@@ -189,15 +222,25 @@
             var originalContent = $feedbackDiv.html();
 
             var inputForm = `
-                <input type="text" class="form-control" id="editFeedbackInput" value="${feedbackTask}" style="width: 100%;margin-bottom: 0 !important;">
-                <div style="display: flex;gap: 10px;">
-                    <button type="button" class="btn btn-success btn-mini" id="saveButton" data-feedback-id="${feedbackId}">Save</button>
-                    <button type="button" class="btn btn-secondary btn-mini" id="cancelButton" data-feedback-id="${feedbackId}">Cancel</button>
+                <textarea class="textarea" id="editFeedbackInput" style="width: 100%; margin-bottom: 0 !important;">${feedbackTask}</textarea>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="button" class="button is-success is-small" id="saveButton" data-feedback-id="${feedbackId}">
+                        <span class="icon is-small mr-3">
+                            <i class="fas fa-save"></i>
+                        </span>
+                        Save
+                    </button>
+                    <button type="button" class="button is-secondary is-small" id="cancelButton" data-feedback-id="${feedbackId}">
+                        <span class="icon is-small mr-3">
+                            <i class="fas fa-times"></i>
+                        </span>
+                        Cancel
+                    </button>
                 </div>
             `;
 
             $feedbackDiv.html(inputForm);
-            $feedbackDiv.attr("style", "display: flex;justify-content: space-between;align-items: center;gap: 10px;");
+            $feedbackDiv.attr("style", "display: flex;justify-content: space-between;align-items: center;gap: 10px; flex-direction: column;");
 
             $(document).on('click', '#cancelButton', function() {
                 // Restore the original content

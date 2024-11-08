@@ -1,27 +1,156 @@
 {% load i18n plugin_utils %}
-    <fieldset>
-{% for field in form %}
-        <div class="fieldWrapper {{ field.css_classes }}">
-            {% if field.field.widget|klass == 'CheckboxInput' %}
-            <label for="{{ field.html_name }}" class="{{ field.css_classes }}">
-                {{ field.label }}
-                {% if field.errors %}
-                <div class="alert alert-error">
-                {{ field.errors }}
-                </div>
-                {% endif %}
-                <input type="checkbox" id="{{ field.html_name }}" name="{{ field.html_name }}" {% if field.value %}checked="checked"{% endif %} />
-            </label>
-            {% else %}
-            {{ field.label_tag }}
-            {% if field.errors %}
-            <div class="alert alert-error">
-            {{ field.errors }}
-            </div>
-            {% endif %}
-            {{ field }}
-            {% endif %}
-            <div class="help">{{ field.help_text }}</div>
+<fieldset class="box-content">
+  {% for field in form %}
+  <div class="field {{ field.css_classes }}">
+    {% if field.field.widget|klass == 'CheckboxInput' %}
+    <div class="control">
+      <label
+        for="{{ field.html_name }}"
+        class="checkbox label{{ field.css_classes }}"
+      >
+        <input
+          type="checkbox"
+          id="{{ field.html_name }}"
+          name="{{ field.html_name }}"
+          {%
+          if
+          field.value
+          %}checked="checked"
+          {%
+          endif
+          %}
+        />
+        {{ field.label }}
+      </label>
+        {% if field.errors %}
+          {% for error in field.errors  %}
+            <p class="help is-danger has-text-weight-medium">{{ error }}</p>
+          {% endfor %}
+        {% endif %} 
+    </div>
+    {% elif field.field.widget|klass == 'ClearableFileInput' %}
+    <div class="file has-name">
+      <label class="file-label">
+        <input
+          class="file-input"
+          type="file"
+          id="{{ field.html_name }}"
+          name="{{ field.html_name }}"
+        />
+        <span class="file-cta">
+          <span class="file-icon">
+            <i class="fas fa-cloud-upload-alt"></i>
+          </span>
+          <span class="file-label"> {{ field.label }} </span>
+        </span>
+        <span class="file-name" id="filename"> Choose a file… </span>
+      </label>
+    </div>
+    {% if field.errors %}
+      {% for error in field.errors  %}
+        <p class="help is-danger has-text-weight-medium">{{ error }}</p>
+      {% endfor %}
+    {% endif %} 
+    {% elif field.field.widget|klass == 'Textarea' %}
+      <div class="field">
+        <label class="label">{{ field.label_tag }}</label>
+        <div class="control">
+            <textarea 
+              class="textarea" 
+              placeholder="{{ field.help_text | safe }}" 
+              id="{{ field.html_name }}"
+              name="{{ field.html_name }}"
+            >{{ field.value|default_if_none:'' }}</textarea>
         </div>
-{% endfor %}
-    </fieldset>
+        {% if field.errors %}
+          <p class="help is-danger">{{ field.errors }}</p>
+        {% endif %} 
+      </div>
+    {% elif field.field.widget|klass == 'TextInput' or field.field.widget|klass == 'URLInput' %}
+      <div class="field">
+        <label class="label">{{ field.label_tag }}</label>
+        <div class="control">
+          <input class="input" type="text" 
+          placeholder="{{ field.help_text | safe }}" 
+          id="{{ field.html_name }}"
+          name="{{ field.html_name }}"
+          value="{{ field.value|default_if_none:'' }}"
+          >
+        </div>
+        {% if field.errors %}
+          {% for error in field.errors  %}
+            <p class="help is-danger has-text-weight-medium">{{ error }}</p>
+          {% endfor %}
+        {% endif %} 
+      </div>
+    {% elif field.field.widget|klass == 'EmailInput' %}
+    <div class="field">
+      <label class="label">{{ field.label_tag }}</label>
+      <div class="control has-icons-left">
+        <input class="input" type="email" 
+        id="{{ field.html_name }}"
+        name="{{ field.html_name }}"
+        value="{{ field.value|default_if_none:'' }}"
+        >
+        <span class="icon is-small is-left">
+          <i class="fas fa-envelope"></i>
+        </span>
+      </div>
+        {% if field.errors %}
+          {% for error in field.errors  %}
+            <p class="help is-danger has-text-weight-medium">{{ error }}</p>
+          {% endfor %}
+        {% endif %} 
+    </div>
+    {% elif field.field.widget|klass == 'Select' %}
+    <div class="field">
+      <label class="label">{{ field.label_tag }}</label>
+      <div class="control">
+        <div class="select">
+          <select id="{{ field.html_name }}" name="{{ field.html_name }}">
+            {% for value, label in field.field.choices %}
+              <option value="{{ value }}" {% if field.value == value %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+        {% if field.errors %}
+          {% for error in field.errors  %}
+            <p class="help is-danger has-text-weight-medium">{{ error }}</p>
+          {% endfor %}
+        {% endif %} 
+    </div>
+    {% else %} 
+    <div class="field">
+      <label class="label">{{ field.label_tag }}</label>
+      <div class="control">
+        {{ field }}
+      </div>
+        {% if field.errors %}
+          {% for error in field.errors  %}
+            <p class="help is-danger has-text-weight-medium">{{ error }}</p>
+          {% endfor %}
+        {% endif %} 
+    </div>
+    {% endif %}
+    <div class="help has-text-grey">{{ field.help_text | safe }}</div>
+  </div>
+  {% endfor %}
+</fieldset>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const fileInput = document.querySelector(".file-input");
+    const fileName = document.querySelector("#filename");
+
+    fileInput.addEventListener("change", function () {
+      if (fileInput.files.length > 0) {
+        fileName.textContent = fileInput.files[0].name;
+      } else {
+        fileName.textContent = "Choose a file…";
+      }
+    });
+  });
+</script>

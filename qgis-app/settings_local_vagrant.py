@@ -35,7 +35,7 @@ USE_L10N = True
 
 # Override assets for Vagrant
 # User uploaded files
-MEDIA_ROOT = "/home/dimas/Documents/Kartoza/QGID-Plugins-Website/vagrant_static/"
+MEDIA_ROOT = "/home/dimas/Documents/Kartoza/QGIS-Plugins-Website/vagrant_static/"
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).

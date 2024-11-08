@@ -1,0 +1,134 @@
+{% load simplemenu_tags plugin_utils static i18n %}
+<footer class="footer">
+    <div class="container">
+        <div class="columns is-desktop">
+            <div class="column is-2-desktop">
+                <figure class="image is-128x128">
+                    <img alt="Logo" src="{% static "images/footlogo.svg" %}" />
+                </figure>
+            </div>
+            <div class="column mb-6">
+                <div class="columns is-desktop">
+                    <ul class="column mb-5">
+                        <li class="is-size-5 mb-5">
+                            <a href="/" class="footertitle text-nowrap">
+                                QGIS Plugins
+                            </a>
+                        </li>
+                        {% get_namedmenu Navigation as menu %}
+                            {% for item in menu %}
+                            <li class="mb-4">
+                                <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
+                                    {{ item.name }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        {% get_namedmenu New as New %}
+                            {% for item in New %}
+                                <li class="mb-4">
+                                    <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
+                                        {{ item.name }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                    </ul>
+    
+                    <ul class="column mb-5">
+                        <li class="is-size-5 mb-5">
+                            <a class="footertitle text-nowrap">
+                                Top
+                            </a>
+                        </li>
+                        {% get_namedmenu Top as Top %}
+                            {% for item in Top %}
+                                <li class="mb-4">
+                                    <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
+                                        {{ item.name }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                    </ul>
+    
+                    <ul class="column mb-5">
+                        <li class="is-size-5 mb-5">
+                            <a class="footertitle text-nowrap">
+                                Category
+                            </a>
+                        </li>
+                        {% get_namedmenu Category as Category %}
+                            {% for item in Category %}
+                                <li class="mb-4">
+                                    <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
+                                        {{ item.name }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                    </ul>
+                    {% if user.is_authenticated and user.is_staff %}
+                        <ul class="column mb-5">
+                            <li class="is-size-5 mb-5">
+                                <a class="footertitle text-nowrap">
+                                    Under review
+                                </a>
+                            </li>
+                            {% get_namedmenu Unapproved as Unapproved %}
+                                {% for item in Unapproved %}
+                                    <li class="mb-4">
+                                        <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
+                                            {{ item.name }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="column is-2-desktop">
+                <a href="https://qgis.org/download/">
+                    <button class="button is-primary1 is-size-5">Download</button>
+                </a>
+            </div>
+        </div>
+        <div class="columns is-desktop">
+            <div class="copyright column is-2-desktop has-text-white"></div>
+            <div class="column social-icons-links">
+                <a class="has-text-white" href="https://www.facebook.com/profile.php?id=100057434859831">
+                    <i class="fa-brands fa-square-facebook"></i>
+                </a>
+                <a class="has-text-white" href="https://www.youtube.com/@qgishome">
+                    <i class="fa-brands fa-youtube"></i>
+                </a>
+                <a class="has-text-white" href="https://fosstodon.org/@qgis">
+                    <i class="fa-brands fa-foss"></i>
+                </a>
+                <a class="has-text-white" href="https://github.com/qgis/">
+                    <i class="fa-brands fa-square-github"></i>
+                </a>
+                <a class="has-text-white" href="https://qgis.org/community/organisation/mailinglists">
+                    <i class="fa-solid fa-envelope"></i>
+                </a>
+            </div>
+        </div>
+        <div class="columns is-desktop issue-report-link is-justify-content-center">
+            <a href="https://github.com/qgis/QGIS-Django/issues" class="column is-narrow p-0 is-size-6">Problems with this website? Report an issue here 🐙</a>   
+        </div>
+        <div class="columns is-desktop is-justify-content-center mb-3">
+            <p class="credit">
+                {% trans "All content is licensed under" %} 
+                <a href="https://creativecommons.org/licenses/by-sa/3.0/">
+                    Creative Commons Attribution-ShareAlike 3.0 licence (CC BY-SA)
+                </a>.
+                {% trans "Select graphics from " %}
+                <a href="https://thenounproject.com" target="_blank">
+                    {% trans "The Noun Project collection" %}
+                </a>.
+            </p>
+        </div>
+    </div>
+    <div class="commit-link is-size-7">
+
+        <p>
+            {% trans "This web application was developed by:" %}&nbsp;<a href="https://www.itopen.it">Alessandro Pasotti</a> and &nbsp;<a href="https://kartoza.com"><img src="{% static 'images/kartoza-logo-only.png' %}" alt="Kartoza icon" width="16" height="16" />Kartoza</a>. <span>Version: {% version_tag %}</span>.
+        </p>
+    </div>
+</footer>

@@ -1,0 +1,28 @@
+{
+  "name": "qgis-plugins",
+  "version": "1.0.0",
+  "description": "QGIS Plugins Website",
+  "main": "webpack.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx webpack --config webpack.config.js --mode development --watch",
+    "dev": "webpack --mode development",
+    "build": "webpack --mode production"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "css-loader": "^6.8.1",
+    "highlight.js": "^11.9.0",
+    "mini-css-extract-plugin": "^2.7.6",
+    "sass": "^1.77.8",
+    "sass-loader": "^13.3.2",
+    "style-loader": "^3.3.3",
+    "webpack": "^5.89.0",
+    "webpack-bundle-tracker": "^2.0.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1",
+    "webpack-livereload-plugin": "^3.0.2"
+  }
+}
