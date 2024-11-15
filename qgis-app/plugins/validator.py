@@ -149,7 +149,7 @@ def _check_url_link(urls):
     )
 
 
-def validator(package):
+def validator(package, is_new: bool = False):
     """
     Analyzes a zipped file, returns metadata if success, False otherwise.
     If the new icon metadata is found, an inmemory file object is also returned
@@ -162,6 +162,7 @@ def validator(package):
         * mandatory metadata: ('name', 'description', 'version', 'qgisMinimumVersion', 'author', 'email')
         * package_name regexp: [A-Za-z][A-Za-z0-9-_]+
         * author regexp: [^/]+
+        * New plugins package_name is PEP8 compliant
 
     """
     try:
@@ -241,6 +242,15 @@ def validator(package):
         raise ValidationError(
             _(
                 "Cannot find a folder inside the compressed package: this does not seems a valid plugin"
+            )
+        )
+    # Check if package_name is PEP 8 compliant
+    if is_new and not package_name.isidentifier():
+        raise ValidationError(
+            _(
+                "The name of the top level directory inside the zip package must be PEP 8 compliant: "
+                "a valid Python identifier, which means it must start with a letter or underscore, "
+                "and can only contain letters, digits, and underscores."
             )
         )
 
