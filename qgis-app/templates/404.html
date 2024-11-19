@@ -1,7 +1,13 @@
-{% extends "base.html" %}
-{% block extratitle %}404 Error - {% endblock %}
+{% extends BASE_TEMPLATE %}
+{% load static %}
+{% block extratitle %}Page not found{% endblock %}
 {% block content %}
-    <h2>Error 404: page not found.</h2>
+    <img src="{% static "images/404.png" %}" alt="404 Page Not Found">
+    <h1 class="title">Whoops! Page not found</h1>
     <p>The page you requested could not be found.</p>
     <p>If you followed a link within this site, please file a ticket on <a href="https://github.com/qgis/QGIS-Plugins-Website/issues">QGIS-Plugins-Website project</a> and let us know about this problem.</p>
+{% endblock %}
+
+{% block leftbar %}
+    {% include "plugins/plugin_sidebar.html" %}
 {% endblock %}
