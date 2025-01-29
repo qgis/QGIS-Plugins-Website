@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - '3.7'
+          - '3.13'
     steps:
 
       - name: Set up Python ${{ matrix.python-version }}
@@ -22,7 +22,7 @@ jobs:
           architecture: x64
 
       - name: Checkout
-        uses: actions/checkout@master
+        uses: actions/checkout@v4
 
       - uses: actions/cache@v4
         with:
