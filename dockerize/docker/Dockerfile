@@ -1,5 +1,5 @@
 # For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3.12-slim as prod
+FROM python:3.12-slim AS prod
 
 EXPOSE 8000
 
@@ -48,7 +48,7 @@ WORKDIR /home/web/django_project
 CMD ["uwsgi", "--ini", "/uwsgi.conf"]
 
 
-FROM prod as dev
+FROM prod AS dev
 
 # This section taken on 2 July 2015 from
 # https://docs.docker.com/examples/running_ssh_service/
