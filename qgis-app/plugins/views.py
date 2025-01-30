@@ -214,6 +214,43 @@ def version_feedback_notify(version,  user):
         )
 
 
+def version_feedback_resolved_notify(version,  user, all_tasks):
+    """
+    Sends a message when a version feedback is resolved.
+    """
+    plugin = version.plugin
+
+    reviewers_emails = all_tasks.values_list('reviewer__email', flat=True)
+    reviewers_emails = list(set(reviewers_emails))
+
+    if reviewers_emails:
+        domain = Site.objects.get_current().domain
+        mail_from = settings.DEFAULT_FROM_EMAIL
+
+        logging.debug(
+            "Sending email feedback resolved notification for %s plugin version %s, recipients:  %s"
+            % (plugin, version.version, reviewers_emails)
+        )
+        send_mail_wrapper(
+            _("Plugin %s feedback resolved notification.") % (plugin, ),
+            _("\r\nPlugin %s feedback resolved by %s.\r\nLink: http://%s%sfeedback/\r\n. The plugin is now ready for review again.")
+            % (
+                plugin.name,
+                user,
+                domain,
+                version.get_absolute_url(),
+            ),
+            mail_from,
+            reviewers_emails,
+            fail_silently=True,
+        )
+    else:
+        logging.warning(
+            "No recipients found for %s plugin feedback resolved notification"
+            % (plugin, )
+        )
+
+
 def user_trust_notify(user):
     """
     Sends a message when an author is trusted or untrusted.
@@ -1489,6 +1526,11 @@ def version_feedback_update(request, package_name, version):
             version=version, pk=task_id).first()
         feedback.is_completed = True
         feedback.save()
+    all_tasks = PluginVersionFeedback.objects.filter(
+        version=version)
+    if all_tasks.count() == len(completed_tasks):
+        version_feedback_resolved_notify(version, request.user, all_tasks)
+
     return JsonResponse({"success": True}, status=201)
 
 
