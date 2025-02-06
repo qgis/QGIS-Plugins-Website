@@ -330,3 +330,6 @@ a.is-active > span {
     height: 16px;
     display:block;
   }
+.choices__list--dropdown, .choices__list[aria-expanded] {
+  z-index: 10 !important;
+}

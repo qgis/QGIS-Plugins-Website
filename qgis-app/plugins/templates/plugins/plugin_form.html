@@ -3,7 +3,6 @@
 {{ block.super }}
 <script src="{% static "js/jquery-3.7.1.min.js" %}" type="text/javascript"></script>
 <link rel="stylesheet" media="all" type="text/css" href="{% static "jquery-autosuggest/css/autoSuggest.css" %}">
-<link rel="stylesheet" media="all" type="text/css" href="{% static "js/chosen.min.css" %}">
 <style type="text/css">
 /* for autocomplete */
 .vTextField {
@@ -32,7 +31,6 @@ ul.as-list {
     };
 </script>
 <script src="{% static "jquery-autosuggest/js/jquery.autoSuggest.minified.js" %}" type="text/javascript"></script>
-<script src="{% static "js/chosen.jquery.min.js" %}" type="text/javascript"></script>
 
 {% endblock %}
 {% block content %}
@@ -64,47 +62,23 @@ ul.as-list {
     </form>
     <script type="text/javascript">
 
-    let checkElement = setInterval(function() {
-        let element = document.getElementById('id_owners');
-        if(element) {
-            $('#id_owners').chosen({
-                placeholder_text_multiple: "Select Some Collaborators",
-                no_results_text: "Oops, nothing found!"
+    django.jQuery(document).ready(function() {
+        let ownersField = django.jQuery('#id_owners');
+        if(ownersField.length) {
+            new Choices(ownersField[0], {
+                removeItemButton: true, // Optional: Add remove button for multi-select
+                searchEnabled: true,    // Optional: Enable search functionality
             });
-            clearInterval(checkElement);
         }
-    }, 200);
+        let tagsField = django.jQuery('#id_tags');
+        if(tagsField.length) {
+            new Choices(tagsField[0], {
+                removeItemButton: true, // Optional: Add remove button for multi-select
+                searchEnabled: true,    // Optional: Enable search functionality
+            });
+        }
+    });
 
-    (function ($) {
-                var tags_as_string;
-                $(document).ready(function (){
-                    tags_as_string = $('#id_tags').val();
-                    $('#id_tags').hide();
-                    $('#id_tags').before('<input type="text" id="id_tags__tagautosuggest" value="" name="tags" autocomplete="off" class="as-input vTextField"><br />');
-                    $("#id_tags__tagautosuggest").val(tags_as_string);
-                    $("#id_tags__tagautosuggest").autoSuggest("/taggit_autosuggest/list/", {
-                        asHtmlID: "id_tags__tagautosuggest",
-                        startText: "Enter Tag Here",
-                        emptyText: "Not found (press TAB to add)",
-                        limitText: "No More Selections Are Allowed",
-                        preFill: tags_as_string,
-                        queryParam: 'q',
-                        retrieveLimit: 100,
-                        minChars: 1,
-                        neverSubmit: true
-                    });
-
-                    $('.as-selections').addClass('vTextField');
-                    $('ul.as-selections li.as-original input').addClass('vTextField');
-
-                    $('#id_tags').parents().find('form').submit(function (){
-                        tags_as_string = $("#as-values-id_tags__tagautosuggest").val();
-                        $("#id_tags__tagautosuggest").remove();
-                        $("#id_tags").val(tags_as_string);
-                    });
-
-                });
-            })(django.jQuery);
         </script>
 
 {% endblock %}

@@ -1,4 +1,6 @@
 require('../style/scss/style.scss');
+import Choices from 'choices.js';
+import 'choices.js/src/styles/choices.scss';
 
  document.addEventListener('DOMContentLoaded', () => {
 
@@ -20,5 +22,7 @@ require('../style/scss/style.scss');
 
        });
      });
+
+    window.Choices = Choices;
 
    }); 

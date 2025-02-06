@@ -8,7 +8,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from plugins.models import Plugin, PluginOutstandingToken, PluginVersion, PluginVersionFeedback
 from plugins.validator import validator
-from taggit.forms import *
+from taggit.forms import TagField
 
 
 def _clean_tags(tags):
