@@ -16,7 +16,6 @@ is-one-third-fullhd">
             is-flex-direction-column 
             is-justify-content-space-between
         "
-        onclick="window.location.href='{% url "plugin_detail" object.package_name %}';"
         >
 
         {% if object|is_new and not object.featured and not object.deprecated %}
@@ -64,7 +63,11 @@ is-one-third-fullhd">
                     {% endif %}
                 </div>
                 <div class="media-content">
-                    <p class="title is-5">{{ object.name }}</p>
+                    <p class="title is-5">
+                        <a href="{% url "plugin_detail" object.package_name %}">
+                            {{ object.name }}
+                        </a>
+                    </p>
                     {% if object.author %}
                         <p class="subtitle is-7 author">{% trans "by" %} 
                             <a title="{% trans "See all plugins by"%} {{ object.author }}" href="{% url "author_plugins" object.author %}">

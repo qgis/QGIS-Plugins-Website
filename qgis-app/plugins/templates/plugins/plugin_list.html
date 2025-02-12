@@ -115,7 +115,7 @@
 			</thead>
 			<tbody>
 				{% for object in object_list %}
-				<tr class="pmain {% if object.deprecated %} has-background-danger-light{% endif %}" id="pmain{{object.pk}}" onclick="window.location.href='{% url "plugin_detail" object.package_name %}';">
+				<tr class="pmain {% if object.deprecated %} has-background-danger-light{% endif %} clickable-row" id="pmain{{object.pk}}">
 					<td style="min-width: 46px;">
 					{% if object.icon and object.icon.file and object.icon|is_image_valid %}
 						{% with image_extension=object.icon.name|file_extension %}
@@ -131,9 +131,9 @@
 						<img height="32" width="32" class="plugin-icon" src="{% static "images/qgis-icon-32x32.png" %}" alt="{% trans "Plugin icon" %}" />
 					{% endif %}</td>
 					<td>
-						<span class="plugin-name">
+						<a href="{% url "plugin_detail" object.package_name %}" class="plugin-name">
 							{{ object.name }}
-						</span>
+						</a>
 					</td>
 					{% if not user.is_anonymous %}<td>{% if object.approved %}<img src="{% static "images/tick_16.png" %}" />{% else %}&mdash;{% endif %}</td>{% endif %}
 					<td class="has-text-right">{{ object.downloads|intcomma }}</td>
