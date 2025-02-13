@@ -171,13 +171,20 @@ class PackageUploadForm(forms.Form):
         label=_("Plugin package"),
         help_text=_("Please select the zipped file of the plugin."),
     )
-    experimental = forms.BooleanField(
+    is_experimental = forms.BooleanField(
         required=False,
         label=_("Experimental"),
         help_text=_(
             "Please check this box if the plugin is experimental. <br/> Please note that this field might be overridden by metadata (if present)."
         ),
     )
+
+    def clean(self):
+        clean_data = super(PackageUploadForm, self).clean()
+        # Set experimental from is_experimental if not set in the metadata
+        if "experimental" not in self.cleaned_data:
+            self.cleaned_data["experimental"] = self.cleaned_data["is_experimental"]
+        return clean_data
 
     def clean_package(self):
         """

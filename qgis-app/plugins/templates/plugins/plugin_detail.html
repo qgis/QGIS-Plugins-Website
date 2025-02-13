@@ -196,6 +196,12 @@
                 {% trans "This plugin is deprecated!" %}
             </div>
             {% endif %}
+
+            {% if object.experimental and not object.stable %}
+            <div class="notification is-info is-light">
+                {% trans "This plugin has an experimental version available!" %}
+            </div>
+            {% endif %}
     
             
             {% if user.is_staff or user in object.editors %}

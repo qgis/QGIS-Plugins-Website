@@ -12,13 +12,7 @@
           type="checkbox"
           id="{{ field.html_name }}"
           name="{{ field.html_name }}"
-          {%
-          if
-          field.value
-          %}checked="checked"
-          {%
-          endif
-          %}
+          {% if field.value %}checked="checked"{% endif %}
         />
         {{ field.label }}
       </label>

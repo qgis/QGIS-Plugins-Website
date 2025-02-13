@@ -79,12 +79,19 @@ is-one-third-fullhd">
             </div>
             <div class="content mb-0">
                 <p>{{ object.description|truncatewords:20 }}</p>
-
             </div>
             <p style="height: 100%;"></p>
             <div class="content mb-0">
 
-                <div class="is-flex is-justify-content-space-between mt-3">
+                {% if object.experimental and not object.stable %}
+                <div class="notification is-info is-light mb-0 p-2">
+                    <span class="icon">
+                        <i class="fas fa-flask"></i>
+                    </span>
+                    <span>{% trans "Experimental" %}</span>
+                </div>
+                {% endif %}
+                <div class="is-flex is-justify-content-space-between">
                     <p class="is-flex is-align-items-center p-1 mb-0">
                         <span class="icon-text">
                             <span class="icon">
