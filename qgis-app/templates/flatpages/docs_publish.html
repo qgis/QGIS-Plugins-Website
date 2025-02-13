@@ -1,5 +1,4 @@
-{% extends "flatpages/docs.html" %} 
-
+{% extends 'flatpages/docs.html' %}
 
 {% block content %}
 <div class="responsive-content">
@@ -40,13 +39,14 @@
     <li>
       If the plugin has an external dependency, this needs to be clearly stated
       in the About metadata field; you can include a short guide to install
-      Python libs as needed, or opint to existing guides, e.g. for Windows
+      Python libs as needed, or opint to existing guides, e.g. for Windows:
       "<a href="https://landscapearchaeology.org/2018/installing-python-packages-in-qgis-3-for-windows/"
-          >Installing Python packages in QGIS 3 (for Windows)</a>"
+         >Installing Python packages in QGIS 3 (for Windows)</a>"
     </li>
     <li>Don't include binaries</li>
+    <li>The size of the plugin package should not exceed 25MB</li>
   </ul>
-  <p><strong>Recommendations</strong></p>
+  <h4>Recommendations</h4>
   <ul>
     <li>
       Write comments in your code in English, it will make it easier for others
@@ -80,7 +80,7 @@
       or regions.
     </li>
   </ul>
-  <p><strong>Tips and Tricks</strong></p>
+  <h4>Tips and Tricks</h4>
   <ul>
     <li>
       Keep your source repository in good shape:&nbsp;
