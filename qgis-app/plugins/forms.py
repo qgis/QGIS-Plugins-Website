@@ -79,6 +79,10 @@ class PluginVersionForm(ModelForm):
     """
 
     required_css_class = "required"
+    package = forms.FileField(
+        label=_("Plugin Package"),
+        help_text=_("Select the zipped plugin file (maximum size: 25MB)."),
+    )
     changelog = forms.fields.CharField(
         label=_("Changelog"),
         required=False,
@@ -168,8 +172,8 @@ class PackageUploadForm(forms.Form):
     """
 
     package = forms.FileField(
-        label=_("Plugin package"),
-        help_text=_("Please select the zipped file of the plugin."),
+        label=_("Plugin Package"),
+        help_text=_("Select the zipped plugin file (maximum size: 25MB)."),
     )
     experimental = forms.BooleanField(
         required=False,
