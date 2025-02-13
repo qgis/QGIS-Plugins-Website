@@ -117,6 +117,12 @@
                 Publish a plugin
               </a>
             </li>
+            {% url 'docs_approval' as docs_approval_url %}
+            <li class="has-child {% if request.path == docs_approval_url %}is-active{% endif %}">
+              <a href="{{ docs_approval_url }}">
+                Approval process
+              </a>
+            </li>
             {% comment %} <li class="has-child {% if request.path == '/docs/manage' %}is-active{% endif %}">
               <a href="/docs/manage">
                 Manage a plugin

@@ -14,7 +14,7 @@ from drf_yasg.views import get_schema_view
 # to find users app views
 # from users.views import *
 from homepage import homepage
-from docs import docs_publish
+from docs import docs_publish, docs_approval
 from rest_framework import permissions
 
 admin.autodiscover()
@@ -77,6 +77,7 @@ urlpatterns += [
 urlpatterns += [
     url(r"^$", homepage, name="homepage"),
     url(r"^docs/publish", docs_publish, name="docs_publish"),
+    url(r"^docs/approval", docs_approval, name="docs_approval"),
 ]
 
 
