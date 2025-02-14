@@ -30,8 +30,8 @@ jobs:
         file: dockerize/docker/Dockerfile
         push: true
         tags: |
-          ${{ vars.DOCKER_HUB_REPO }}/qgis-plugins-uwsgi:${{ github.ref_name }}
-          ${{ vars.DOCKER_HUB_REPO }}/qgis-plugins-uwsgi:latest
+          qgis/qgis-plugins-uwsgi:${{ github.ref_name }}
+          qgis/qgis-plugins-uwsgi:latest
 
     - name: Log out from Docker Hub
       run: docker logout
