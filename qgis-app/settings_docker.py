@@ -191,3 +191,164 @@ WEBPACK_LOADER = {
         'STATS_FILE': os.path.join(SITE_ROOT, 'webpack-stats.json'),
     }
 }
+
+# News and Updated menus
+NEWS_MENU = [
+    {
+        'name': 'New',
+        'url': '/plugins/fresh/',
+        'order': 0,
+    },
+    {
+        'name': 'Updated',
+        'url': '/plugins/latest/',
+        'order': 1,
+    },
+]
+
+# Featured, popular, most downloaded, most voted, most rated
+TOP_MENU = [
+    {
+        'name': 'Featured',
+        'url': '/plugins/featured/',
+        'order': 0,
+    },
+    {
+        'name': 'Popular',
+        'url': '/plugins/popular/',
+        'order': 1,
+    },
+    {
+        'name': 'Most Downloaded',
+        'url': '/plugins/most_downloaded/',
+        'order': 2,
+    },
+    {
+        'name': 'Most Voted',
+        'url': '/plugins/most_voted/',
+        'order': 3,
+    },
+    {
+        'name': 'Most Rated Plugins',
+        'url': '/plugins/most_rated/',
+        'order': 4,
+    },
+]
+
+# Review Resolved, Review Pending, Awaiting Review
+REVIEW_MENU = [
+    {
+        'name': 'Review Resolved',
+        'url': '/plugins/feedback_completed/',
+        'order': 0,
+    },
+    {
+        'name': 'Review Pending',
+        'url': '/plugins/feedback_received/',
+        'order': 1,
+    },
+    {
+        'name': 'Awaiting Review',
+        'url': '/plugins/feedback_pending/',
+        'order': 2,
+    },
+]
+
+# Stable, experimental, server, deprecated
+OTHER_MENU = [
+    {
+        'name': 'Stable',
+        'url': '/plugins/stable/',
+        'order': 0,
+    },
+    {
+        'name': 'Experimental',
+        'url': '/plugins/experimental/',
+        'order': 1,
+    },
+    {
+        'name': 'Server',
+        'url': '/plugins/server/',
+        'order': 2,
+    },
+    {
+        'name': 'Deprecated',
+        'url': '/plugins/deprecated/',
+        'order': 3,
+    },
+]
+
+# News menus, Top menus, Other menus
+PLUGINS_CATEGORIES = [
+    {
+        'name': 'News and Updated',
+        'url': '#',
+        'icon': 'fa-newspaper',
+        'order': 0,
+        'submenu': NEWS_MENU
+    },
+    {
+        'name': 'Top',
+        'url': '#',
+        'icon': 'fa-star',
+        'order': 1,
+        'submenu': TOP_MENU
+    },
+    {
+        'name': 'Other Categories',
+        'url': '#',
+        'icon': 'fa-ellipsis-h',
+        'order': 3,
+        'submenu': OTHER_MENU
+    },
+]
+
+NAVIGATION_MENU = [
+    {
+        'name': 'QGIS Plugins Home',
+        'url': '/',
+        'icon': 'fa-house',
+        'order': 0,
+    },
+    {
+        'name': 'All Plugins',
+        'url': '/plugins/',
+        'icon': 'fa-plug',
+        'order': 1,
+    },
+    {
+        'name': 'My Plugins',
+        'url': '/plugins/my',
+        'icon': 'fa-user',
+        'order': 2,
+        'requires_login': True,
+    },
+    {
+        'name': 'Review',
+        'url': '#',
+        'icon': 'fa-check',
+        'order': 3,
+        'submenu': REVIEW_MENU,
+        'requires_staff': True
+    },
+    {
+        'name': 'Categories',
+        'url': '#',
+        'icon': 'fa-list',
+        'order': 4,
+        'submenu': PLUGINS_CATEGORIES, 
+    },
+    {
+        'name': 'Metrics',
+        'url': 'https://plugins-analytics.qgis.org',
+        'icon': 'fa-chart-bar',
+        'order': 5,
+    },
+    {
+        'name': 'Admin',
+        'url': '/admin/',
+        'icon': 'fa-tools',
+        'order': 6,
+        'requires_staff': True,
+    },
+]
