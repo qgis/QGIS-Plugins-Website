@@ -109,3 +109,24 @@ def get_sustaining_members_section():
             return f.read()
     except FileNotFoundError:
         return ""
+
+def _filter_menu(menu, user):
+    """
+    Filter the menu and its submenus based on user status
+    """
+    filtered_menu = []
+    for item in menu:
+        if item.get('requires_staff') and not user.is_staff:
+            continue
+        if item.get('requires_login') and not user.is_authenticated:
+            continue
+        filtered_menu.append(item)
+    return filtered_menu
+
+@register.simple_tag()
+def get_navigation_menu(user):
+    """
+    Get the navigation menu from the settings, filtered by user status
+    """
+    menu = _filter_menu(settings.NAVIGATION_MENU, user)
+    return menu
