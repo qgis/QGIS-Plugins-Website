@@ -10,16 +10,25 @@ class TestQGISGitHubReleases(TestCase):
 
     @patch('requests.get')
     def test_get_qgis_versions(self, mock_get):
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = [
+        mock_response_github = Mock()
+        mock_response_github.status_code = 200
+        mock_response_github.json.return_value = [
             {'tag_name': 'final_3_22_10', 'html_url': 'https://github.com/qgis/QGIS/releases/tag/final-3_22_10'},
             {'tag_name': 'beta_3_23_0', 'html_url': 'https://github.com/qgis/QGIS/releases/tag/beta-3_23_0'}
         ]
-        mock_get.return_value = mock_response
+
+        mock_response_qgis = Mock()
+        mock_response_qgis.status_code = 200
+        mock_response_qgis.json.return_value = {
+            'dev': {'version': '3.24'}
+        }
+
+        mock_get.side_effect = [mock_response_github, mock_response_qgis]
 
         versions = get_qgis_versions()
         self.assertIn('3.22', versions)
+        self.assertIn('3.23', versions)
+        self.assertIn('3.24', versions)
 
     @patch('requests.get')
     def test_get_github_releases_failed_request(self, mock_get):
