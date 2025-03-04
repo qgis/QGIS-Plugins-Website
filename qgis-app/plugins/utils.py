@@ -47,6 +47,14 @@ def get_qgis_versions():
         version = extract_version(tag_name)
         if version not in all_versions:
             all_versions.append(version)
+    url = 'https://qgis.org/version.json'
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception('Request failed')
+    releases = response.json()
+    version = releases['dev']['version']
+    if version not in all_versions:
+        all_versions.insert(0, version)
     return all_versions
 
 
