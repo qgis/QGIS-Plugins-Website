@@ -7,16 +7,28 @@
 - Path to your repo should be `<your current directory>/QGIS-Plugins-Website `
 - Go to dockerize directory `cd QGIS-Plugins-Website/dockerize`
 
+- Create .env file
+```bash
+$ cp .env.template .env
+```
+
+- Edit .env file and set your environment variables
+- Enable debug mode by setting `DEBUG=True`.
+- Uncomment RABBITMQ_IMAGE if you want to use a different image version. 
+Default is `rabbitmq:3.7-alpine`. This is useful if you encounter any issues 
+with the default image (can be also use to change the image without editing the code). 
+Please also see [this discussion](https://github.com/qgis/QGIS-Plugins-Website/issues/80).
+
 - Build and spin container
 ```bash
 $ make build
-$ make web
 $ make devweb
 ```
 
-- Run migrate
+- Run migrate and seed db
 ```bash
-$ make migrate
+$ make devweb-migrate
+$ make dbseed
 ```
 
 If you have a backup, you can restore it:
@@ -25,16 +37,47 @@ If you have a backup, you can restore it:
 make dbrestore
 ```
 
-otherwise, you can seed initial data from fixtures:
-```
-make dbseed
-```
-
 - Set up python interpreter in PyCharm or just runserver from devweb container:
 ```bash
 $ make devweb-runserver
 ```
-and now, you can see your site at `http://0.0.0.0:62202` (skip this step if you are using PyCharm interpreter)
+and now, you can see your site at `http://localhost:62202` `http://0.0.0.0:62202`.
+
+- Run unit tests
+```bash
+$ make devweb-runtests
+```
+
+- You can use the following credentials to log in if you ran the `make dbseed` command:
+```
+Admin account:
+username: admin
+password: admin
+
+Staff account:
+username: staff
+password: staff
+
+Plugin author account:
+username: creator
+password: creator
+```
+
+- Update migrations:
+```bash
+$ make devweb-makemigrations app='plugins'
+```
+
+- Run a django command from the devweb container
+```bash
+$ make devweb-exec c='python manage.py createsuperuser'
+$ make devweb-exec c='pip freeze'
+```
+
+- Enter the devweb container shell
+```bash
+$ make devweb-shell
+```
 
 - If 'None' appears in the search results, it indicates a misalignment between the search index and the database. This discrepancy often arises when a plugin is deleted from the model but persists in the search index. To rectify this issue, it is essential to synchronize the search index with the database by rebuilding it. Execute the following command to initiate the rebuilding process:
 

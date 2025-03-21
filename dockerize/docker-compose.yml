@@ -104,7 +104,7 @@ services:
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw
 
   rabbitmq:
-    image: rabbitmq:3.7-alpine
+    image: ${RABBITMQ_IMAGE:-rabbitmq:3.7-alpine}
     hostname: rabbitmq
     volumes:
       - rabbitmq:/var/lib/rabbitmq
