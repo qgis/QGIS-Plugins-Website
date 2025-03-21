@@ -37,11 +37,6 @@ make metabase
 make web
 ```
 
-- **dbbackups**: Starts the database backups container.
-```sh
-make dbbackups
-```
-
 - **certbot**: Starts the Certbot container for managing SSL certificates.
 ```sh
 make certbot
@@ -164,9 +159,29 @@ make build-dev
 make devweb-test
 ```
 
-- **devweb:** Starts the `devweb` container for development, along with RabbitMQ, worker, and beat containers.
+- **devweb:** Starts the `devweb` container for development, along with RabbitMQ, worker, beat, and webpack containers.
 ```sh
 make devweb
+```
+
+- **devweb-migrate:** Runs database migrations in the `devweb` container.
+```sh
+make devweb-migrate
+```
+
+- **devweb-makemigrations:** Creates new migration files based on changes in models in the `devweb` container.
+```sh
+make devweb-makemigrations app=app_name
+```
+
+- **devweb-exec:** Executes a specific Docker command in the `devweb` container. Specify the command with the `c` variable.
+```sh
+make devweb-exec c="command"
+```
+
+- **devweb-shell:** Opens a shell in the `devweb` container.
+```sh
+make devweb-shell
 ```
 
 - **devweb-runserver:** Runs the Django development server inside the `devweb` container.
@@ -177,9 +192,4 @@ make devweb-runserver
 - **dbseed:** Seeds the database with initial data from JSON files in the `fixtures` directory.
 ```sh
 make dbseed
-```
-
-- **loadmenu:** Clear all menu entries and load menu from JSON file at `fixtures/simplemenu.json`.
-```sh
-make loadmenu
 ```

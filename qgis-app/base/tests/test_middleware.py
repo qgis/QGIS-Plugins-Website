@@ -5,7 +5,6 @@ from django.urls import path
 from django.urls import reverse
 
 class HandleTemplateDoesNotExistMiddlewareTest(TestCase):
-    fixtures = ["fixtures/simplemenu.json"]
     def setUp(self):
         # Mock get_response function
         self.factory = RequestFactory()

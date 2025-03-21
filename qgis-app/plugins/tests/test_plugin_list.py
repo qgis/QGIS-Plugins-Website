@@ -5,7 +5,6 @@ from plugins.models import Plugin
 class PluginsListViewTestCase(TestCase):
     fixtures = [
         "fixtures/auth.json",
-        "fixtures/simplemenu.json",
         "fixtures/plugins.json",
     ]
 

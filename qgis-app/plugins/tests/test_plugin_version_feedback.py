@@ -14,7 +14,7 @@ from django.utils.dateformat import format
 import json
 
 class SetupMixin:
-    fixtures = ["fixtures/auth.json", "fixtures/simplemenu.json"]
+    fixtures = ["fixtures/auth.json"]
 
     def setUp(self) -> None:
         self.creator = User.objects.get(id=2)
@@ -123,7 +123,7 @@ class TestFeedbackNotify(SetupMixin, TestCase):
         )
 
 class TestPluginFeedbackCompletedList(SetupMixin, TestCase):
-    fixtures = ["fixtures/simplemenu.json", "fixtures/auth.json"]
+    fixtures = ["fixtures/auth.json"]
 
     def setUp(self):
         super().setUp()
@@ -208,7 +208,7 @@ class TestPluginFeedbackCompletedList(SetupMixin, TestCase):
         )
 
 class TestPluginFeedbackReceivedList(SetupMixin, TestCase):
-    fixtures = ["fixtures/simplemenu.json", "fixtures/auth.json"]
+    fixtures = ["fixtures/auth.json"]
 
     def setUp(self):
         super().setUp()
@@ -265,7 +265,7 @@ class TestPluginFeedbackReceivedList(SetupMixin, TestCase):
 
 
 class TestPluginFeedbackPendingList(SetupMixin, TestCase):
-    fixtures = ["fixtures/simplemenu.json", "fixtures/auth.json"]
+    fixtures = ["fixtures/auth.json"]
 
     def setUp(self):
         super().setUp()

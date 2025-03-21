@@ -199,13 +199,6 @@ exec:
 	@echo "------------------------------------------------------------------"
 	@docker compose -p $(PROJECT_ID) $(c)
 
-loadmenu:
-	@echo
-	@echo "------------------------------------------------------------------"
-	@echo "Delete all simplemenu entries and load from fixtures/all_menu.json"
-	@echo "------------------------------------------------------------------"
-	@docker compose -p $(PROJECT_ID) exec uwsgi python manage.py clear_simplemenu
-	@docker compose -p $(PROJECT_ID) exec uwsgi python manage.py loaddata fixtures/all_menu.json
 # ----------------------------------------------------------------------------
 #    D E V E L O P M E N T    C O M M A N D S
 # ----------------------------------------------------------------------------
@@ -231,6 +224,34 @@ devweb: db
 	@echo "------------------------------------------------------------------"
 	@docker compose -p $(PROJECT_ID) up --no-deps -d devweb rabbitmq worker beat webpack
 
+devweb-migrate:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Migrate in development mode only"
+	@echo "------------------------------------------------------------------"
+	@docker compose -p $(PROJECT_ID) exec devweb python manage.py migrate
+
+devweb-makemigrations:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Migrate in development mode only"
+	@echo "------------------------------------------------------------------"
+	@docker compose -p $(PROJECT_ID) exec devweb python manage.py makemigrations $(app)
+
+devweb-exec:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Execute a specific docker command"
+	@echo "------------------------------------------------------------------"
+	@docker compose -p $(PROJECT_ID) exec devweb $(c)
+
+devweb-shell:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Shelling into the devweb container(s)"
+	@echo "------------------------------------------------------------------"
+	@docker compose -p $(PROJECT_ID) exec devweb bash
+
 devweb-runserver: devweb
 	@echo
 	@echo "------------------------------------------------------------------"
@@ -244,3 +265,11 @@ dbseed:
 	@echo "Seed db with JSON data from /fixtures/*.json"
 	@echo "------------------------------------------------------------------"
 	@docker compose -p $(PROJECT_ID) exec devweb bash -c 'python manage.py loaddata fixtures/*.json'
+
+devweb-runtests:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running unit tests in development mode"
+	@echo "------------------------------------------------------------------"
+	@docker compose -p $(PROJECT_ID) exec devweb bash -c 'python manage.py makemigrations'
+	@docker compose -p $(PROJECT_ID) exec devweb bash -c 'python manage.py test'
