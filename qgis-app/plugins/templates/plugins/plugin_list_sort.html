@@ -8,6 +8,7 @@
                 <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>{% trans "Name" %}</option>
                 <option value="downloads" {% if request.GET.sort == 'downloads' %}selected{% endif %}>{% trans "Downloads" %}</option>
                 <option value="author" {% if request.GET.sort == 'author' %}selected{% endif %}>{% trans "Author" %}</option>
+                <option value="created_on" {% if request.GET.sort == 'created_on' %}selected{% endif %}>{% trans "Created On" %}</option>
                 <option value="latest_version_date" {% if request.GET.sort == 'latest_version_date' %}selected{% endif %}>{% trans "Latest Version" %}</option>
                 <option value="weighted_rating" {% if request.GET.sort == 'weighted_rating' %}selected{% endif %}>{% trans "Stars" %}</option>
             </select>
@@ -35,7 +36,11 @@
     
             // Preserve the other sorting option (sort/order)
             if (key === 'sort' && !params.has('order')) {
-                params.set('order', 'asc');  // Default to ascending if no order is selected
+                if (value === 'name' || value === 'author') {
+                    params.set('order', 'asc');  // Default to descending if sorting by weighted rating
+                } else {
+                    params.set('order', 'desc');  // Default to ascending if no order is selected
+                }
             } else if (key === 'order' && !params.has('sort')) {
                 params.set('sort', 'name');  // Default to sorting by name if no sort field is selected
             }
