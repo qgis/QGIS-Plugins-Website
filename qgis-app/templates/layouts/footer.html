@@ -15,18 +15,20 @@
                                 QGIS Plugins
                             </a>
                         </li>
-                        {% get_namedmenu Navigation as menu %}
+                        {% get_navigation_menu user as menu %}
                             {% for item in menu %}
-                            <li class="mb-4">
-                                <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
-                                    {{ item.name }}
-                                </a>
-                            </li>
+                                {% if not item.submenu %}
+                                    <li class="mb-4">
+                                        <a href="{{ item.url }}" class="has-text-white text-nowrap">
+                                            {{ item.name }}
+                                        </a>
+                                    </li>
+                                {% endif %}
                             {% endfor %}
-                        {% get_namedmenu New as New %}
+                        {% get_news_menu as New %}
                             {% for item in New %}
                                 <li class="mb-4">
-                                    <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
+                                    <a href="{{ item.url }}" class="has-text-white text-nowrap">
                                         {{ item.name }}
                                     </a>
                                 </li>
@@ -39,10 +41,10 @@
                                 Top
                             </a>
                         </li>
-                        {% get_namedmenu Top as Top %}
+                        {% get_top_menu as Top %}
                             {% for item in Top %}
                                 <li class="mb-4">
-                                    <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
+                                    <a href="{{ item.url }}" class="has-text-white text-nowrap">
                                         {{ item.name }}
                                     </a>
                                 </li>
@@ -55,10 +57,10 @@
                                 Category
                             </a>
                         </li>
-                        {% get_namedmenu Category as Category %}
+                        {% get_other_menu as Category %}
                             {% for item in Category %}
                                 <li class="mb-4">
-                                    <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
+                                    <a href="{{ item.url }}" class="has-text-white text-nowrap">
                                         {{ item.name }}
                                     </a>
                                 </li>
@@ -71,10 +73,10 @@
                                     Under review
                                 </a>
                             </li>
-                            {% get_namedmenu Unapproved as Unapproved %}
+                            {% get_review_menu as Unapproved %}
                                 {% for item in Unapproved %}
                                     <li class="mb-4">
-                                        <a href="{{ item.page.url }}" class="has-text-white text-nowrap">
+                                        <a href="{{ item.url }}" class="has-text-white text-nowrap">
                                             {{ item.name }}
                                         </a>
                                     </li>

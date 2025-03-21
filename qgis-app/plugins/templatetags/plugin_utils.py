@@ -130,3 +130,35 @@ def get_navigation_menu(user):
     """
     menu = _filter_menu(settings.NAVIGATION_MENU, user)
     return menu
+
+@register.simple_tag()
+def get_news_menu():
+    """
+    Get the news menu from the settings
+    """
+    menu = settings.NEWS_MENU
+    return menu
+
+@register.simple_tag()
+def get_top_menu():
+    """
+    Get the top menu from the settings
+    """
+    menu = settings.TOP_MENU
+    return menu
+
+@register.simple_tag()
+def get_other_menu():
+    """
+    Get the other menu from the settings
+    """
+    menu = settings.OTHER_MENU
+    return menu
+
+@register.simple_tag()
+def get_review_menu():
+    """
+    Get the review menu from the settings
+    """
+    menu = settings.REVIEW_MENU
+    return menu
