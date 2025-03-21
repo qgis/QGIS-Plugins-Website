@@ -18,7 +18,6 @@ TESTFILE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "testfile
 class PluginUpdateTestCase(TestCase):
     fixtures = [
         "fixtures/auth.json",
-        "fixtures/simplemenu.json",
     ]
 
     @override_settings(MEDIA_ROOT="api/tests")

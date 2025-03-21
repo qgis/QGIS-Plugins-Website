@@ -5,7 +5,6 @@ from plugins.models import Plugin, PluginVersion
 
 
 class TestPluginSimpleTag(TestCase):
-    fixtures = ["fixtures/simplemenu.json"]
 
     def setUp(self) -> None:
         self.creator = User.objects.create(

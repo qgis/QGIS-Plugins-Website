@@ -17,8 +17,7 @@ TESTFILE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "testfile
 
 class UploadWithTokenTestCase(TestCase):
     fixtures = [
-        "fixtures/auth.json",
-        "fixtures/simplemenu.json",
+        "fixtures/auth.json"
     ]
 
     @override_settings(MEDIA_ROOT="api/tests")

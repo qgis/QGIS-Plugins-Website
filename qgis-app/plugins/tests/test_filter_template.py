@@ -8,7 +8,6 @@ from plugins.models import Plugin, PluginVersion
 
 
 class TestPluginFilterTemplate(TestCase):
-    fixtures = ["fixtures/simplemenu.json"]
 
     def setUp(self) -> None:
         self.creator = User.objects.create(
