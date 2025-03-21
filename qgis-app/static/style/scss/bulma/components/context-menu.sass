@@ -12,13 +12,44 @@
   top: 4rem
   z-index: 100
   transition: top 0.3s
-  @media screen and (max-width: 768px)
-    height: 6em
-  .container
-    @media screen and (max-width: 768px)
-      flex-direction: column
-      gap: 10px
-  
+  .navbar
+    background-color: unset
+    min-height: 3em
+    max-height: 54px
+  .navbar-burger
+    color: $primary1-invert
+    margin-left: unset
+    width: 3em
+    height: 3em
+
+  .navbar-start
+    .navbar-item
+      color: white
+      border-radius: 5px
+    .navbar-item, .nabar-link
+      padding: 0.5rem .75rem
+      transition: all 0.3s
+
+    a.navbar-item.is-active,
+    .navbar-link.is-active,
+    .navbar-item
+      color: white
+      background-color: unset
+      &:hover
+        color: #0a0a0a
+        background-color: #fafafa
+
+    .navbar-link
+      color: inherit
+      border-radius: 5px
+
+  .navbar-brand,
+  .navbar-tabs
+    min-height: unset
+    a:hover
+      color: $primary1-invert
+
+    
   input
     background: #223745
     border: none
@@ -34,3 +65,64 @@
     &:focus 
       background: $white
 
+  @media screen and (min-width: 1024px)
+    .navbar-start
+      padding: 10px 0
+      .navbar-dropdown
+        background-color: #002033
+        border: none
+        max-height: calc(100dvh - 112px)
+        overflow: auto
+
+  @media screen and (max-width: 1023px)
+    .container
+      max-width: unset
+    .box
+      padding: 1.25rem 1rem 1.25rem 0rem
+    .navbar-menu
+      background-color: #002033
+      min-width: 150px
+      padding: 1rem
+      &.is-active
+        display: block
+        position: fixed
+        height: calc(100% - 112px)
+        overflow: auto
+        left: 0
+        animation: slideInFromLeft 0.3s ease-out forwards
+      &:not(.is-active)
+        animation: slideOutToLeft 0.3s ease-out forwards
+
+    @keyframes slideInFromLeft
+      from
+        transform: translateX(-100%)
+        opacity: 0
+      to
+        transform: translateX(0)
+        opacity: 1
+
+    @keyframes slideOutToLeft
+      from
+        transform: translateX(0)
+        opacity: 1
+      to
+        transform: translateX(-100%)
+        opacity: 0
+
+    .context-container .navbar-start a.navbar-item.is-active:hover,
+    .context-container .navbar-start .navbar-link.is-active:hover,
+    .context-container .navbar-start .navbar-item:hover
+      background-color: unset !important
+      color: white !important
+
+    .content > .columns .content
+      width: 100%
+
+  // @media screen and (min-width: 1408px)
+  //   .navbar-end
+  //     margin-right: 68px
+
+
+@media screen and (max-width: 1023px)
+  .box
+    padding: 1.25rem 1rem 1.25rem 0rem

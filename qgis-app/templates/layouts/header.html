@@ -1,4 +1,4 @@
-{% load i18n simplemenu_tags static %}
+{% load i18n simplemenu_tags plugin_utils static %}
 <div class="box mb-0 context-container" id="context">
     <div class="container">
         <nav class="navbar" role="navigation" aria-label="main navigation">
@@ -20,57 +20,49 @@
             
             <div id="pluginsNavbar" class="navbar-menu">
                 <div class="navbar-start">
-                    {% get_namedmenu Navigation as menu %}
-                        {% for item in menu %}
-                            <a 
-                            class="navbar-item has-text-weight-semibold is-size-7" 
-                            href="{{ item.page.url }}">
-                                <span>{{ item.name }}</span>
-                            </a>
-                        {% endfor %}
-
-                    {% get_namedmenu New as New %}
-                    {% get_namedmenu Top as Top %}
-                    {% get_namedmenu Category as Category %}
-                    <div class="navbar-item has-dropdown is-hoverable has-text-weight-semibold is-size-7">
-                        <a class="navbar-link">
-                          Category
-                        </a>
-                        <div class="navbar-dropdown">
-                            {% for item in New %}
-                            <a href="{{ item.page.url }}" class="navbar-item has-text-weight-semibold is-size-7">
-                                {{ item.name }}
-                            </a>
-                            {% endfor %}
-                            <hr class="navbar-divider">
-                            {% for item in Top %}
-                            <a href="{{ item.page.url }}" class="navbar-item has-text-weight-semibold is-size-7">
-                                {{ item.name }}
-                            </a>
-                            {% endfor %}
-                            <hr class="navbar-divider">
-                            {% for item in Category %}
-                            <a href="{{ item.page.url }}" class="navbar-item has-text-weight-semibold is-size-7">
-                                {{ item.name }}
-                            </a>
-                            {% endfor %}
-                            {% if user.is_authenticated and user.is_staff %}
-                                {% get_namedmenu Unapproved as Unapproved %}
-                                    <hr class="navbar-divider">
-                                    {% for item in Unapproved %}
-                                    <a href="{{ item.page.url }}" class="navbar-item has-text-weight-semibold is-size-7">
-                                        {{ item.name }}
-                                    </a>
+                    {% get_navigation_menu user as menu %}
+                    {% for item in menu %}
+                        {% if item.submenu %}
+                            <div class="navbar-item has-dropdown is-hoverable p-0">
+                                <a class="navbar-link has-text-weight-semibold is-size-7">
+                                    <span class="mr-2">
+                                        <i class="fas {{ item.icon }}"></i>
+                                    </span>
+                                    <span>{{ item.name }}</span>
+                                </a>
+                                <div class="navbar-dropdown">
+                                    {% for subitem in item.submenu %}
+                                        {% if subitem.submenu %}
+                                            {% for entry in subitem.submenu %}
+                                                <a class="navbar-item has-text-weight-semibold is-size-7 ml-1 mr-1" href="{{ entry.url }}">
+                                                    {{ entry.name }}
+                                                </a>
+                                            {% endfor %}
+                                            {% if not forloop.last %}
+                                                <hr class="navbar-divider">
+                                            {% endif %}
+                                        {% else %}
+                                            <a class="navbar-item has-text-weight-semibold is-size-7 ml-1 mr-1" href="{{ subitem.url }}">
+                                                <span class="mr-2">
+                                                    <i class="fas {{ subitem.icon }}"></i>
+                                                </span>
+                                                <span>{{ subitem.name }}</span>
+                                            </a>
+                                        {% endif %}
                                     {% endfor %}
+                                </div>
+                            </div>
+                        {% else %}
+                            {% if item.name != 'Admin' %}
+                                <a class="navbar-item has-text-weight-semibold is-size-7" href="{{ item.url }}">
+                                    <span class="mr-2">
+                                        <i class="fas {{ item.icon }}"></i>
+                                    </span>
+                                    <span>{{ item.name }}</span>
+                                </a>
                             {% endif %}
-                        </div>
-                    </div>
-                    {% if user.is_authenticated and user.is_staff %}
-                    <a class="navbar-item has-text-weight-semibold is-size-7" href="/admin">
-                        <i class="fas fa-tools mr-3"></i>
-                        {% trans "Admin" %}
-                    </a>
-                    {% endif %}
+                        {% endif %}
+                    {% endfor %}
 
                 </div>
                 <div class="navbar-end">
@@ -82,10 +74,10 @@
                             </form>
                         </div>
                     </div>
-                    <div class="navbar-item">
+                    <div class="navbar-item pl-0">
                         {% if user.is_authenticated %}
-                        <a class="button is-warning is-small is-fullwidth" href="{% url "logout" %}">
-                            <span class="icon">
+                        <a class="button is-warning is-small" href="{% url "logout" %}">
+                            <span class="mr-2">
                                 <i class="fas fa-sign-out-alt"></i>
                             </span>
                             <span>
@@ -94,7 +86,7 @@
                         </a>
                         {% else %}
                         <a class="button is-info is-small" href="{% url "login" %}">
-                            <span class="icon">
+                            <span class="mr-2">
                                 <i class="fas fa-sign-in-alt"></i>
                             </span>
                             <span>
