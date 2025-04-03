@@ -121,9 +121,9 @@ def _check_url_link(urls):
             # add the headers parameter to make the request appears like coming
             # from browser, otherwise some websites will return 403
             headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) "
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/56.0.2924.76 Safari/537.36"
+                "Chrome/117.0.0.0 Safari/537.36"
             }
             req = requests.head(url, headers=headers)
         except requests.exceptions.SSLError:
@@ -132,6 +132,31 @@ def _check_url_link(urls):
             return True
         return req.status_code >= 400
 
+    def error_check_if_timeout(url: str) -> bool:
+        # Check if url exists with a timeout
+        try:
+            # Add headers to make the request appear like it's coming from a browser
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/117.0.0.0 Safari/537.36"
+            }
+            req = requests.head(url, headers=headers, timeout=10)  # Set timeout to 10 seconds
+        except requests.exceptions.Timeout:
+            return True
+        except Exception:
+            return True
+        return req.status_code >= 400
+
+    timeout_url_error = [item for item in [url_item['metadata_attr'] for url_item in urls if error_check_if_timeout(url_item['url'])]]
+    if len(timeout_url_error) > 0:
+        timeout_url_error_str = ", ".join(timeout_url_error)
+        raise ValidationError(
+        _(
+            f"Please provide valid url link for the following key(s) in the metadata source: <strong>{timeout_url_error_str}</strong>. "
+            "The website(s) cannot be reached within 10 seconds."
+            )
+    )
     url_error = [item for item in [url_item['metadata_attr'] for url_item in urls if error_check(url_item['url'], url_item['forbidden_url'])]]
     if len(url_error) > 0:
         url_error_str = ", ".join(url_error)
