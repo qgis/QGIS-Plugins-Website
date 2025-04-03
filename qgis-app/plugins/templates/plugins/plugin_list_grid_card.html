@@ -49,7 +49,7 @@ is-one-third-fullhd">
                                     <img alt="{% trans "Plugin icon" %}" src="{{ object.icon.url }}" />
                                 </figure>
                             {% else %}
-                                {% thumbnail object.icon "256x256" format="PNG" as im %}
+                                {% thumbnail object.icon "48x48" format="PNG" as im %}
                                     <figure class="image is-48x48 m-0">
                                         <img alt="{% trans "Plugin icon" %}" src="{{ im.url }}" />
                                     </figure>
