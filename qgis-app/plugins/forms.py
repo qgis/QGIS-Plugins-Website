@@ -163,6 +163,8 @@ class PluginVersionForm(ModelForm):
         # Clean tags
         self.cleaned_data["tags"] = _clean_tags(self.cleaned_data.get("tags", None))
         self.instance.changelog = self.cleaned_data.get("changelog")
+        if "experimental" in self.cleaned_data:
+            self.instance.experimental = self.cleaned_data.get("experimental")
         return super(PluginVersionForm, self).clean()
 
 
