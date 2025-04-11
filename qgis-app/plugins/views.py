@@ -489,7 +489,7 @@ def plugin_upload(request):
                     "package": form.cleaned_data.get("package"),
                     "approved": request.user.has_perm("plugins.can_approve")
                     or plugin.approved,
-                    "experimental": form.cleaned_data.get("experimental"),
+                    "experimental": form.cleaned_data.get("experimental", False),
                     "changelog": form.cleaned_data.get("changelog", ""),
                     "external_deps": form.cleaned_data.get("external_deps", ""),
                 }
