@@ -169,6 +169,10 @@ MATOMO_URL="//matomo.qgis.org/"
 # Default primary key type
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
+PLUGIN_MAX_UPLOAD_SIZE = os.environ.get("PLUGIN_MAX_UPLOAD_SIZE", 25000000) # Default is 25MB
+
+# RPC2 Max upload size
+DATA_UPLOAD_MAX_MEMORY_SIZE = PLUGIN_MAX_UPLOAD_SIZE # same as max allowed plugin size
 
 # Sentry
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
