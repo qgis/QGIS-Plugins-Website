@@ -76,8 +76,16 @@
                 </span>
                 {% endif %}
             </a></li>
+            <li data-tab="3"><a href="#qt6-tab">
+                <span>{% trans "Qt6 Check" %}</span>
+                {% if version.qt6_checked_on %}
+                <span class="tag ml-2 {% if version.qt6_compatible %}is-success{% else %}is-danger{% endif %}">
+                    {% if version.qt6_compatible %}✓{% else %}✗{% endif %}
+                </span>
+                {% endif %}
+            </a></li>
             {% endif %}
-            <li data-tab="3"><a href="#manage-tab">{% trans "Manage" %}</a></li>
+            <li data-tab="4"><a href="#manage-tab">{% trans "Manage" %}</a></li>
         </ul>
     </div>
 
@@ -358,6 +366,63 @@
                         {% trans "No security scan available for this version" %}
                     </p>
                     <p class="mt-2">{% trans "This version was uploaded before security scanning was implemented, or the scan failed. Please contact an administrator if you'd like to request a scan." %}</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ONGLET 3 : Qt6 Check -->
+        <div class="tab-pane" id="qt6-tab">
+            {% if version.qt6_checked_on %}
+                <div class="notification {% if version.qt6_compatible %}is-success{% else %}is-danger{% endif %} is-light mb-4">
+                    <p class="has-text-weight-bold">
+                        {% if version.qt6_compatible %}
+                            <span class="icon"><i class="fas fa-check-circle"></i></span>
+                            {% trans "This version is Qt6 compatible" %}
+                        {% else %}
+                            <span class="icon"><i class="fas fa-times-circle"></i></span>
+                            {% trans "This version has Qt6 compatibility issues" %}
+                        {% endif %}
+                    </p>
+                    <p class="mt-1 is-size-7 has-text-grey">{% trans "Checked on" %}: {{ version.qt6_checked_on|local_timezone }}</p>
+                </div>
+
+                {% if qt6_issues %}
+                <h5 class="title is-6 mb-3">
+                    {% trans "Issues found" %}: {{ qt6_issues|length }}
+                </h5>
+                <div style="overflow-x: auto;">
+                    <table class="table is-fullwidth is-striped is-hoverable is-size-7">
+                        <thead>
+                            <tr>
+                                <th>{% trans "File" %}</th>
+                                <th>{% trans "Line" %}</th>
+                                <th>{% trans "Col" %}</th>
+                                <th>{% trans "Message" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for issue in qt6_issues %}
+                            <tr>
+                                <td><code>{{ issue.file }}</code></td>
+                                <td>{{ issue.line }}</td>
+                                <td>{{ issue.col }}</td>
+                                <td>{{ issue.message }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                    <div class="notification is-success is-light">
+                        {% trans "No issues found, this plugin is fully Qt6 compatible!" %}
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="notification is-warning is-light">
+                    <p class="has-text-weight-semibold">
+                        <span class="icon"><i class="fas fa-clock"></i></span>
+                        {% trans "Qt6 check not yet available for this version" %}
+                    </p>
                 </div>
             {% endif %}
         </div>

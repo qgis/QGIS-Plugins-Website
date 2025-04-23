@@ -566,7 +566,9 @@ def plugin_upload(request):
 
                 new_version = PluginVersion(**version_data)
                 new_version.save()
-                msg = _("The Plugin has been successfully created.")
+                msg = _(
+                    "The Plugin has been successfully created. A Qt6 compliance check will be launched. You'll receive the results by email."
+                )
                 messages.success(request, msg, fail_silently=True)
 
                 # Run security scan on the uploaded package
@@ -2312,6 +2314,51 @@ def version_detail(request, package_name, version):
         security_scan = None
         scan_badge = get_scan_badge_info(None)
 
+    # Parse Qt6 logs
+    qt6_issues = []
+    if version.qt6_logs:
+        in_traceback = False
+        for line in version.qt6_logs.splitlines():
+            # Ignore headers and blank lines
+            if line.startswith("===") or not line.strip():
+                continue
+            # Detect the start of a traceback
+            if line.startswith("Traceback"):
+                in_traceback = True
+                continue
+            # Skip all lines of the traceback
+            if in_traceback:
+                continue
+            try:
+                if " - " in line:
+                    location, message = line.split(" - ", 1)
+                    parts = location.rsplit(":", 2)
+                    if len(parts) == 3:
+                        filepath, lineno, col = parts
+                    else:
+                        filepath = parts[0]
+                        lineno = col = ""
+                elif ": " in line:
+                    filepath, message = line.split(": ", 1)
+                    lineno = col = ""
+                else:
+                    continue
+                path_parts = filepath.split("/")
+                if len(path_parts) > 4:
+                    relative_path = "/".join(path_parts[4:])
+                else:
+                    relative_path = filepath
+                qt6_issues.append(
+                    {
+                        "file": relative_path,
+                        "line": lineno.strip(),
+                        "col": col.strip(),
+                        "message": message.strip(),
+                    }
+                )
+            except Exception:
+                continue
+
     return render(
         request,
         "plugins/version_detail.html",
@@ -2319,6 +2366,7 @@ def version_detail(request, package_name, version):
             "version": version,
             "security_scan": security_scan,
             "scan_badge": scan_badge,
+            "qt6_issues": qt6_issues,
         },
     )
 
@@ -2391,11 +2439,7 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         filters.update(
-            {
-                "pluginversion__max_qg_version__gte": _add_patch_version(
-                    qg_version, "0"
-                )
-            }
+            {"pluginversion__max_qg_version__gte": _add_patch_version(qg_version, "0")}
         )
         version_filters.update(
             {"max_qg_version__gte": _add_patch_version(qg_version, "0")}
@@ -2519,11 +2563,7 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         filters.update(
-            {
-                "pluginversion__max_qg_version__gte": _add_patch_version(
-                    qg_version, "0"
-                )
-            }
+            {"pluginversion__max_qg_version__gte": _add_patch_version(qg_version, "0")}
         )
         version_filters.update(
             {"max_qg_version__gte": _add_patch_version(qg_version, "0")}

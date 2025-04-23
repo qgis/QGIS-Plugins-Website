@@ -100,7 +100,7 @@ rm-only: kill
 	@echo "------------------------------------------------------------------"
 	@echo "Removing production instance!!! "
 	@echo "------------------------------------------------------------------"
-	@docker compose -p $(PROJECT_ID) rm
+	@docker compose -p $(PROJECT_ID) rm -v 
 
 dbrestore:
 	@echo
@@ -222,7 +222,7 @@ devweb: db
 	@echo "------------------------------------------------------------------"
 	@echo "Running in DEVELOPMENT mode"
 	@echo "------------------------------------------------------------------"
-	@docker compose -p $(PROJECT_ID) up --no-deps -d devweb rabbitmq worker beat webpack maindev
+	@docker compose -p $(PROJECT_ID) up --no-deps -d devweb rabbitmq worker beat webpack maindev qgis-qt6
 
 devweb-migrate:
 	@echo

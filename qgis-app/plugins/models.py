@@ -966,6 +966,12 @@ class PluginVersion(models.Model):
     stable_objects = StablePluginVersions()
     experimental_objects = ExperimentalPluginVersions()
 
+    # Check qt6
+    qt6_passed = models.BooleanField(null=True)
+    qt6_logs = models.TextField(blank=True)
+    qt6_checked_on = models.DateTimeField(null=True, blank=True)
+    qt6_compatible = models.BooleanField(null=True, blank=True)
+
     @property
     def file_name(self):
         return os.path.basename(self.package.file.name)
