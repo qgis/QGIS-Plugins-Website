@@ -5,6 +5,7 @@ volumes:
   static-data:
   media-data:
   backups-data:
+  plugins-data:
 services:
   maindev:
     build:
@@ -73,6 +74,7 @@ services:
       - ${QGISPLUGINS_STATIC_VOLUME}:/home/web/static:rw
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw
       - celerybeat-schedule:/home/web/celerybeat-schedule:rw
+      - plugins-data:/home/web/shared
     command: bash -c "npm install && npm run build && uwsgi --ini /uwsgi.conf"
     depends_on:
       - db
@@ -96,6 +98,7 @@ services:
       - ../qgis-app:/home/web/django_project
       - ${QGISPLUGINS_STATIC_VOLUME}:/home/web/static:rw
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw
+      - plugins-data:/home/web/shared
     ports:
       # for django test server
       - "62202:8081"
@@ -116,6 +119,26 @@ services:
       - ../qgis-app:/home/web/django_project
       - ${QGISPLUGINS_STATIC_VOLUME}:/home/web/static:rw
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw
+  qgis-qt6:
+    container_name: qgis-plugins-qgis-qt6
+    build:
+      context: ${PWD}/../
+      dockerfile: dockerize/docker-qt6-validator.dockerfile
+    volumes:
+      - ../qt6-validator:/celery_task
+      - plugins-data:/home/web/shared
+      - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:ro
+    working_dir: /celery_task
+    command: ["/usr/local/bin/celery", "-A", "plugins", "worker", "-l", "DEBUG", "-Q", "qt6"]
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - CELERY_RESULT_BACKEND=rpc://
+      - CELERY_BROKER_URL=amqp://rabbitmq:5672
+      - PATH=/home/pyqgisdev/.local/bin:/home/pyqgisdev/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    depends_on:
+      - rabbitmq
+    networks:
+      internal:
 
   rabbitmq:
     image: ${RABBITMQ_IMAGE:-rabbitmq:3.7-alpine}
@@ -153,14 +176,14 @@ services:
         condition: service_started
     working_dir: /home/web/django_project
     entrypoint: []
-    command: celery -A plugins worker -l INFO
+    command: celery -A plugins worker -l DEBUG
     networks:
       internal:
 
   web:
     # Note you cannot scale if you use container_name
     container_name: qgis-plugins-web
-    image: nginx
+    image: nginx:latest
     hostname: web
     entrypoint:
     - /etc/nginx/sites-available/docker-entrypoint.sh
