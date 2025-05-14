@@ -213,7 +213,7 @@ services:
       - ./certbot-etc:/etc/letsencrypt
     depends_on:
       - web
-    command: certonly --webroot --webroot-path=/var/www/webroot --email admin@qgis.org --agree-tos --no-eff-email --force-renewal -d ${DOMAIN_NAME:-plugins.qgis.org}
+    command: certonly --webroot --webroot-path=/var/www/webroot --email admin@qgis.org --agree-tos --no-eff-email --force-renewal -d ${DOMAIN_NAME:-plugins.qgis.org} -d plugins-analytics.qgis.org
     networks:
       internal:
 
