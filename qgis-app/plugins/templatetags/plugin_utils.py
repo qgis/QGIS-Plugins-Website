@@ -162,3 +162,17 @@ def get_review_menu():
     """
     menu = settings.REVIEW_MENU
     return menu
+
+@register.simple_tag()
+def get_site_url():
+    """
+    Get the site domain from the settings
+    """
+    return settings.DEFAULT_PLUGINS_SITE.rstrip('/')
+
+@register.simple_tag()
+def get_navigation_config_url():
+    """
+    Get the navigation config URL from the settings
+    """
+    return os.path.join(settings.DEFAULT_PLUGINS_SITE, "static", "config", "navigation.json")

@@ -2,17 +2,17 @@
 <div class="box mb-0 context-container" id="context">
     <div class="container">
         <nav class="navbar" role="navigation" aria-label="main navigation">
-            <div class="navbar-brand is-align-items-center is-justify-content-space-between">
+            <div class="navbar-brand is-align-items-center is-justify-content-flex-end">
                 {% comment %} <a class="navbar-item brand">
                     QGIS
                 </a> {% endcomment %}
-                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="pluginsNavbar">
+                {% comment %} <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="pluginsNavbar">
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
-                </a>
+                </a> {% endcomment %}
                 
-                <a class="button is-success is-small is-outlined is-hidden-desktop" href="{% url "plugin_upload" %}">
+                <a class="button is-success is-small is-outlined is-hidden-desktop mt-3 mb-3" href="{% url "plugin_upload" %}">
                     <i class="fas fa-upload mr-3"></i>
                     {% trans "Upload a plugin" %}
                 </a>

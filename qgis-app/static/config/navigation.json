@@ -22,27 +22,6 @@
           {
             "type": "second-menu",
             "settings": {
-              "name": "Review Resolved",
-              "href": "/plugins/feedback_completed/"
-            }
-          },
-          {
-            "type": "second-menu",
-            "settings": {
-              "name": "Review Pending",
-              "href": "/plugins/feedback_received/"
-            }
-          },
-          {
-            "type": "second-menu",
-            "settings": {
-              "name": "Awaiting Review",
-              "href": "/plugins/feedback_pending/"
-            }
-          },
-          {
-            "type": "second-menu",
-            "settings": {
               "name": "New",
               "href": "/plugins/fresh/"
             }
@@ -115,6 +94,27 @@
             "settings": {
               "name": "Deprecated",
               "href": "/plugins/deprecated/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Review Resolved",
+              "href": "/plugins/feedback_completed/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Review Pending",
+              "href": "/plugins/feedback_received/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Awaiting Review",
+              "href": "/plugins/feedback_pending/"
             }
           },
           {
