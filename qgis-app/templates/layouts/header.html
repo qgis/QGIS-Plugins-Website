@@ -3,15 +3,16 @@
     <div class="container">
         <nav class="navbar" role="navigation" aria-label="main navigation">
             <div class="navbar-start buttons are-small is-hidden-desktop mb-0 ml-4 is-align-items-center is-justify-content-space-between" style="height: 3rem;">
-                <a class="button is-light is-small mb-0" href="/">
-                    <i class="fas fa-home mr-3"></i>
-                    {% trans "Home" %}
-                </a>
-                <a class="button is-light is-small mb-0" href="{% url "plugin_upload" %}">
-                    <i class="fas fa-upload mr-3"></i>
-                    {% trans "Upload a plugin" %}
-                </a>
-
+                <div>
+                    <a class="button is-light is-small mb-0" href="/">
+                        <i class="fas fa-home mr-3"></i>
+                        {% trans "Home" %}
+                    </a>
+                    <a class="button is-light is-small mb-0" href="{% url "plugin_upload" %}">
+                        <i class="fas fa-upload mr-3"></i>
+                        {% trans "Upload a plugin" %}
+                    </a>
+                </div>
                 {% if user.is_authenticated %}
                 <a class="button is-warning is-small mb-0" href="{% url "logout" %}">
                     <span class="mr-2">
