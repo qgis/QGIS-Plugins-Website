@@ -18,16 +18,19 @@ class TestValidatorMetadataPlugins(TestCase):
         )
         web_not_exist_plugins = os.path.join(TESTFILE_DIR, "web_not_exist.zip")
         valid_plugins = os.path.join(TESTFILE_DIR, "valid_metadata_link.zip")
+        timeout_plugin_link = os.path.join(TESTFILE_DIR, "timeout_plugin_link.zip_")
         self.valid_metadata_link = open(valid_plugins, "rb")
         self.invalid_metadata_link = open(invalid_plugins, "rb")
         self.web_not_exist = open(web_not_exist_plugins, "rb")
         self.invalid_url_scheme = open(invalid_url_scheme_plugins, "rb")
+        self.timeout_plugin_link = open(timeout_plugin_link, "rb")
 
     def tearDown(self):
         self.valid_metadata_link.close()
         self.invalid_metadata_link.close()
         self.invalid_url_scheme.close()
         self.web_not_exist.close()
+        self.timeout_plugin_link.close()
 
     def test_valid_metadata(self):
         self.assertTrue(
@@ -111,6 +114,28 @@ class TestValidatorMetadataPlugins(TestCase):
                 charset="utf8",
             ),
         )
+
+    def test_timeout_plugin_link(self):
+        """
+        The timeout_plugin_link.zip contains metadata file with
+        invalid scheme.
+        bug tracker : http://www.example.com
+        repo :  http://www.example.com/
+        homepage: http://www.google.com:81/
+        """
+        self.assertRaises(
+            ValidationError,
+            validator,
+            InMemoryUploadedFile(
+                self.timeout_plugin_link,
+                field_name="tempfile",
+                name="testfile.zip",
+                content_type="application/zip",
+                size=39889,
+                charset="utf8",
+            ),
+        )
+
 
     @mock.patch("requests.get", side_effect=requests.exceptions.SSLError())
     def test_check_url_link_ssl_error(self, mock_request):
