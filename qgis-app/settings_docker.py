@@ -174,8 +174,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 # When changing this, make sure to also change the
 # corresponding value in the PLUGIN_MAX_UPLOAD_SIZE in
 # the prod-ssl.conf and staging-ssl.conf
-# files. Make sure to also change the value in the location /plugins/RPC2 entry
-# to the corrensponding value (multiplied by 1.33).
+# files.
 PLUGIN_MAX_UPLOAD_SIZE = os.environ.get("PLUGIN_MAX_UPLOAD_SIZE", 25000000) # Default is 25MB
 
 # RPC2 Max upload size
