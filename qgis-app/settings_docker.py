@@ -172,7 +172,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # Set the maximum PLUGIN_MAX_UPLOAD_SIZE size to 25MB
 # When changing this, make sure to also change the
-# corresponding value in the PLUGIN_MAX_UPLOAD_SIZE in
+# corresponding value in the "client_max_body_size" in
 # the prod-ssl.conf and staging-ssl.conf
 # files.
 PLUGIN_MAX_UPLOAD_SIZE = os.environ.get("PLUGIN_MAX_UPLOAD_SIZE", 25000000) # Default is 25MB
