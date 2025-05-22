@@ -22,9 +22,10 @@ def get_sustaining_members():
         section = soup.select_one('section.section')
 
         if section:
+            html_content = section.prettify().replace("Â¶", "¶")
             template_path = os.path.join(settings.SITE_ROOT, 'templates/flatpages/sustaining_members.html')
             with open(template_path, 'w') as f:
-                f.write(section.prettify())
+                f.write(html_content)
             logger.info(f"get_sustaining_members: Section saved to {template_path}")
         else:
             logger.info("get_sustaining_members: Section not found")
