@@ -925,7 +925,6 @@ class PluginsList(ListView):
         context["show_more_items_number"] = next_per_page
 
         # Check if any plugin is deprecated
-        # self.any_deprecated = any(obj.deprecated for obj in qs.iterator())
         page = context['page_obj']
         self.any_deprecated = any(
             obj.deprecated for obj in self.get_queryset()[page.start_index() - 1:page.end_index()]
