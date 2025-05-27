@@ -216,10 +216,12 @@
 	<div class="mt-3 mb-3">
 	{% include 'plugins/list_pagination.html' %}
 	</div>
-	<div class="notification is-danger is-light is-light">
-		<i class="fas fa-info mr-3"></i>
-		{% trans "Deprecated plugins are printed in red." %}
-	</div>
+	{% if any_deprecated %}
+		<div class="notification is-danger is-light">
+			<i class="fas fa-info mr-3"></i>
+			{% trans "Deprecated plugins are printed in red." %}
+		</div>
+	{% endif %}
 	{% else %}
 	{% block plugins_message %}
 	<div class="notification">

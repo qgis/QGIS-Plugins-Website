@@ -923,6 +923,14 @@ class PluginsList(ListView):
             # of records. This action effectively disables the button."
             next_per_page = context["paginator"].count + 1
         context["show_more_items_number"] = next_per_page
+
+        # Check if any plugin is deprecated
+        # self.any_deprecated = any(obj.deprecated for obj in qs.iterator())
+        page = context['page_obj']
+        self.any_deprecated = any(
+            obj.deprecated for obj in self.get_queryset()[page.start_index() - 1:page.end_index()]
+        )
+        context["any_deprecated"] = self.any_deprecated
         return context
 
     def get_sortstring(self):
