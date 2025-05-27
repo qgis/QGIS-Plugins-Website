@@ -64,3 +64,7 @@ qgis-app/webpack-stats.json
 
 # Sustaining members template
 qgis-app/templates/flatpages/sustaining_members.html
+
+# VS Code
+.vscode
+.vscode-extensions
