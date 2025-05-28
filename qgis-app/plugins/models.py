@@ -313,11 +313,19 @@ class FeedbackCompletedPlugins(models.Manager):
             completed_count=Count('id')
         ).values('completed_count')
 
+        # Only consider plugins whose latest version is unapproved and all feedbacks are completed
+        latest_version_subquery = PluginVersion.objects.filter(
+            plugin=OuterRef('pk')
+        ).order_by('-created_on').values('approved')[:1]
+
         return (
             super(FeedbackCompletedPlugins, self)
             .get_queryset()
+            .annotate(
+                latest_version_approved=Subquery(latest_version_subquery)
+            )
             .filter(
-                pluginversion__approved=False,
+                latest_version_approved=False,
                 deprecated=False
             )
             .annotate(

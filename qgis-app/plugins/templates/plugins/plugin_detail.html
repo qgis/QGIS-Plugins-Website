@@ -439,7 +439,7 @@
                                 {% if version.approved or not user.is_anonymous %}
                                 <tr onclick="window.location.href='{% url "version_detail" object.package_name version.version %}';">
                                     <td class="has-text-centered">
-                                        {{ version.version }}
+                                        <a href="{% url 'version_detail' object.package_name version.version %}">{{ version.version }}</a>
                                     </td>
                                     {% if not user.is_anonymous %}
                                     <td class="has-text-centered">
