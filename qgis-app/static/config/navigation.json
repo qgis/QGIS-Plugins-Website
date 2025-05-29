@@ -8,6 +8,13 @@
           {
             "type": "second-menu",
             "settings": {
+              "name": "Home",
+              "href": "/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
               "name": "All Plugins",
               "href": "/plugins/"
             }
