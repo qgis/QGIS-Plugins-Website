@@ -1,0 +1,145 @@
+{
+  "navigation": [
+    {
+      "type": "menu",
+      "settings": {
+        "name": "Plugins",
+        "children": [
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Home",
+              "href": "/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "All Plugins",
+              "href": "/plugins/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "My Plugins",
+              "href": "/plugins/my"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "New",
+              "href": "/plugins/fresh/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Updated",
+              "href": "/plugins/latest/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Featured",
+              "href": "/plugins/featured/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Popular",
+              "href": "/plugins/popular/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Most Downloaded",
+              "href": "/plugins/most_downloaded/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Most Voted",
+              "href": "/plugins/most_voted/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Most Rated Plugins",
+              "href": "/plugins/most_rated/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Stable",
+              "href": "/plugins/stable/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Experimental",
+              "href": "/plugins/experimental/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Server",
+              "href": "/plugins/server/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Deprecated",
+              "href": "/plugins/deprecated/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Review Resolved",
+              "href": "/plugins/feedback_completed/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Review Pending",
+              "href": "/plugins/feedback_received/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Awaiting Review",
+              "href": "/plugins/feedback_pending/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Metrics",
+              "href": "/metabase/public/dashboard/7ecd345f-7321-423d-9844-71e526a454a9"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "Admin",
+              "href": "/admin/"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
