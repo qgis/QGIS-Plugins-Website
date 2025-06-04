@@ -6,6 +6,13 @@ volumes:
   media-data:
   backups-data:
 services:
+  maindev:
+    image: python:3.12
+    tty: true
+    container_name: maindev
+    restart: unless-stopped
+    volumes:
+      - ../:/srv/app
 
   db:
     container_name: qgis-plugins-db
