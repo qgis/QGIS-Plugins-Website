@@ -83,7 +83,7 @@ NOTE: The preferred way to install QGIS plugins is via the <a href="https://docs
 QGIS will download this list automatically and make it possible to install a plugin with one click.
 </p>
 <p>
-NOTE: Here you only see a representation of the plugins working for the requested version (defined by the "<code>?qgis=x.y.z</code>" part of the url).
+NOTE: Here you only see a representation of the plugins working for the requested version (defined by the "<code>?qgis=x.y</code>" part of the url).
 </p>
 <table>
 <tr>
