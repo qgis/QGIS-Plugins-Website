@@ -88,6 +88,26 @@ This command ensures that the search index accurately reflects the current state
 
 For more information about make commands, please see the full docs [here](./dockerize/README.md).
 
+For development in a containerized environment using VSCode:
+
+- Install the [Remote Development extension pack](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack) in VSCode to enable attaching to and developing inside containers.
+
+- Attach to the `qgis-plugins-devweb` container to work on the website.
+
+- For pre-commit and git hooks:
+  
+  1. Install dependencies inside the `maindev` container:
+
+    ```bash
+    make maindev-install-dep
+    ```
+
+  2. Attach to the `qgis-plugins-maindev` container to run pre-commit checks and perform git operations. The repository is located at `/srv/app` within the container.
+
+
+TODO: For development in NixOS:
+
+
 ## Production Environment
 For the production environment, please see the the private repo of the System Administration Documentation.
 
@@ -216,4 +236,3 @@ $ cp backups/2020/December/PG_QGIS_PLUGINS_gis.16-December-2020.dmp dockerize/ba
 $ cd dockerize
 $ make dbrestore
 ```
-

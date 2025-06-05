@@ -222,7 +222,7 @@ devweb: db
 	@echo "------------------------------------------------------------------"
 	@echo "Running in DEVELOPMENT mode"
 	@echo "------------------------------------------------------------------"
-	@docker compose -p $(PROJECT_ID) up --no-deps -d devweb rabbitmq worker beat webpack
+	@docker compose -p $(PROJECT_ID) up --no-deps -d devweb rabbitmq worker beat webpack maindev
 
 devweb-migrate:
 	@echo
@@ -273,3 +273,11 @@ devweb-runtests:
 	@echo "------------------------------------------------------------------"
 	@docker compose -p $(PROJECT_ID) exec devweb bash -c 'python manage.py makemigrations'
 	@docker compose -p $(PROJECT_ID) exec devweb bash -c 'python manage.py test'
+
+maindev-install-dep:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Installing dependencies in maindev container"
+	@echo "------------------------------------------------------------------"
+	@docker compose -p $(PROJECT_ID) exec maindev bash -c "cd /srv/app && pip install -r REQUIREMENTS-dev.txt"
+	@docker compose -p $(PROJECT_ID) exec maindev bash -c  "cd /srv/app && pre-commit install"

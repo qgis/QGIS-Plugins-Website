@@ -6,6 +6,16 @@ volumes:
   media-data:
   backups-data:
 services:
+  maindev:
+    build:
+      context: ${PWD}/../
+      dockerfile: dockerize/docker/Dockerfile
+      target: dev
+    tty: true
+    container_name: maindev
+    restart: unless-stopped
+    volumes:
+      - ../:/srv/app
 
   db:
     container_name: qgis-plugins-db
