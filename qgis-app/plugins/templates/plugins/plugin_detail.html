@@ -5,6 +5,10 @@
 {{ block.super }}
 <script type="text/javascript" src="{% static "js/jquery.cookie.js" %}"></script>
 <script type="text/javascript" src="{% static "jquery-ratings/jquery.ratings.1.0.js" %}"></script>
+<link rel="stylesheet" href="{% static 'style/dataTables.css' %}" />
+<script type="text/javascript" src="{% static 'js/dataTables.js' %}"></script>
+
+
 <script type="text/javascript">
     function csrfSafeMethod(method) {
         // these HTTP methods do not require CSRF protection
@@ -85,6 +89,48 @@
         var tooltip = document.getElementById("copyTooltip");
         tooltip.innerHTML = "Plugin ID copied!";
     }
+
+    // Get the number of columns in the plugin versions table
+    function getTableColumnCount() {
+        var table = document.getElementById("plugin-versions-table");
+        if (table) {
+            var header = table.querySelector("thead tr");
+            if (header) {
+                return header.children.length;
+            }
+        }
+        return 0;
+    }
+
+    // Check if the user is allowed to manage the plugin
+    function isUserAllowedToManage() {
+        return (
+            {{ user.is_staff|yesno:"true,false" }} ||
+            {% if user in object.approvers %}true{% else %}false{% endif %} ||
+            {% if user in object.editors %}true{% else %}false{% endif %}
+        );
+    }
+    
+    // Initialize DataTable with dynamic column definitions
+    jQuery(function(){
+        var columnDefs;
+        if (isUserAllowedToManage()) {
+            columnDefsValue = [
+                { bSortable: false, aTargets: [-1, -3] },
+                { bSearchable: false, aTargets: [1, 2, 5, 7, -1] }
+            ];
+        } else {
+            columnDefsValue = [
+                { bSortable: false, aTargets: [-2] },
+                { searchable: false, targets: [1, -1] }
+            ];
+        }
+        $('#plugin-versions-table').DataTable({
+            paging: false,
+            searching: true,
+            aoColumnDefs: columnDefsValue
+        });
+        });
 </script>
 {% endblock %}
 {% block extracss %}
@@ -420,7 +466,7 @@
                 <div class="tab-pane" id="plugin-versions">
                     {% if object.pluginversion_set.count %}
                     <div class="table_container">
-                        <table class="table versions-list-table">
+                        <table id="plugin-versions-table" class="table versions-list-table">
                             <thead>
                                 <tr>
                                     <th>{% trans "Version" %}</th>
