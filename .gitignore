@@ -68,3 +68,6 @@ qgis-app/templates/flatpages/sustaining_members.html
 # VS Code
 .vscode
 .vscode-extensions
+
+# NixOS
+.direnv
