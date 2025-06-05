@@ -139,9 +139,6 @@ Download:
 Author: <xsl:value-of select="author_name" />
 </div>
 <div class="author">
-Version: <xsl:value-of select="version" />
-</div>
-<div class="author">
 Trusted: <xsl:value-of select="trusted" />
 </div>
 <div class="branch">
