@@ -26,6 +26,8 @@
     "webpack-livereload-plugin": "^3.0.2"
   },
   "dependencies": {
-    "choices.js": "^11.0.3"
+    "choices.js": "^11.0.3",
+    "datatables.net": "^2.3.1",
+    "datatables.net-dt": "^2.3.1"
   }
 }

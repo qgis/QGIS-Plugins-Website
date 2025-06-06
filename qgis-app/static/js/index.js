@@ -1,4 +1,8 @@
 require('../style/scss/style.scss');
+
+import 'datatables.net';
+import 'datatables.net-dt';
+
 import Choices from 'choices.js';
 import 'choices.js/src/styles/choices.scss';
 

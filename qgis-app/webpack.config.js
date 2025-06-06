@@ -18,6 +18,12 @@ if (mode === 'development') {
   plugins.push(new LiveReloadPlugin({ appendScriptTag: true }));
 }
 
+
+// List of libraries to expose globally
+const exposeLibraries = [
+  { name: 'datatables.net', exposes: ['DataTable'] },
+];
+
 module.exports = {
   entry: './static/js/index',
   output: {
@@ -27,6 +33,14 @@ module.exports = {
   plugins: plugins,
   module: {
     rules: [
+      // Auto-generate expose-loader rules
+      ...exposeLibraries.map(lib => ({
+        test: require.resolve(lib.name),
+        loader: 'expose-loader',
+        options: {
+          exposes: lib.exposes,
+        },
+      })),
       {
         test: /\.scss$/,
         use: [
