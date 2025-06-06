@@ -116,19 +116,21 @@
         var columnDefs;
         if (isUserAllowedToManage()) {
             columnDefsValue = [
-                { bSortable: false, aTargets: [-1, -3] },
-                { bSearchable: false, aTargets: [1, 2, 5, 7, -1] }
+                { sortable: false, targets: [-1, -3] },
+                { searchable: false, targets: [1, 2, 5, 7, -1] },
+                { sType: 'date', targets: [-2] }
             ];
         } else {
             columnDefsValue = [
-                { bSortable: false, aTargets: [-2] },
-                { searchable: false, targets: [1, -1] }
+                { sortable: false, targets: [-2] },
+                { searchable: false, targets: [1, -1] },
+                { type: 'date', targets: [-1]}
             ];
         }
         $('#plugin-versions-table').DataTable({
             paging: false,
             searching: true,
-            aoColumnDefs: columnDefsValue
+            columnDefs: columnDefsValue
         });
         });
 </script>
@@ -511,7 +513,7 @@
                                     {% else %}
                                     <td class="has-text-centered"><a href="{% url "user_details" version.created_by.username %}">{{ version.created_by }}</a></td>
                                     {% endif %}
-                                    <td class="has-text-centered">{{ version.created_on|local_timezone }}</td>
+                                    <td class="has-text-centered" data-order="{{ version.created_on.isoformat }}">{{ version.created_on|local_timezone }}</td>
                                     {% if user.is_staff or user in version.plugin.approvers or user in version.plugin.editors %}
                                     <td class="has-text-centered" style="min-width: 200px;">
                                         <form method="post" action="{% url "version_manage" object.package_name version.version %}">{% csrf_token %}
