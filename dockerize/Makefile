@@ -279,5 +279,5 @@ maindev-install-dep:
 	@echo "------------------------------------------------------------------"
 	@echo "Installing dependencies in maindev container"
 	@echo "------------------------------------------------------------------"
-	@docker compose -p $(PROJECT_ID) exec maindev bash -c "cd 'srv/app' && pip install -r REQUIREMENTS-dev.txt"
-	@docker compose -p $(PROJECT_ID) exec maindev bash -c  'cd 'srv/app' && pre-commit install'
+	@docker compose -p $(PROJECT_ID) exec maindev bash -c "cd /srv/app && pip install -r REQUIREMENTS-dev.txt"
+	@docker compose -p $(PROJECT_ID) exec maindev bash -c  "cd /srv/app && pre-commit install"
