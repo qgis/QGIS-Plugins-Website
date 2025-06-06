@@ -559,6 +559,8 @@ class PluginDetailView(DetailView):
     def get_context_data(self, **kwargs):
         plugin = kwargs.get("object")
         context = super(PluginDetailView, self).get_context_data(**kwargs)
+        # Sort plugin versions by created_on descending
+        context["plugin_versions_sorted"] = plugin.pluginversion_set.all().order_by('-created_on')
         # Warnings for owners
         if check_plugin_access(self.request.user, plugin):
             if not plugin.homepage:
