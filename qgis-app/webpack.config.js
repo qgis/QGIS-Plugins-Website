@@ -1,6 +1,7 @@
 const path = require('path');
 const BundleTracker = require('webpack-bundle-tracker');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const webpack = require('webpack');
 
 const mode = process.argv.indexOf("production") !== -1 ? "production" : "development";
 console.log(`Webpack mode: ${mode}`);
@@ -9,6 +10,11 @@ let plugins = [
   new BundleTracker({ path: __dirname, filename: 'webpack-stats.json' }),
   new MiniCssExtractPlugin({
     filename: 'css/[name].[contenthash].css',
+  }),
+  new webpack.ProvidePlugin({
+    $: 'jquery',
+    jQuery: 'jquery',
+    'window.jQuery': 'jquery',
   }),
 ];
 
@@ -21,6 +27,7 @@ if (mode === 'development') {
 
 // List of libraries to expose globally
 const exposeLibraries = [
+  { name: 'jquery', exposes: ['$', 'jQuery'] },
   { name: 'datatables.net', exposes: ['DataTable'] },
 ];
 

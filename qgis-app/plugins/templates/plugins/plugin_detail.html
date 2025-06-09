@@ -5,9 +5,7 @@
 {{ block.super }}
 <script type="text/javascript" src="{% static "js/jquery.cookie.js" %}"></script>
 <script type="text/javascript" src="{% static "jquery-ratings/jquery.ratings.1.0.js" %}"></script>
-<link rel="stylesheet" href="{% static 'style/dataTables.css' %}" />
-<script type="text/javascript" src="{% static 'js/dataTables.js' %}"></script>
-
+<script src="{% static "js/dataTables/dataTables.bulma.js" %}"></script>
 
 <script type="text/javascript">
     function csrfSafeMethod(method) {
@@ -138,6 +136,7 @@
 {% endblock %}
 {% block extracss %}
 <link type="text/css" href="{% static "jquery-ratings/jquery.ratings.1.0.css" %}" rel="stylesheet" />
+<link rel="stylesheet" href="{% static "style/dataTables.bulma.css" %}">
 {{ block.super }}
 <style>
     .tooltip {
