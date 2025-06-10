@@ -1,6 +1,7 @@
 const path = require('path');
 const BundleTracker = require('webpack-bundle-tracker');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const webpack = require('webpack');
 
 const mode = process.argv.indexOf("production") !== -1 ? "production" : "development";
 console.log(`Webpack mode: ${mode}`);
@@ -10,6 +11,11 @@ let plugins = [
   new MiniCssExtractPlugin({
     filename: 'css/[name].[contenthash].css',
   }),
+  new webpack.ProvidePlugin({
+    $: 'jquery',
+    jQuery: 'jquery',
+    'window.jQuery': 'jquery',
+  }),
 ];
 
 if (mode === 'development') {
@@ -17,6 +23,13 @@ if (mode === 'development') {
   const LiveReloadPlugin = require('webpack-livereload-plugin');
   plugins.push(new LiveReloadPlugin({ appendScriptTag: true }));
 }
+
+
+// List of libraries to expose globally
+const exposeLibraries = [
+  { name: 'jquery', exposes: ['$', 'jQuery'] },
+  { name: 'datatables.net', exposes: ['DataTable'] },
+];
 
 module.exports = {
   entry: './static/js/index',
@@ -27,6 +40,14 @@ module.exports = {
   plugins: plugins,
   module: {
     rules: [
+      // Auto-generate expose-loader rules
+      ...exposeLibraries.map(lib => ({
+        test: require.resolve(lib.name),
+        loader: 'expose-loader',
+        options: {
+          exposes: lib.exposes,
+        },
+      })),
       {
         test: /\.scss$/,
         use: [
