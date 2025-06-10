@@ -182,3 +182,17 @@ $notification-radius: $corner-radius;
 @import "bulma/layout/_all.sass";
 @import "bulma/helpers/_all.sass";
 @import "bulma/form/_all.sass";
+
+.versions-list-table {
+  thead {
+    z-index: 30;
+  }
+  tbody {
+    .button,
+    button,
+    .icon,
+    i {
+      z-index: 1 !important;
+    }
+  }
+}
