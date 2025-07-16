@@ -282,7 +282,7 @@
                             <span>{% trans "Tokens" %}</span>
                         </a>
                     </p>
-                    {% if user.is_staff %}
+                    {% comment %} {% if user.is_staff %}
                         <p class="control">
                             {% if object.featured %}
                                 <button class="button is-warning" type="submit" name="unset_featured" value="unset_featured" id="unset_featured">
@@ -300,7 +300,7 @@
                                 </button>
                             {% endif %}
                         </p>
-                    {% endif %}
+                    {% endif %} {% endcomment %}
                     {% if user.is_staff or user in object.editors %}
                         <p class="control">
                             <a class="button is-danger" href="{% url "plugin_delete" object.package_name %}">

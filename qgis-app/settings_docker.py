@@ -218,11 +218,13 @@ NEWS_MENU = [
 
 # Featured, popular, most downloaded, most voted, most rated
 TOP_MENU = [
-    {
-        'name': 'Featured',
-        'url': '/plugins/featured/',
-        'order': 0,
-    },
+    # Hidden for now, as we didn't set rules for featured plugins
+    # Uncomment the following lines when ready to use featured plugins
+    # {
+    #     'name': 'Featured',
+    #     'url': '/plugins/featured/',
+    #     'order': 0,
+    # },
     {
         'name': 'Popular',
         'url': '/plugins/popular/',

@@ -75,18 +75,19 @@ urlpatterns = [
         {},
         name="plugin_token_delete",
     ),
-    url(
-        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/set_featured/$",
-        plugin_set_featured,
-        {},
-        name="plugin_set_featured",
-    ),
-    url(
-        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/unset_featured/$",
-        plugin_unset_featured,
-        {},
-        name="plugin_unset_featured",
-    ),
+    # Uncomment the following lines when ready to use featured plugins
+    # url(
+    #     r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/set_featured/$",
+    #     plugin_set_featured,
+    #     {},
+    #     name="plugin_set_featured",
+    # ),
+    # url(
+    #     r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/unset_featured/$",
+    #     plugin_unset_featured,
+    #     {},
+    #     name="plugin_unset_featured",
+    # ),
     url(
         r"^user/(?P<username>\w+)/admin$",
         UserDetailsPluginsList.as_view(),
@@ -110,17 +111,18 @@ urlpatterns = [
         ),
         name="my_plugins",
     ),
-    url(
-        r"^featured/$",
-        PluginsList.as_view(
-            queryset=Plugin.featured_objects.all(),
-            additional_context={
-                "title": _("Featured Plugins"),
-                "description": _("List of approved plugins with the 'featured' flags set."),
-            },
-        ),
-        name="featured_plugins",
-    ),
+    # Uncomment the following lines when ready to use featured plugins
+    # url(
+    #     r"^featured/$",
+    #     PluginsList.as_view(
+    #         queryset=Plugin.featured_objects.all(),
+    #         additional_context={
+    #             "title": _("Featured Plugins"),
+    #             "description": _("List of approved plugins with the 'featured' flags set."),
+    #         },
+    #     ),
+    #     name="featured_plugins",
+    # ),
     url(r"^user/(?P<username>\w+)/$", UserPluginsList.as_view(), name="user_plugins"),
     url(
         r"^server/$",
