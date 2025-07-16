@@ -31,6 +31,9 @@ docker-compose --version
 - Go to dockerize directory `cd QGIS-Plugins-Website/dockerize`
 
 
+![-----------------------------------------------------](./img/green-gradient.png)
+
+
 ## 🧑💻 Development
 
 For Nix based development environment, please skip directly to the [Nix](#nix) section.
@@ -142,8 +145,6 @@ nix-shell
 ```
 TODO: Install all dependecies when running nix-shell.
 
-![-----------------------------------------------------](./img/green-gradient.png)
-
 
 ### Setup git-hooks and local linting
 
@@ -155,7 +156,6 @@ pip install -r REQUIREMENTS-dev.txt
 pre-commit install --config .pre-commit-config.yaml
 ```
 
----
 
 ### Setting up a remote interpreter in PyCharm
 
@@ -218,7 +218,9 @@ Now you can run the server using the green triangle next to the Django server
 label in the run configurations pull down. Debug will also work and you will be
 able to step through views etc as you work.
 
----
+
+![-----------------------------------------------------](./img/green-gradient.png)
+
 ## Backup and Restore
 
 - Go to repo directory and run backup.sh
