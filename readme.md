@@ -25,6 +25,8 @@
 > - [certification.qgis.org](https://certification.qgis.org) ([GitHub: QGIS-Certification-Website](https://github.com/qgis/QGIS-Certification-Website)) – QGIS Certification Programme Platform
 > - [changelog.qgis.org](https://changelog.qgis.org) ([GitHub: QGIS-Changelog-Website](https://github.com/qgis/QGIS-Changelog-Website)) – QGIS Changelog Manager
 > - [uc2025.qgis.org](https://uc.qgis.org) ([GitHub: QGIS-UC-Website](https://github.com/qgis/QGIS-UC-Website)) – QGIS User Conference Website
+>
+> For issues related to specific plugins or other concerns, please use their respective bug tracker (see the metadata/details of the concerned plugin).
 
 ![-----------------------------------------------------](./img/green-gradient.png)
 
