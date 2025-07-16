@@ -42,8 +42,8 @@
     <li><a href="#-license"> 📜 License </a></li>
     <li><a href="#-folder-structure"> 📂 Folder Structure </a></li>
     <li><a href="#-using-ai-large-language-models"> 🤖 Using 'AI' (Large Language Models) </a></li>
-    <li><a href="#-tech-stack"> 🛠️ Tech Stack </a></li>
-    <li><a href="#-data-model"> 🗄️ Data Model </a></li>
+    <li><a href="#️-tech-stack"> 🛠️ Tech Stack </a></li>
+    <li><a href="#️-data-model"> 🗄️ Data Model </a></li>
     <li><a href="#-token-based-authentication"> 🔑 Token-based Authentication </a></li>
     <li><a href="#-using-the-nix-shell"> 🧊 Using the Nix Shell </a></li>
     <li><a href="#-contributing"> ✨ Contributing </a></li>
