@@ -182,7 +182,7 @@ Have questions or feedback? Feel free to open an issue or submit a Pull Request!
 - [Tim Sutton](https://github.com/timlinux) – Original author and lead maintainer of the QGIS Plugins Website project
 - [Kontur Team](https://www.kontur.io) – Responsible for the design of the current theme
 - [Lova Andriarimalala](https://github.com/Xpirix) – Core developer and ongoing maintainer
-- [QGIS Contributors](https://github.com/qgis/QGIS-Website/graphs/contributors) – See the full list of amazing contributors who have helped make this website possible.
+- [QGIS Contributors](https://github.com/qgis/QGIS-Plugins-Website/graphs/contributors) – See the full list of amazing contributors who have helped make this website possible.
 
 ![-----------------------------------------------------](./img/green-gradient.png)
 
