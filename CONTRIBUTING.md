@@ -36,8 +36,6 @@ docker-compose --version
 
 ## 🧑💻 Development
 
-For Nix based development environment, please skip directly to the [Nix](#nix) section.
-
 - Create .env file
 ```bash
 $ cp .env.template .env
