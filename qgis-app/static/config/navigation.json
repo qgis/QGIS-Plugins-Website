@@ -43,13 +43,6 @@
           {
             "type": "second-menu",
             "settings": {
-              "name": "Featured",
-              "href": "/plugins/featured/"
-            }
-          },
-          {
-            "type": "second-menu",
-            "settings": {
               "name": "Popular",
               "href": "/plugins/popular/"
             }
