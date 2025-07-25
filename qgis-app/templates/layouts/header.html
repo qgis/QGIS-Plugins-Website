@@ -48,6 +48,11 @@
                                             {% for entry in subitem.submenu %}
                                                 <a class="navbar-item has-text-weight-semibold is-size-7 ml-1 mr-1" href="{{ entry.url }}">
                                                     {{ entry.name }}
+                                                    {% if entry.is_highlighted %}
+                                                        <span class="tag is-success is-rounded is-size-7 ml-1">
+                                                        {% trans "New" %}
+                                                        </span>
+                                                    {% endif %}
                                                 </a>
                                             {% endfor %}
                                             {% if not forloop.last %}
