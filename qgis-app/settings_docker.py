@@ -205,20 +205,14 @@ WEBPACK_LOADER = {
 # News and Updated menus
 NEWS_MENU = [
     {
-        'name': 'QGIS 4 Ready',
-        'url': '/plugins/new_qgis_ready/',
-        'order': 0,
-        'is_highlighted': True,
-    },
-    {
-        'name': 'New Plugins',
+        'name': 'New',
         'url': '/plugins/fresh/',
-        'order': 1,
+        'order': 0,
     },
     {
-        'name': 'Updated Plugins',
+        'name': 'Updated',
         'url': '/plugins/latest/',
-        'order': 2,
+        'order': 1,
     },
 ]
 
