@@ -1,88 +1,9 @@
-ADMINS = (
-  ('ElPaso', 'elpaso@itopen.it'),
-)
-
-MANAGERS = ADMINS
-# Tell django which clients may receive debug messages...used by django-debug-toolbar
-INTERNAL_IPS = ('127.0.0.1','')
-
-# Disable for prod machine
-DEBUG = True
-TEMPLATE_DEBUG = DEBUG
-LOGGING_OUTPUT_ENABLED=DEBUG
-LOGGING_LOG_SQL=DEBUG
-
-
-ADMINS = (
-    # ('Your Name', 'your_email@domain.com'),
-)
-
-DATABASES = {
-    'default': {
-        # Newer django versions may require you to use the postgis backed
-
-        #'ENGINE': 'django.contrib.gis.db.backends.postgis', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'qgis-django-plugins.db',                      # Or path to database file if using sqlite3.
-        'USER': '',                      # Not used with sqlite3.
-        'PASSWORD': '',                  # Not used with sqlite3.
-        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
-    }
-}
-
-#Tim for google maps in user community page
-#qgis-django.localhost
-GOOGLE_API_KEY='ABQIAAAAyZw9WlHOs4CazzwUByOgZxQok5WFiNcwymBq4ClbhSeQY6fSMhTl0KHT2Donh18dLk3P4AC4ddOarA'
-
-PAGINATION_DEFAULT_PAGINATION=20
-
-# ABP: More portable config
-import os
-SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
-
-# Absolute path to the directory that holds media.
-# Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = SITE_ROOT  + '/static/'
-
-# URL that handles the media served from MEDIA_ROOT. Make sure to use a
-# trailing slash if there is a path component (optional in other cases).
-# Examples: "http://media.lawrence.com", "http://example.com/media/"
-MEDIA_URL = 'http://localhost:8000/static/'
-
-SERVE_STATIC_MEDIA = True
-
-# TIM: Place where search indexes are stored for snippets - should be non web accessible
-HAYSTACK_WHOOSH_PATH = '/home/web/qgis-django/search-index'
-
-# Tim Email settings
-EMAIL_HOST = 'localhost'
-#EMAIL_PORT =
-DEFAULT_FROM_EMAIL = os.environ.get("EMAIL_HOST_USER", "automation")
-
-INSTALLED_APPS = [
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.sites',
-    'django.contrib.messages',
-    # Uncomment the next line to enable the admin:
-     'django.contrib.admin',
-    # Uncomment the next line to enable admin documentation:
-    # 'django.contrib.admindocs',
-    'django.contrib.staticfiles',
-    'django.contrib.flatpages',
-
-    # ABP:
-    'plugins',
-    'django.contrib.humanize',
-    'django.contrib.syndication',
-
-    'taggit',
-    'taggit_autosuggest',
-    'taggit_templatetags',
-    #'haystack',
-    'simplemenu',
-    'tinymce',
-    'rpc4django',
-]
+# Host for sending e-mail.
+EMAIL_HOST = "smtp.gmail.com"
+# Port for sending e-mail.
+EMAIL_PORT = 587
+# SMTP authentication information for EMAIL_HOST.
+# See fig.yml for where these are defined
+EMAIL_HOST_USER = "automation@qgis.org"
+EMAIL_HOST_PASSWORD = "hello_password"
+EMAIL_USE_TLS = True
