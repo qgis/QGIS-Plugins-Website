@@ -102,26 +102,6 @@ class ExperimentalPlugins(BasePluginManager):
             .distinct()
         )
 
-class NewQgisMajorVersionReadyPlugins(BasePluginManager):
-    """
-    Shows only public plugins: i.e. those with "approved" flag set
-    and with one version that is compatible with QGIS 4.x
-    This is determined by checking if the max_qg_version is greater than or equal to "4.0".
-    This manager filters out deprecated plugins as well.
-    """
-
-    def get_queryset(self):
-        return (
-            super(NewQgisMajorVersionReadyPlugins, self)
-            .get_queryset()
-            .filter(
-                pluginversion__approved=True,
-                pluginversion__max_qg_version__gte="4.0",
-                deprecated=False
-            )
-            .distinct()
-            .order_by("-created_on")
-        )
 
 class FeaturedPlugins(BasePluginManager):
     """
@@ -553,7 +533,6 @@ class Plugin(models.Model):
     approved_objects = ApprovedPlugins()
     stable_objects = StablePlugins()
     experimental_objects = ExperimentalPlugins()
-    new_qgis_ready_objects = NewQgisMajorVersionReadyPlugins()
     featured_objects = FeaturedPlugins()
     fresh_objects = FreshPlugins()
     latest_objects = LatestPlugins()
