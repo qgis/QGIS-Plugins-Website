@@ -29,14 +29,21 @@
           {
             "type": "second-menu",
             "settings": {
-              "name": "New",
+              "name": "QGIS 4 Ready",
+              "href": "/plugins/new_qgis_ready/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
+              "name": "New Plugins",
               "href": "/plugins/fresh/"
             }
           },
           {
             "type": "second-menu",
             "settings": {
-              "name": "Updated",
+              "name": "Updated Plugins",
               "href": "/plugins/latest/"
             }
           },
