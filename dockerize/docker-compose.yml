@@ -61,6 +61,7 @@ services:
       - EMAIL_HOST_USER=${EMAIL_HOST_USER:-automation}
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
       - DEFAULT_PLUGINS_SITE=${DEFAULT_PLUGINS_SITE:-https://plugins.qgis.org/}
+      - NEW_QGIS_MAJOR_VERSION=${NEW_QGIS_MAJOR_VERSION:-4}
       - SENTRY_DSN=${SENTRY_DSN}
       - SENTRY_RATE=${SENTRY_RATE}
     volumes:

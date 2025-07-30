@@ -202,10 +202,12 @@ WEBPACK_LOADER = {
     }
 }
 
+NEW_QGIS_MAJOR_VERSION = os.environ.get("NEW_QGIS_MAJOR_VERSION", "4")
+
 # News and Updated menus
 NEWS_MENU = [
     {
-        'name': 'QGIS 4 Ready',
+        'name': f'QGIS {NEW_QGIS_MAJOR_VERSION} Ready',
         'url': '/plugins/new_qgis_ready/',
         'order': 0,
         'is_highlighted': True,

@@ -6,6 +6,7 @@ from django.conf import settings
 from bs4 import BeautifulSoup
 import requests
 import datetime
+import json
 
 register = template.Library()
 
@@ -173,6 +174,33 @@ def get_site_url():
 @register.simple_tag()
 def get_navigation_config_url():
     """
-    Get the navigation config URL from the settings
+    Get the navigation config URL from the settings,
+    replacing dynamic variables and saving to a new file.
     """
-    return os.path.join(settings.DEFAULT_PLUGINS_SITE, "static", "config", "navigation.json")
+
+    # Path to the original navigation.json
+    original_path = os.path.join(settings.SITE_ROOT, "static", "config", "navigation.json")
+    # Path to the new file with variables replaced
+    new_path = os.path.join(settings.SITE_ROOT, "static", "config", "navigation_rendered.json")
+
+    # Read the original file
+    with open(original_path, "r") as f:
+        content = f.read()
+
+    # Replace the variable(s)
+    new_qgis_major_version = settings.NEW_QGIS_MAJOR_VERSION
+    content = content.replace("{{ new_qgis_major_version }}", str(new_qgis_major_version))
+
+    # Optionally validate JSON
+    try:
+        json.loads(content)
+    except json.JSONDecodeError:
+        # If the result is not valid JSON, don't save or return the new path
+        return None
+
+    # Write to the new file
+    with open(new_path, "w") as f:
+        f.write(content)
+
+    # Return the URL to the new file
+    return os.path.join(settings.DEFAULT_PLUGINS_SITE, "static", "config", "navigation_rendered.json")

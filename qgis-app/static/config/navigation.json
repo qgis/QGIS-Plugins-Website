@@ -29,7 +29,7 @@
           {
             "type": "second-menu",
             "settings": {
-              "name": "QGIS 4 Ready",
+              "name": "QGIS {{ new_qgis_major_version }} Ready",
               "href": "/plugins/new_qgis_ready/"
             }
           },
