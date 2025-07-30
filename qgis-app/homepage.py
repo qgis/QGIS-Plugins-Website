@@ -2,6 +2,7 @@ from django.contrib.flatpages.models import FlatPage
 from django.shortcuts import render
 from django.template import RequestContext
 from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 from plugins.models import Plugin
 
 
@@ -28,7 +29,8 @@ def homepage(request):
             "popular": popular,
             "new_qgis_ready": new_qgis_ready,
             "content": content,
-            "title": "QGIS plugins web portal"
+            "title": "QGIS plugins web portal",
+            "new_qgis_major_version": settings.NEW_QGIS_MAJOR_VERSION,
         },
     )
 

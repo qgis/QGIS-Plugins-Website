@@ -206,8 +206,8 @@ urlpatterns = [
         PluginsList.as_view(
             queryset=Plugin.new_qgis_ready_objects.all(),
             additional_context={
-                "title": _("QGIS 4 Ready Plugins"),
-                "description": _("List of approved plugins that are ready for QGIS 4."),
+                "title": _(f"QGIS {settings.NEW_QGIS_MAJOR_VERSION} Ready Plugins"),
+                "description": _(f"List of approved plugins that are ready for QGIS {settings.NEW_QGIS_MAJOR_VERSION}."),
             },
         ),
         name="new_qgis_ready_plugins",

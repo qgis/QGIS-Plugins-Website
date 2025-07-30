@@ -105,8 +105,8 @@ class ExperimentalPlugins(BasePluginManager):
 class NewQgisMajorVersionReadyPlugins(BasePluginManager):
     """
     Shows only public plugins: i.e. those with "approved" flag set
-    and with one version that is compatible with QGIS 4.x
-    This is determined by checking if the max_qg_version is greater than or equal to "4.0".
+    and with one version that is compatible with the new QGIS major version.
+    This is determined by checking if the max_qg_version is greater than or equal to the new QGIS major version.
     This manager filters out deprecated plugins as well.
     """
 
@@ -116,7 +116,7 @@ class NewQgisMajorVersionReadyPlugins(BasePluginManager):
             .get_queryset()
             .filter(
                 pluginversion__approved=True,
-                pluginversion__max_qg_version__gte="4.0",
+                pluginversion__max_qg_version__gte=f"{settings.NEW_QGIS_MAJOR_VERSION}.0",
                 deprecated=False
             )
             .distinct()

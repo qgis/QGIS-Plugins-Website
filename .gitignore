@@ -71,3 +71,6 @@ qgis-app/templates/flatpages/sustaining_members.html
 
 # NixOS
 .direnv
+
+# Menu
+qgis-app/static/config/navigation_rendered.json
