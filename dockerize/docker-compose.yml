@@ -47,6 +47,7 @@ services:
       - DATABASE_PASSWORD=${DATABASE_PASSWORD:-docker}
       - DATABASE_HOST=${DATABASE_HOST:-db}
       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-settings_docker}
+      - DJANGO_LOCAL_SETTINGS=${DJANGO_LOCAL_SETTINGS:-settings_local.py}
       - VIRTUAL_HOST=${VIRTUAL_HOST:-plugins.kartoza.com}
       - VIRTUAL_PORT=${VIRTUAL_PORT:-8080}
       - DEBUG=${DEBUG:-False}
