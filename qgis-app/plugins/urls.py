@@ -202,6 +202,18 @@ urlpatterns = [
         name="experimental_plugins",
     ),
     url(
+        r"^new_qgis_ready/$",
+        PluginsList.as_view(
+            queryset=Plugin.new_qgis_ready_objects.all(),
+            additional_context={
+                "title": _(f"QGIS {settings.NEW_QGIS_MAJOR_VERSION} Ready Plugins"),
+                "description": _(f"List of approved plugins that are ready for QGIS {settings.NEW_QGIS_MAJOR_VERSION}."),
+            },
+        ),
+        name="new_qgis_ready_plugins",
+    ),
+
+    url(
         r"^popular/$",
         PluginsList.as_view(
             queryset=Plugin.popular_objects.all(),
