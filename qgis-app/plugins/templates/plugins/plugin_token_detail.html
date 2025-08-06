@@ -15,16 +15,8 @@
         <td><a href="{% url "user_details" object.user %}">{{ object.user }}</a></td>
       </tr>
       <tr>
-        <th>{% trans "Jti" %}</th>
-        <td>{{ object.jti }}</td>
-      </tr>
-      <tr>
         <th>{% trans "Created at" %}</th>
         <td>{{ object.created_at|local_timezone }}</td>
-      </tr>
-      <tr>
-        <th>{% trans "Expires at" %}</th>
-        <td>{{ object.expires_at|local_timezone }}</td>
       </tr>
       <tr>
         <th>{% trans "Access token" %}</th>
