@@ -779,7 +779,7 @@ def plugin_token_create(request, package_name):
         )
 
         return HttpResponseRedirect(
-            reverse("plugin_token_detail", args=(plugin.package_name, plugin_token.pk))
+            reverse("plugin_token_detail", args=(plugin.package_name, outstanding_token.pk))
         )
 
 @login_required
