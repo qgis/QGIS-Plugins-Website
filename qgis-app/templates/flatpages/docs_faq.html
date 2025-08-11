@@ -1,0 +1,29 @@
+{% extends 'flatpages/docs.html' %}
+
+{% block content %}
+<div class="responsive-content">
+  <h1>Frequently Asked Questions</h1>
+
+  <h2>How do I rename an existing plugin?</h2>
+
+  <h3>Changing the plugin display name</h3>
+  <p>
+    At present, the plugin display name can only be changed via the administration interface, and it requires additional verification. 
+    To request a name change for an existing QGIS plugin, please contact the QGIS Plugin Administration team by emailing 
+    <a href="mailto:tim@katoza.com">tim@katoza.com</a> and <a href="mailto:lova@kartoza.com">lova@kartoza.com</a> from the plugin author's email address.
+  </p>
+
+  <h3>Renaming the directory (also known as <code>package_name</code>)</h3>
+  <p>
+    This functionality was previously requested but has since been discontinued. 
+    It is strongly recommended to keep the original plugin identifier (directory name) to avoid compatibility issues. 
+    Changing the <code>package_name</code> may cause QGIS to treat the plugin as uninstalled, 
+    which can result in errors during installation.
+  </p>
+  <p>
+    More details can be found in the discussion 
+    <a href="https://github.com/qgis/QGIS-Django/pull/271#issuecomment-1794858448">here</a>.
+  </p>
+
+</div>
+{% endblock %}

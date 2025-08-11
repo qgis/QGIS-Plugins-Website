@@ -89,6 +89,12 @@
             Approval process
           </a>
         </li>
+        {% url 'docs_faq' as docs_faq_url %}
+        <li class="has-child {% if request.path == docs_faq_url %}is-active{% endif %}">
+          <a href="{{ docs_faq_url }}">
+            FAQ
+          </a>
+        </li>
       </ul>
     </li>
     <li>
