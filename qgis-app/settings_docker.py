@@ -1,6 +1,5 @@
 from celery.schedules import crontab
 
-from settings import *
 import ast
 import os
 
@@ -372,3 +371,23 @@ NAVIGATION_MENU = [
         'requires_staff': True,
     },
 ]
+
+# Local settings overrides
+# Must be the last!
+DJANGO_LOCAL_SETTINGS = os.environ.get("DJANGO_LOCAL_SETTINGS", "settings_local.py")
+
+try:
+    from pathlib import Path
+    local_settings_path = Path(__file__).parent / DJANGO_LOCAL_SETTINGS
+    if local_settings_path.exists():
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("settings_local", local_settings_path)
+        settings_local = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(settings_local)
+        for setting in dir(settings_local):
+            if setting.isupper():
+                globals()[setting] = getattr(settings_local, setting)
+    else:
+        raise ImportError(f"Local settings file {DJANGO_LOCAL_SETTINGS} does not exist.")
+except ImportError:
+    pass

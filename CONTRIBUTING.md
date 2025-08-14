@@ -36,6 +36,7 @@ docker-compose --version
 
 ## 🧑💻 Development
 
+### Environment file (`.env`)
 - Create .env file
 ```bash
 $ cp .env.template .env
@@ -47,6 +48,21 @@ $ cp .env.template .env
 Default is `rabbitmq:3.7-alpine`. This is useful if you encounter any issues 
 with the default image (can be also use to change the image without editing the code). 
 Please also see [this discussion](https://github.com/qgis/QGIS-Plugins-Website/issues/80).
+
+**IMPORTANT NOTE**: For new Django variables, please use the `settings_local.py` as the `.env` file is not supported by the new production infrastructure.
+
+### Django Local Settings (`settings_local.py`)
+
+- Create settings_local.py file
+```bash
+$ cp settings_local.py.templ settings_local.py
+```
+
+- Edit settings_local.py file and set your environment variables
+
+**IMPORTANT NOTE**: As we are migrating to a declarative based infrastructure, it is preferable to use the `settings_local.py` file for all new Django variables. This file is ignored when commiting so please make sure you define your new variables with an example value (**NOT THE REAL ONE FOR SECRETS AND PASSWORDS**) inside the `settings_local.py.templ` file.
+
+### Spin up the development environment
 
 - Build and spin container
 ```bash
