@@ -22,3 +22,14 @@ def docs_approval(request):
         "flatpages/docs_approval.html",
         {},
     )
+
+
+def docs_faq(request):
+    """
+    Renders the docs_faq page
+    """
+    return render(
+        request,
+        "flatpages/docs_faq.html",
+        {},
+    )
