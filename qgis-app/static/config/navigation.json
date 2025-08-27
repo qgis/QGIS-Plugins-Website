@@ -71,8 +71,8 @@
           {
             "type": "second-menu",
             "settings": {
-              "name": "Most Rated Plugins",
-              "href": "/plugins/most_rated/"
+              "name": "Best Rated Plugins",
+              "href": "/plugins/best_rated/"
             }
           },
           {
