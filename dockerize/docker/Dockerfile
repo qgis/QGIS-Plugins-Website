@@ -40,7 +40,7 @@ RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends wget &&
 
 WORKDIR /home/web/django_project
 COPY qgis-app/package.json /home/web/django_project/package.json
-RUN npm install -g npm@10.2.1 && npm install -g webpack@5.89.0 && npm install -g webpack-cli@5.1.4 && npm install
+RUN npm install --unsafe-perm -g npm@10.2.1 && npm install --unsafe-perm -g webpack@5.89.0 && npm install --unsafe-perm -g webpack-cli@5.1.4 && npm install --unsafe-perm
 
 RUN mkdir -p /var/log/uwsgi
 
