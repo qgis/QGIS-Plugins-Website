@@ -251,15 +251,15 @@ urlpatterns = [
         name="most_downloaded_plugins",
     ),
     url(
-        r"^most_rated/$",
+        r"^best_rated/$",
         PluginsList.as_view(
-            queryset=Plugin.most_rated_objects.all(),
+            queryset=Plugin.best_rated_objects.all(),
             additional_context={
-                "title": _("Most Rated Plugins"),
+                "title": _("Best Rated Plugins"),
                 "description": _("List of approved plugins sorted by the number of ratings."),
             },
         ),
-        name="most_rated_plugins",
+        name="best_rated_plugins",
     ),
     url(
         r"^feedback_completed/$",

@@ -223,7 +223,7 @@ NEWS_MENU = [
     },
 ]
 
-# Featured, popular, most downloaded, most voted, most rated
+# Featured, popular, most downloaded, most voted, best rated
 TOP_MENU = [
     # Hidden for now, as we didn't set rules for featured plugins
     # Uncomment the following lines when ready to use featured plugins
@@ -248,8 +248,8 @@ TOP_MENU = [
         'order': 3,
     },
     {
-        'name': 'Most Rated Plugins',
-        'url': '/plugins/most_rated/',
+        'name': 'Best Rated Plugins',
+        'url': '/plugins/best_rated/',
         'order': 4,
     },
 ]

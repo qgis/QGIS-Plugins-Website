@@ -87,7 +87,7 @@ test('plugins', async ({ page }) => {
 
   await expect(page.getByRole('link', { name: 'Top downloads' })).toBeVisible();
 
-  await expect(page.getByRole('link', { name: 'Most rated' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Best rated' })).toBeVisible();
 
   await expect(page.getByRole('link', { name: 'QGIS Server plugins' })).toBeVisible();
 

@@ -283,14 +283,14 @@ class MostVotedPlugins(ApprovedPlugins):
         )
 
 
-class MostRatedPlugins(ApprovedPlugins):
+class BestRatedPlugins(ApprovedPlugins):
     """
     Shows only approved plugins, sort by vote/number of votes number
     """
 
     def get_queryset(self):
         return (
-            super(MostRatedPlugins, self)
+            super(BestRatedPlugins, self)
             .get_queryset()
             .filter(deprecated=False)
             .order_by("-weighted_rating")
@@ -562,7 +562,7 @@ class Plugin(models.Model):
     popular_objects = PopularPlugins()
     most_downloaded_objects = MostDownloadedPlugins()
     most_voted_objects = MostVotedPlugins()
-    most_rated_objects = MostRatedPlugins()
+    best_rated_objects = BestRatedPlugins()
     server_objects = ServerPlugins()
     feedback_completed_objects = FeedbackCompletedPlugins()
     feedback_received_objects = FeedbackReceivedPlugins()

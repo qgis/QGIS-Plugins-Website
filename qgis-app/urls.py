@@ -109,7 +109,7 @@ simplemenu.register(
     "/plugins/popular/",
     "/plugins/most_voted/",
     "/plugins/most_downloaded/",
-    "/plugins/most_rated/",
+    "/plugins/best_rated/",
     # Category
     "/plugins/stable/",
     "/plugins/experimental/",
