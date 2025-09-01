@@ -1,0 +1,27 @@
+name: QGIS Plugins Website Development
+description: For issues encountered with the QGIS Plugins development environment.
+labels:
+  - "dev"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        #### Thank you for reporting an issue!
+        
+        Please help us resolve your issue faster by providing clear details and screenshots if possible.
+
+        - Before submitting, please read [the repository note](https://github.com/qgis/QGIS-Plugins-Website?tab=readme-ov-file#%EF%B8%8F-note-on-other-qgis-websites).
+        - Only issues related to the QGIS Plugins website will be addressed; unrelated issues will be closed.
+        - Check if this bug has already been reported to avoid duplicates.
+  - type: input
+    attributes:
+      label: Tools
+      description: What tool(s) are affected?
+      placeholder: IDE, Docker, GH Actions, Make, etc.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the issue you encountered. Feel free to throw in screenshots and/or screencasts if helpful (they always are!)
+    validations:
+      required: true

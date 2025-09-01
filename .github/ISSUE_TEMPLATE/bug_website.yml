@@ -1,0 +1,69 @@
+name: QGIS Plugins Website Bug Report
+description: For problems with the design or functionality of the QGIS Plugins website.
+labels:
+  - "bug"
+  - "design"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        #### Thank you for reporting an issue!
+
+        Please help us resolve your issue faster by providing clear details and screenshots if possible.
+
+        - Before submitting, please read [the repository note](https://github.com/qgis/QGIS-Plugins-Website?tab=readme-ov-file#%EF%B8%8F-note-on-other-qgis-websites).
+        - Only issues related to the QGIS Plugins website will be addressed; unrelated issues will be closed.
+        - Check if this bug has already been reported to avoid duplicates.
+  - type: input
+    id: address
+    attributes:
+      label: URL
+      description: URL where the bug was found
+      placeholder: https://plugins.qgis.org/
+  - type: dropdown
+    id: devices
+    attributes:
+      label: On what type of device(s) did you see this bug?
+      multiple: true
+      options:
+        - Phone
+        - Tablet
+        - Desktop
+  - type: dropdown
+    id: operating_systems
+    attributes:
+      label: On which operating system(s) are you seeing the problem?
+      multiple: true
+      options:
+        - Android
+        - iOS
+        - Linux distribution
+        - MacOs
+        - Windows
+  - type: input
+    id: other_os
+    attributes:
+      label: Other OS
+      description: If your operating system is not in the list, enter it here.
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: On which browser(s) are you seeing the problem?
+      multiple: true
+      options:
+        - Firefox
+        - Chrome
+        - Safari
+        - Microsoft Edge
+  - type: input
+    id: other_browser
+    attributes:
+      label: Other Browser
+      description: If your browser is not in the list, enter it here.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the bug you encountered.
+    validations:
+      required: true

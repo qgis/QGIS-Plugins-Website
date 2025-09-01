@@ -1,0 +1,28 @@
+name: Feature Request for QGIS Plugins Website
+description: Suggest an idea to better the QGIS Plugins Website!
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        #### Thank you for submitting a feature request!
+
+        Please help us resolve your request faster by providing clear details and screenshots if possible.
+
+        - Before submitting, please read [the repository note](https://github.com/qgis/QGIS-Plugins-Website?tab=readme-ov-file#%EF%B8%8F-note-on-other-qgis-websites).
+        - Only feature requests related to the QGIS Plugins website will be addressed; unrelated requests will be closed.
+        - Check if this feature has already been requested to avoid duplicates.
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: Describe the feature you would like to see implemented.
+    validations:
+      required: true
+  - type: textarea
+    id: reference
+    attributes:
+      label: Reference to Feature
+      description: Have you seen this feature somewhere else?
+      placeholder: Please include links to references if you have them.
