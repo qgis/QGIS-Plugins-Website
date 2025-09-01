@@ -15,7 +15,7 @@
                         <i class="fas fa-sign-out-alt"></i>
                     </span>
                     <span>
-                        {% trans "Logout" %}
+                        {% trans "Logout" %}  ({{ user.username }})
                     </span>
                 </a>
                 {% else %}
@@ -83,7 +83,7 @@
 
                 </div>
                 <div class="navbar-end">
-                    <div class="navbar-item">
+                    <div>
                         <div class="control has-icons-right search-control">
                             <form action="{% url "haystack_search" %}" method="get" style="margin:0;">
                                 <input class="input is-small"  id="id_q" name="q" type="text" placeholder="Search">
@@ -91,16 +91,17 @@
                             </form>
                         </div>
                     </div>
-                    <div class="navbar-item pl-0">
+                    <div class="navbar-item p-0 ml-1">
                         {% if user.is_authenticated %}
-                        <a class="button is-warning is-small" href="{% url "logout" %}">
-                            <span class="mr-2">
-                                <i class="fas fa-sign-out-alt"></i>
-                            </span>
-                            <span>
-                                {% trans "Logout" %}
-                            </span>
-                        </a>
+                            <div class="navbar-item has-dropdown is-hoverable p-0">
+                                <a href="#" class="navbar-link has-text-weight-semibold is-size-7">
+                                    <i class="fas fa-user mr-3"></i>
+                                    {{ user.get_full_name|default:user.username }}
+                                </a>
+                                <div class="navbar-dropdown">
+                                    <a href='{% url "logout" %}' class="navbar-item has-text-weight-semibold is-size-7">{% trans "Logout" %}</a>
+                                </div>
+                            </div>
                         {% else %}
                         <a class="button is-info is-small" href="{% url "login" %}">
                             <span class="mr-2">

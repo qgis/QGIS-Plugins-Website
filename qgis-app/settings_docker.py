@@ -324,7 +324,7 @@ PLUGINS_CATEGORIES = [
 
 NAVIGATION_MENU = [
     {
-        'name': 'QGIS Plugins Home',
+        'name': 'Home',
         'url': '/',
         'icon': 'fa-house',
         'order': 0,
