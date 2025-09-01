@@ -1,4 +1,4 @@
-name: QGIS Plugins Website Development
+name: Development
 description: For issues encountered with the QGIS Plugins development environment.
 labels:
   - "dev"

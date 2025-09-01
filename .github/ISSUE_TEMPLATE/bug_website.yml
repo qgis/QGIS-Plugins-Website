@@ -1,4 +1,4 @@
-name: QGIS Plugins Website Bug Report
+name: Bug Report
 description: For problems with the design or functionality of the QGIS Plugins website.
 labels:
   - "bug"
