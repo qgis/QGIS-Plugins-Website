@@ -22,6 +22,6 @@ body:
     id: summary
     attributes:
       label: Summary
-      description: Describe the issue you encountered. Feel free to throw in screenshots and/or screencasts if helpful (they always are!)
+      description: Describe the issue you encountered. Feel free to provide screenshots and/or screencasts if helpful (they always are!)
     validations:
       required: true

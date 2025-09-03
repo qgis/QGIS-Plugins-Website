@@ -12,7 +12,7 @@ body:
         Please help us resolve your issue faster by providing clear details and screenshots if possible.
 
         - Before submitting, please read [the repository note](https://github.com/qgis/QGIS-Plugins-Website?tab=readme-ov-file#%EF%B8%8F-note-on-other-qgis-websites).
-        - Only issues related to the QGIS Plugins website will be addressed; unrelated issues will be closed.
+        - Only issues related to the QGIS Plugins website will be addressed, unrelated issues will be closed.
         - Check if this bug has already been reported to avoid duplicates.
   - type: input
     id: address
