@@ -10,8 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Close issue with comment
-        uses: peter-evans/close-issue@v2
+        uses: peter-evans/close-issue@v3
         with:
+          token: ${{ secrets.PAT }}
           issue-number: ${{ github.event.issue.number }}
           comment: >
             This issue has been marked as not related to the QGIS Plugins website and is being closed.
