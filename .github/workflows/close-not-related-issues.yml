@@ -1,0 +1,19 @@
+name: Close Issues Not Related to QGIS Plugins Website
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  close-not-related:
+    if: github.event.label.name == 'not-related'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close issue with comment
+        uses: peter-evans/close-issue@v2
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          comment: >
+            This issue has been marked as not related to the QGIS Plugins website and is being closed.
+            It's possible that the issue is related to a specific plugin or functionality outside the QGIS Plugins website.
+            If you think this is a mistake, please comment to explain why.
