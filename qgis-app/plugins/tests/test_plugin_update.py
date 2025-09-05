@@ -131,12 +131,10 @@ class PluginUpdateTestCase(TestCase):
         })
         self.assertEqual(response.status_code, 302)
 
-        # The old version should not exist anymore
-        # TODO: The old version still exist, not sure why
-        # self.assertFalse(PluginVersion.objects.filter(
-        #     plugin__name='Test Plugin', 
-        #     version='0.0.1').exists()
-        # )
+        self.assertFalse(PluginVersion.objects.filter(
+            plugin__name='Test Plugin', 
+            version='0.0.1').exists()
+        )
         self.assertTrue(PluginVersion.objects.filter(
             plugin__name='Test Plugin', 
             version='0.0.2').exists()
@@ -162,6 +160,21 @@ class PluginUpdateTestCase(TestCase):
             settings.EMAIL_HOST_USER
         )
 
+    def test_plugin_version_approved_update(self):
+        """
+        Test update a plugin version that is already approved
+        """
+        package_name = self.plugin.package_name
+        self.url_add_version = reverse('version_update', args=[package_name, '0.0.1'])
+        version = PluginVersion.objects.get(plugin__name='Test Plugin', version='0.0.1')
+        version.approved = True
+        version.save()
+        self.assertTrue(version.approved)
+
+        response = self.client.get(self.url_add_version)
+        # Should redirect to the plugin details page
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('plugin_detail', args=[package_name]))
 
     def tearDown(self):
         self.client.logout()
