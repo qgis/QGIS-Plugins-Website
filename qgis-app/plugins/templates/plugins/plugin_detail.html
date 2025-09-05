@@ -535,8 +535,19 @@
                                             {% endif %}
                                         </a>
                                         {% if user.is_staff or user in version.plugin.editors %}
-                                        <a class="button is-success is-small is-outlined" href="{% url "version_update" object.package_name version.version %}" title="{% trans "Edit" %}"><i class="fas fa-pencil"></i></a>
-                                        <a class="button is-danger is-small is-outlined" href="{% url "version_delete" object.package_name version.version %}" title="{% trans "Delete" %}"><i class="fas fa-remove"></i></a>
+                                            {% if not version.approved %}
+                                                <a 
+                                                    class="button is-success is-small is-outlined" 
+                                                    href="{% url "version_update" object.package_name version.version %}" 
+                                                    title="{% trans "Edit" %}">
+                                                    <i class="fas fa-pencil"></i>
+                                                </a>
+                                            {% else %}
+                                                <button class="button is-success is-small is-outlined" disabled title="{% trans 'Cannot edit approved version' %}">
+                                                    <i class="fas fa-pencil"></i>
+                                                </button>
+                                            {% endif %}
+                                            <a class="button is-danger is-small is-outlined" href="{% url "version_delete" object.package_name version.version %}" title="{% trans "Delete" %}"><i class="fas fa-remove"></i></a>
                                         {% endif %}
                                         </form>
                                     </td>

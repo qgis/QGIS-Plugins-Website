@@ -135,9 +135,37 @@ class UploadWithTokenTestCase(TestCase):
             'package': uploaded_file,
         })
         self.assertEqual(response.status_code, 302)
-        # This will create a new version because this one is using token and doesn't have a created_by column
-        self.assertTrue(PluginVersion.objects.filter(plugin__name='Test Plugin', version='0.0.1').exists())
+        self.assertFalse(PluginVersion.objects.filter(plugin__name='Test Plugin', version='0.0.1').exists())
         self.assertTrue(PluginVersion.objects.filter(plugin__name='Test Plugin', version='0.0.2').exists())
+
+    def test_update_approved_version_with_token(self):
+        # Generate a token for the authenticated user
+        self.client.post(self.url_token_create, {})
+        outstanding_token = OutstandingToken.objects.last().token
+        refresh = RefreshToken(outstanding_token)
+        refresh['plugin_id'] = self.plugin.pk
+        refresh['refresh_jti'] = refresh['jti']
+        access_token = str(refresh.access_token)
+
+        version = PluginVersion.objects.get(plugin__name='Test Plugin', version='0.0.1')
+        version.approved = True
+        version.save()
+        self.assertTrue(version.approved)
+
+        # Log out the user and use the token
+        self.client.logout()
+
+        c = Client(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+
+        # Test request with access token
+        response = c.get(self.url_update_version)
+        # Check that the response is forbidden
+        self.assertEqual(response.status_code, 401)
+        self.assertIn("application/json", response["Content-Type"])
+        self.assertEqual(
+            response.json().get("detail"),
+            "You cannot edit an approved version, please create a new version instead."
+        )
 
     def test_update_version_with_invalid_token(self):
         # Log out the user and use the token
