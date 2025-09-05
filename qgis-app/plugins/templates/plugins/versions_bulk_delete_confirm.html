@@ -1,0 +1,60 @@
+{% extends 'plugins/plugin_base.html' %}{% load i18n %}
+{% block content %}
+    <h3>{% blocktrans with plugin.name as plugin_name %}Delete selected versions of "{{ plugin_name }}"{% endblocktrans %}</h3>
+    <form action="" method="post">{% csrf_token %}
+        <div class="notification is-danger is-light">
+            {% trans "You asked to delete the following versions. The versions will be permanently deleted and this action cannot be undone. Please confirm." %}
+        </div>
+        <div class="table-container mb-4">
+            <table class="table is-fullwidth is-striped is-hoverable">
+                <thead>
+                    <tr>
+                        <th>{% trans "Version" %}</th>
+                        <th>{% trans "Experimental" %}</th>
+                        <th>{% trans "Min QGIS version" %}</th>
+                        <th>{% trans "Max QGIS version" %}</th>
+                        <th>{% trans "Downloads" %}</th>
+                        <th>{% trans "Uploaded by" %}</th>
+                        <th>{% trans "Date" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for version in versions %}
+                    <tr>
+                        <td><span class="has-text-weight-bold">{{ version.version }}</span></td>
+                        <td class="has-text-centered">
+                            {% if version.experimental %}
+                                <i class="fas fa-flask has-text-warning"></i>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="has-text-centered">{{ version.min_qg_version }}</td>
+                        <td class="has-text-centered">{{ version.max_qg_version }}</td>
+                        <td class="has-text-centered">{{ version.downloads }}</td>
+                        <td class="has-text-centered">
+                            {% if version.is_from_token %}
+                                Token {{ version.token.description|default:"" }}
+                            {% else %}
+                                {{ version.created_by }}
+                            {% endif %}
+                        </td>
+                        <td class="has-text-centered">{{ version.created_on|date:'Y-m-d' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% for version in versions %}
+            <input type="hidden" name="selected_versions" value="{{ version.pk }}">
+        {% endfor %}
+        <button type="submit" class="button is-danger is-light" name="confirm_bulk_delete">
+            <span class="icon"><i class="fas fa-check"></i></span>
+            <span>{% trans "Delete" %}</span>
+        </button>
+        <a class="button is-success is-outlined" href="javascript:history.back()">
+            <span class="icon"><i class="fas fa-times"></i></span>
+            <span>{% trans "Cancel" %}</span>
+        </a>
+    </form>
+{% endblock %}
