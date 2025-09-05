@@ -396,6 +396,12 @@ urlpatterns += [
         {},
         name="version_feedback_edit",
     ),
+    url(
+        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/bulk_delete_versions/$",
+        versions_bulk_delete,
+        {},
+        name="versions_bulk_delete",
+    ),
 ]
 
 # RPC
