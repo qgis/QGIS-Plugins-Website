@@ -1,4 +1,7 @@
 {% extends 'plugins/plugin_base.html' %}{% load i18n %}
 {% block content %}
-    <div class="error">{% trans "You cannot create or modify versions of this plugin." %}</div>
+    <div class="notification is-danger is-light">
+        <strong>{% trans "Permission Denied" %}</strong><br>
+        {% trans "You cannot create or modify versions of this plugin." %}
+    </div>
 {% endblock %}
