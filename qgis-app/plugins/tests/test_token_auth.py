@@ -135,8 +135,7 @@ class UploadWithTokenTestCase(TestCase):
             'package': uploaded_file,
         })
         self.assertEqual(response.status_code, 302)
-        # This will create a new version because this one is using token and doesn't have a created_by column
-        self.assertTrue(PluginVersion.objects.filter(plugin__name='Test Plugin', version='0.0.1').exists())
+        self.assertFalse(PluginVersion.objects.filter(plugin__name='Test Plugin', version='0.0.1').exists())
         self.assertTrue(PluginVersion.objects.filter(plugin__name='Test Plugin', version='0.0.2').exists())
 
     def test_update_approved_version_with_token(self):
