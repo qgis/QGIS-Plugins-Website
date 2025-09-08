@@ -68,10 +68,15 @@ class PluginUploadTestCase(TestCase):
         self.assertTrue(PluginVersion.objects.filter(plugin__name='Test Plugin', version='0.0.1').exists())
 
         self.assertIn(
+            'staff.recipient@example.com',
+            mail.outbox[0].recipients(),
+        )
+
+        self.assertNotIn(
             'admin@admin.it',
             mail.outbox[0].recipients(),
         )
-        self.assertIn(
+        self.assertNotIn(
             'staff@staff.it',
             mail.outbox[0].recipients()
         )
