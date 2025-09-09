@@ -4,7 +4,9 @@
 
 {% block open_graph %}
     <meta property="og:title" content="{{ object.name }} - {{ object.description|striptags|truncatewords:25 }}">
-    <meta property="og:image" content="https://{{ request.get_host }}{{ object.icon.url }}">
+    {% if object.icon and object.icon.file and object.icon|is_image_valid %}
+        <meta property="og:image" content="https://{{ request.get_host }}{{ object.icon.url }}">
+    {% endif %}
 {% endblock %}
 
 {% block extrajs %}
