@@ -1,6 +1,12 @@
 {% extends 'plugins/plugin_base.html' %}{% load i18n static thumbnail %}
 {% load local_timezone %}
 {% load plugin_utils %}
+
+{% block open_graph %}
+    <meta property="og:title" content="{{ object.name }} - {{ object.description|striptags|truncatewords:25 }}">
+    <meta property="og:image" content="https://{{ request.get_host }}{{ object.icon.url }}">
+{% endblock %}
+
 {% block extrajs %}
 {{ block.super }}
 <script type="text/javascript" src="{% static "js/jquery.cookie.js" %}"></script>
