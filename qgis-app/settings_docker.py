@@ -179,6 +179,13 @@ PLUGIN_MAX_UPLOAD_SIZE = os.environ.get("PLUGIN_MAX_UPLOAD_SIZE", 25000000) # De
 # RPC2 Max upload size
 DATA_UPLOAD_MAX_MEMORY_SIZE = PLUGIN_MAX_UPLOAD_SIZE # same as max allowed plugin size
 
+# Plugin Notification Recipients Group Name
+# used to send notifications when a new plugin 
+# or a new version is uploaded. This group usually
+# contains the plugin approvers
+# but can be customized.
+NOTIFICATION_RECIPIENTS_GROUP_NAME = os.environ.get("NOTIFICATION_RECIPIENTS_GROUP_NAME", "Plugin Notification Recipients")
+
 # Sentry
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
 SENTRY_RATE = os.environ.get("SENTRY_RATE", 1.0)
