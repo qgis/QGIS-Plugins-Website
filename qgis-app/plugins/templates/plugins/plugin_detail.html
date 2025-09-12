@@ -88,6 +88,8 @@
             $(window).scrollTop(0);
         });
 
+        updateBulkDeleteButton();
+
     });
 
     function copyToClipBoard(plugin_id) {
@@ -123,8 +125,8 @@
         var columnDefs;
         if (isUserAllowedToManage()) {
             columnDefsValue = [
-                { sortable: false, targets: [-1, -3] },
-                { searchable: false, targets: [1, 2, 5, 7, -1] },
+                { sortable: false, targets: [0, -1, -3] },
+                { searchable: false, targets: [0, 1, 2, 5, 7, -1] },
                 { type: 'date', targets: [-2], orderDataType: 'dom-data-order'}
             ];
         } else {
@@ -141,6 +143,27 @@
             order: [[-1, 'desc']]
         });
         });
+    
+    function toggleAllVersions(source) {
+        const checkboxes = document.querySelectorAll('.version-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = source.checked;
+        });
+        updateBulkDeleteButton();
+    }
+
+    function updateBulkDeleteButton() {
+        const checkboxes = document.querySelectorAll('.version-checkbox:checked');
+        const btn = document.getElementById('bulk-delete-btn');
+        if (btn) {
+            document.getElementById('selected-count').innerText = checkboxes.length;
+            if (checkboxes.length > 0) {
+                btn.disabled = false;
+            } else {
+                btn.disabled = true;
+            }
+        }
+    }
 </script>
 {% endblock %}
 {% block extracss %}
@@ -476,85 +499,105 @@
                 </div>
                 <div class="tab-pane" id="plugin-versions">
                     {% if object.pluginversion_set.count %}
-                      <div class="table-container">
-                        <table id="plugin-versions-table" class="table versions-list-table">
-                            <thead>
-                                <tr>
-                                    <th>{% trans "Version" %}</th>
-                                    {% if not user.is_anonymous %}<th title="{% trans "Approved" %}"><i class="fa-solid fa-plug-circle-check"></i></th>{% endif %}
-                                    <th  title="{% trans "Experimental" %}"><i class="fa-solid fa-flask"></i></th>
-                                    <th title="{% trans "Min QGIS version" %}">{% trans "QGIS >=" %}</th>
-                                    <th title="{% trans "Max QGIS version" %}">{% trans "QGIS <=" %}</th>
-                                    <th title="{% trans "Downloads" %}"><i class="fa-solid fa-download"></i></th>
-                                    <th title="{% trans "Uploaded by" %}"><i class="fa-solid fa-user"></i></th>
-                                    <th title="{% trans "Date" %}"><i class="fa-regular fa-calendar"></i> {% trans "Date" %}</th>
-                                    {% if user.is_staff or user in object.approvers or user in object.editors %}<th title="{% trans "Manage" %}"><i class="fa-solid fa-gear"></i> {% trans "Manage" %}</th>{% endif %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                            {% for version in plugin_versions_sorted %}
-                                {% if version.approved or not user.is_anonymous %}
-                                <tr onclick="window.location.href='{% url "version_detail" object.package_name version.version %}';">
-                                    <td class="has-text-centered">
-                                        <a href="{% url 'version_detail' object.package_name version.version %}">{{ version.version }}</a>
-                                    </td>
-                                    {% if not user.is_anonymous %}
-                                    <td class="has-text-centered">
-                                        {% if version.approved %}
-                                            <i class="fas fa-check-circle has-text-success"></i>
-                                        {% else %}
-                                            <i class="fas fa-times-circle has-text-danger"></i>
-                                        {% endif %}
-                                    </td>
-                                    {% endif %}
-                                    <td class="has-text-centered">
-                                        {% if version.experimental %}
-                                            <i class="fas fa-flask has-text-warning"></i>
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td class="has-text-centered">{{ version.min_qg_version }}</td>
-                                    <td class="has-text-centered">{{ version.max_qg_version }}</td>
-                                    <td class="downloads">{{ version.downloads }}</td>
-                                    {% if version.is_from_token %}
-                                    <td class="has-text-centered">Token {{ version.token.description|default:"" }}</td>
-                                    {% else %}
-                                    <td class="has-text-centered"><a href="{% url "user_details" version.created_by.username %}">{{ version.created_by }}</a></td>
-                                    {% endif %}
-                                    <td class="has-text-centered" data-order="{{ version.created_on.isoformat }}">{{ version.created_on|local_timezone }}</td>
-                                    {% if user.is_staff or user in version.plugin.approvers or user in version.plugin.editors %}
-                                    <td class="has-text-centered" style="min-width: 200px;">
-                                        <form method="post" action="{% url "version_manage" object.package_name version.version %}">{% csrf_token %}
-                                        {% if user.is_staff or user in version.plugin.approvers %}
-                                            {% if not version.approved %}
-                                            <button class="button is-success is-small is-outlined" type="submit" name="version_approve" title="{% trans "Approve" %}">
-                                                <i class="fas fa-thumbs-up"></i>
-                                            </button>
-                                            {% else %}
-                                            <button class="button is-warning is-small is-outlined" type="submit" name="version_unapprove" title="{% trans "Unapprove" %}">
-                                                <i class="fas fa-thumbs-down"></i></button>
-                                            {% endif %}
-                                        {% endif %}
-                                        <a class="button is-small is-outlined {% if version.feedback|feedbacks_not_completed|length >= 1 %}is-warning{% else %}is-success{% endif %}" href="{% url "version_feedback" object.package_name version.version %}" title="{% trans "Feedback" %}">
-                                            <i class="fas fa-comments"></i>
-                                            {% if version.feedback|feedbacks_not_completed|length >= 2 %}
-                                                {{ version.feedback|feedbacks_not_completed|length }}
-                                            {% endif %}
-                                        </a>
+                    <form id="bulk-delete-form" method="post" action="{% url "versions_bulk_delete" object.package_name %}">
+                        {% csrf_token %}
+
+                        <div class="table-container">
+                            <table id="plugin-versions-table" class="table versions-list-table">
+                                <thead>
+                                    <tr>
                                         {% if user.is_staff or user in version.plugin.editors %}
-                                        <a class="button is-success is-small is-outlined" href="{% url "version_update" object.package_name version.version %}" title="{% trans "Edit" %}"><i class="fas fa-pencil"></i></a>
-                                        <a class="button is-danger is-small is-outlined" href="{% url "version_delete" object.package_name version.version %}" title="{% trans "Delete" %}"><i class="fas fa-remove"></i></a>
+                                            <th><input type="checkbox" id="select-all-versions" onclick="toggleAllVersions(this)"></th>
                                         {% endif %}
-                                        </form>
-                                    </td>
+                                        <th>{% trans "Version" %}</th>
+                                        {% if not user.is_anonymous %}<th title="{% trans "Approved" %}"><i class="fa-solid fa-plug-circle-check"></i></th>{% endif %}
+                                        <th  title="{% trans "Experimental" %}"><i class="fa-solid fa-flask"></i></th>
+                                        <th title="{% trans "Min QGIS version" %}">{% trans "QGIS >=" %}</th>
+                                        <th title="{% trans "Max QGIS version" %}">{% trans "QGIS <=" %}</th>
+                                        <th title="{% trans "Downloads" %}"><i class="fa-solid fa-download"></i></th>
+                                        <th title="{% trans "Uploaded by" %}"><i class="fa-solid fa-user"></i></th>
+                                        <th title="{% trans "Date" %}"><i class="fa-regular fa-calendar"></i> {% trans "Date" %}</th>
+                                        {% if user.is_staff or user in object.approvers or user in object.editors %}<th title="{% trans "Manage" %}"><i class="fa-solid fa-gear"></i> {% trans "Manage" %}</th>{% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for version in plugin_versions_sorted %}
+                                    {% if version.approved or not user.is_anonymous %}
+                                    <tr>
+                                        {% if user.is_staff or user in version.plugin.editors %}
+                                            <td class="has-text-centered">
+                                                <input type="checkbox" class="version-checkbox" name="selected_versions" value="{{ version.pk }}" onclick="updateBulkDeleteButton()">
+                                            </td>
+                                        {% endif %}
+                                        <td class="has-text-centered">
+                                            <a href="{% url 'version_detail' object.package_name version.version %}">{{ version.version }}</a>
+                                        </td>
+                                        {% if not user.is_anonymous %}
+                                        <td class="has-text-centered">
+                                            {% if version.approved %}
+                                                <i class="fas fa-check-circle has-text-success"></i>
+                                            {% else %}
+                                                <i class="fas fa-times-circle has-text-danger"></i>
+                                            {% endif %}
+                                        </td>
+                                        {% endif %}
+                                        <td class="has-text-centered">
+                                            {% if version.experimental %}
+                                                <i class="fas fa-flask has-text-warning"></i>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td class="has-text-centered">{{ version.min_qg_version }}</td>
+                                        <td class="has-text-centered">{{ version.max_qg_version }}</td>
+                                        <td class="downloads">{{ version.downloads }}</td>
+                                        {% if version.is_from_token %}
+                                        <td class="has-text-centered">Token {{ version.token.description|default:"" }}</td>
+                                        {% else %}
+                                        <td class="has-text-centered"><a href="{% url "user_details" version.created_by.username %}">{{ version.created_by }}</a></td>
+                                        {% endif %}
+                                        <td class="has-text-centered" data-order="{{ version.created_on.isoformat }}">{{ version.created_on|local_timezone }}</td>
+                                        {% if user.is_staff or user in version.plugin.approvers or user in version.plugin.editors %}
+                                        <td class="has-text-centered" style="min-width: 200px;">
+                                            <form method="post" action="{% url "version_manage" object.package_name version.version %}">{% csrf_token %}
+                                            {% if user.is_staff or user in version.plugin.approvers %}
+                                                {% if not version.approved %}
+                                                <button class="button is-success is-small is-outlined" type="submit" name="version_approve" title="{% trans "Approve" %}">
+                                                    <i class="fas fa-thumbs-up"></i>
+                                                </button>
+                                                {% else %}
+                                                <button class="button is-warning is-small is-outlined" type="submit" name="version_unapprove" title="{% trans "Unapprove" %}">
+                                                    <i class="fas fa-thumbs-down"></i></button>
+                                                {% endif %}
+                                            {% endif %}
+                                            <a class="button is-small is-outlined {% if version.feedback|feedbacks_not_completed|length >= 1 %}is-warning{% else %}is-success{% endif %}" href="{% url "version_feedback" object.package_name version.version %}" title="{% trans "Feedback" %}">
+                                                <i class="fas fa-comments"></i>
+                                                {% if version.feedback|feedbacks_not_completed|length >= 2 %}
+                                                    {{ version.feedback|feedbacks_not_completed|length }}
+                                                {% endif %}
+                                            </a>
+                                            {% if user.is_staff or user in version.plugin.editors %}
+                                            <a class="button is-success is-small is-outlined" href="{% url "version_update" object.package_name version.version %}" title="{% trans "Edit" %}"><i class="fas fa-pencil"></i></a>
+                                            <a class="button is-danger is-small is-outlined" href="{% url "version_delete" object.package_name version.version %}" title="{% trans "Delete" %}"><i class="fas fa-remove"></i></a>
+                                            {% endif %}
+                                            </form>
+                                        </td>
+                                        {% endif %}
+                                    </tr>
                                     {% endif %}
-                                </tr>
-                                {% endif %}
-                            {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if user.is_staff or user in object.editors %}
+                            <button id="bulk-delete-btn" class="button is-danger is-light" type="submit" disabled>
+                                <span class="icon">
+                                    <i class="fas fa-trash"></i>
+                                </span>
+                                <span>{% trans "Delete selected versions:" %} <span id="selected-count">0</span></span>
+                            </button>
+                        {% endif %}
+                    </form>
                     {% endif %}
                 </div> 
                 {% if user.is_staff or user in object.editors %}
