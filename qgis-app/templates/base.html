@@ -62,12 +62,12 @@
                 </div>
                 <div class="content column is-9">
                     {% if messages %}
-                    <div class="notification is-light">
-                        <button class="delete"></button>
-                        {% for message in messages %}
-                            <p{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|safe }}</p>
-                        {% endfor %}
-                    </div>
+                    {% for message in messages %}
+                        <div class="notification is-light {% if message.tags %} {{ message.tags }}{% endif %}">
+                            <button class="delete"></button>
+                            {{ message|safe }}
+                        </div>
+                    {% endfor %}
                     {% endif %}
                     {% block content %}
                     {% endblock %}
