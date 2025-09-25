@@ -107,7 +107,7 @@ class PluginUpdateTestCase(TestCase):
         # Should use the new email
         self.assertEqual(
             mail.outbox[0].from_email,
-            settings.EMAIL_HOST_USER
+            settings.DEFAULT_FROM_EMAIL
         )
 
     @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
@@ -167,7 +167,7 @@ class PluginUpdateTestCase(TestCase):
         # Should use the new email
         self.assertEqual(
             mail.outbox[0].from_email,
-            settings.EMAIL_HOST_USER
+            settings.DEFAULT_FROM_EMAIL
         )
 
     def test_plugin_version_approved_update(self):
