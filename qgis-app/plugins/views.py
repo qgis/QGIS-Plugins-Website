@@ -37,6 +37,7 @@ from plugins.models import Plugin, PluginOutstandingToken, PluginVersion, Plugin
 from plugins.validator import PLUGIN_REQUIRED_METADATA
 from django.contrib.gis.geoip2 import GeoIP2
 from plugins.utils import parse_remote_addr
+from django.conf import settings
 
 from django.template.response import TemplateResponse
 
@@ -55,6 +56,9 @@ except ImportError:
 staff_required = user_passes_test(lambda u: u.is_staff)
 from plugins.tasks.generate_plugins_xml import generate_plugins_xml
 
+# Plugin Notification Recipients Group Name
+NOTIFICATION_RECIPIENTS_GROUP_NAME = settings.NOTIFICATION_RECIPIENTS_GROUP_NAME
+
 
 def send_mail_wrapper(subject, message, mail_from, recipients, fail_silently=True):
     if settings.DEBUG:
@@ -65,13 +69,16 @@ def send_mail_wrapper(subject, message, mail_from, recipients, fail_silently=Tru
 
 def plugin_notify(plugin):
     """
-    Sends a message to staff on new plugins
+    Sends a message to staff that are in 
+    the notification recipients group on new plugins
     """
     recipients = [
         u.email
-        for u in User.objects.filter(is_staff=True, email__isnull=False).exclude(
-            email=""
-        )
+        for u in User.objects.filter(
+            groups__name=NOTIFICATION_RECIPIENTS_GROUP_NAME,
+            is_staff=True,
+            email__isnull=False
+        ).exclude(email="")
     ]
 
     if recipients:
@@ -98,15 +105,18 @@ def plugin_notify(plugin):
 
 def version_notify(plugin_version):
     """
-    Sends a message to staff on new plugin versions
+    Sends a message to staff that are in 
+    the notification recipients group on new plugin versions
     """
     plugin = plugin_version.plugin
 
     recipients = [
         u.email
-        for u in User.objects.filter(is_staff=True, email__isnull=False).exclude(
-            email=""
-        )
+        for u in User.objects.filter(
+            groups__name=NOTIFICATION_RECIPIENTS_GROUP_NAME,
+            is_staff=True,
+            email__isnull=False
+        ).exclude(email="")
     ]
 
     if recipients:

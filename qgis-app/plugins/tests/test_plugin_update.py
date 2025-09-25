@@ -91,10 +91,15 @@ class PluginUpdateTestCase(TestCase):
         self.assertEqual(self.plugin.repository, "https://github.com/")
 
         self.assertIn(
+            'staff.recipient@example.com',
+            mail.outbox[0].recipients(),
+        )
+
+        self.assertNotIn(
             'admin@admin.it',
             mail.outbox[0].recipients(),
         )
-        self.assertIn(
+        self.assertNotIn(
             'staff@staff.it',
             mail.outbox[0].recipients()
         )
@@ -148,10 +153,15 @@ class PluginUpdateTestCase(TestCase):
         self.assertEqual(self.plugin.repository, "https://github.com/")   
 
         self.assertIn(
+            'staff.recipient@example.com',
+            mail.outbox[0].recipients(),
+        )
+
+        self.assertNotIn(
             'admin@admin.it',
             mail.outbox[0].recipients(),
         )
-        self.assertIn(
+        self.assertNotIn(
             'staff@staff.it',
             mail.outbox[0].recipients()
         )
