@@ -1327,7 +1327,14 @@ def version_update_api(request, package_name, version):
     disabling CSRF protection.
     """
     plugin = get_object_or_404(Plugin, package_name=package_name)
-    version = PluginVersion(plugin=plugin, is_from_token=True, token=request.plugin_token)
+    version = get_object_or_404(PluginVersion, plugin=plugin, version=version)
+    if version.approved:
+        msg = _(
+            "You cannot edit an approved version, please create a new version instead."
+        )
+        return JsonResponse({"detail": msg}, status=401)
+    version.is_from_token = True
+    version.token = request.plugin_token
     return _version_update(request, plugin, version)
 
 
@@ -1339,6 +1346,12 @@ def version_update(request, package_name, version):
         return render(
             request, "plugins/version_permission_deny.html", {"plugin": plugin}
         )
+    if version.approved:
+        msg = _(
+            "You cannot edit an approved version, please create a new version instead."
+        )
+        messages.error(request, msg, fail_silently=True, extra_tags="is-danger")
+        return HttpResponseRedirect(plugin.get_absolute_url())
     version.created_by = request.user
     is_trusted=request.user.has_perm("plugins.can_approve")
     return _version_update(request, plugin, version, is_trusted=is_trusted)
