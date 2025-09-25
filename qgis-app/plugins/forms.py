@@ -2,13 +2,30 @@
 import re
 
 from django import forms
-from django.contrib.auth.models import User
-from django.forms import CharField, ModelForm, ValidationError
+from django.forms import ModelForm, ValidationError
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
-from plugins.models import Plugin, PluginOutstandingToken, PluginVersion, PluginVersionFeedback
+from plugins.models import Plugin, PluginOutstandingToken, PluginVersion
 from plugins.validator import validator
 from taggit.forms import TagField
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = single_file_clean(data, initial)
+        return result
 
 
 def _clean_tags(tags):
@@ -51,16 +68,19 @@ class PluginForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(PluginForm, self).__init__(*args, **kwargs)
-        self.fields['owners'].label = "Collaborators"
+        self.fields["owners"].label = "Collaborators"
 
         choices = (
-            (self.instance.created_by.pk, self.instance.created_by.username + " (Plugin creator)"),
+            (
+                self.instance.created_by.pk,
+                self.instance.created_by.username + " (Plugin creator)",
+            ),
         )
         for owner in self.instance.owners.exclude(pk=self.instance.created_by.pk):
             choices += ((owner.pk, owner.username + " (Collaborator)"),)
 
-        self.fields['maintainer'].choices = choices
-        self.fields['maintainer'].label = "Maintainer"
+        self.fields["maintainer"].choices = choices
+        self.fields["maintainer"].label = "Maintainer"
 
     def clean(self):
         """
@@ -142,7 +162,7 @@ class PluginVersionForm(ModelForm):
             )
             self.instance.server = self.cleaned_data.get("server")
 
-            # Check plugin folder name 
+            # Check plugin folder name
             if (
                 self.cleaned_data.get("package_name")
                 and self.cleaned_data.get("package_name")
@@ -233,25 +253,52 @@ class VersionFeedbackForm(forms.Form):
                     "- [ ] second task"
                 ),
                 "rows": "5",
-                "class": "textarea is-fullwidth"
+                "class": "textarea is-fullwidth",
             }
         )
     )
 
+    images = MultipleFileField(
+        required=False,
+        widget=MultipleFileInput(
+            attrs={"multiple": True, "accept": "image/*", "class": "file-input"}
+        ),
+        help_text=_("Upload images or GIFs to support your feedback (optional)"),
+    )
+
+    def clean_images(self):
+        images = self.cleaned_data.get("images")
+        if images:
+            # Handle both single file and list of files
+            if not isinstance(images, list):
+                images = [images] if images else []
+
+            for image in images:
+                # Validate file type
+                if not image.content_type.startswith("image/"):
+                    raise forms.ValidationError(_("Only image files are allowed."))
+                # Validate file size (max 10MB)
+                if image.size > 10 * 1024 * 1024:
+                    raise forms.ValidationError(
+                        _("Image file size must be less than 10MB.")
+                    )
+        return images
+
     def clean(self):
         super().clean()
-        feedback = self.cleaned_data.get('feedback')
+        feedback = self.cleaned_data.get("feedback")
 
         if feedback:
-            lines: list = feedback.split('\n')
+            lines: list = feedback.split("\n")
             bullet_points: list = [
-                line[6:].strip() for line in lines if line.strip().startswith('- [ ]')
+                line[6:].strip() for line in lines if line.strip().startswith("- [ ]")
             ]
             has_bullet_point = len(bullet_points) >= 1
             tasks: list = bullet_points if has_bullet_point else [feedback]
-            self.cleaned_data['tasks'] = tasks
+            self.cleaned_data["tasks"] = tasks
 
         return self.cleaned_data
+
 
 class PluginTokenForm(ModelForm):
     """
@@ -260,6 +307,4 @@ class PluginTokenForm(ModelForm):
 
     class Meta:
         model = PluginOutstandingToken
-        fields = (
-            "description",
-        )
+        fields = ("description",)
