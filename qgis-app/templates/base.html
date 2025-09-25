@@ -12,6 +12,13 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    {% block open_graph %}
+        <!-- Open Graph tags, it will directly use the fallback if the image is not defined here -->
+    {% endblock %}
+
+    <!-- Open Graph image fallback if the one in the block open_graph is failing or doesn't exist -->
+    <meta property="og:image" content="https://{{ request.get_host }}{% static 'images/qgis-icon128.png' %}">
+
     <!-- Icons -->
     <link rel="stylesheet" href="{% static 'font-awesome/css/fontawesome.min.css' %}" type="text/css">
     {% block extracss %}{% endblock %}

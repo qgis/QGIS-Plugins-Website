@@ -38,6 +38,8 @@ from plugins.validator import PLUGIN_REQUIRED_METADATA
 from django.contrib.gis.geoip2 import GeoIP2
 from plugins.utils import parse_remote_addr
 
+from django.template.response import TemplateResponse
+
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken, api_settings
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -1417,6 +1419,38 @@ def version_delete(request, package_name, version):
 
 
 @login_required
+@transaction.atomic
+def versions_bulk_delete(request, package_name):
+    """
+    Bulk delete selected plugin versions with confirmation.
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    if not check_plugin_access(request.user, plugin):
+        messages.error(request, _("You do not have permission to delete versions for this plugin."))
+        return HttpResponseRedirect(plugin.get_absolute_url())
+
+    if request.method == "POST":
+        selected_ids = request.POST.getlist("selected_versions")
+        versions = PluginVersion.objects.filter(pk__in=selected_ids, plugin=plugin)
+        if "confirm_bulk_delete" in request.POST:
+            # Perform deletion
+            deleted_versions = list(versions)
+            versions.delete()
+            messages.success(request, _(f"Deleted {len(deleted_versions)} plugin version(s)."))
+            return HttpResponseRedirect(plugin.get_absolute_url())
+        elif selected_ids:
+            # Show confirmation page
+            return TemplateResponse(request, "plugins/versions_bulk_delete_confirm.html", {
+                "plugin": plugin,
+                "versions": versions,
+            })
+        else:
+            messages.warning(request, _("No versions selected for deletion."))
+            return HttpResponseRedirect(plugin.get_absolute_url())
+    # GET fallback
+    return HttpResponseRedirect(plugin.get_absolute_url())
+
+@login_required
 @require_POST
 def version_approve(request, package_name, version):
     """
@@ -1669,6 +1703,7 @@ def version_detail(request, package_name, version):
     plugin = get_object_or_404(Plugin, package_name=package_name)
     version = get_object_or_404(PluginVersion, plugin=plugin, version=version)
     return render(request, "plugins/version_detail.html", {"version": version})
+
 
 
 ###############################################
