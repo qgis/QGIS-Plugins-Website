@@ -7,14 +7,13 @@ import re
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import Count, F, OuterRef, Subquery
 from django.urls import reverse
-from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from djangoratings.fields import AnonymousRatingField
-from taggit_autosuggest.managers import TaggableManager
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
-
-from django.db.models import OuterRef, Count, Subquery, F
+from taggit_autosuggest.managers import TaggableManager
 
 PLUGINS_STORAGE_PATH = getattr(settings, "PLUGINS_STORAGE_PATH", "packages/%Y")
 PLUGINS_FRESH_DAYS = getattr(settings, "PLUGINS_FRESH_DAYS", 30)
@@ -29,7 +28,7 @@ class BasePluginManager(models.Manager):
     """
     Adds a score
     * average_vote provides a simple average rating.
-    * latest_version_date fetches the date of the 
+    * latest_version_date fetches the date of the
     most recent approved plugin version.
     * weighted_rating uses the Bayesian Average formula
     to provide a more balanced rating that mitigates the effect of low vote counts.
@@ -102,6 +101,7 @@ class ExperimentalPlugins(BasePluginManager):
             .distinct()
         )
 
+
 class NewQgisMajorVersionReadyPlugins(BasePluginManager):
     """
     Shows only public plugins: i.e. those with "approved" flag set
@@ -117,11 +117,12 @@ class NewQgisMajorVersionReadyPlugins(BasePluginManager):
             .filter(
                 pluginversion__approved=True,
                 pluginversion__max_qg_version__gte=f"{settings.NEW_QGIS_MAJOR_VERSION}.0",
-                deprecated=False
+                deprecated=False,
             )
             .distinct()
             .order_by("-created_on")
         )
+
 
 class FeaturedPlugins(BasePluginManager):
     """
@@ -325,36 +326,34 @@ class FeedbackCompletedPlugins(models.Manager):
     """
     Show only unapproved plugins with resolved feedbacks
     """
+
     def get_queryset(self):
-        feedback_count_subquery = PluginVersionFeedback.objects.filter(
-            version=OuterRef('pluginversion'),
-            is_completed=True
-        ).values('version').annotate(
-            completed_count=Count('id')
-        ).values('completed_count')
+        feedback_count_subquery = (
+            PluginVersionFeedback.objects.filter(
+                version=OuterRef("pluginversion"), is_completed=True
+            )
+            .values("version")
+            .annotate(completed_count=Count("id"))
+            .values("completed_count")
+        )
 
         # Only consider plugins whose latest version is unapproved and all feedbacks are completed
-        latest_version_subquery = PluginVersion.objects.filter(
-            plugin=OuterRef('pk')
-        ).order_by('-created_on').values('approved')[:1]
+        latest_version_subquery = (
+            PluginVersion.objects.filter(plugin=OuterRef("pk"))
+            .order_by("-created_on")
+            .values("approved")[:1]
+        )
 
         return (
             super(FeedbackCompletedPlugins, self)
             .get_queryset()
+            .annotate(latest_version_approved=Subquery(latest_version_subquery))
+            .filter(latest_version_approved=False, deprecated=False)
             .annotate(
-                latest_version_approved=Subquery(latest_version_subquery)
+                total_feedback_count=Count("pluginversion__feedback"),
+                completed_feedback_count=Subquery(feedback_count_subquery),
             )
-            .filter(
-                latest_version_approved=False,
-                deprecated=False
-            )
-            .annotate(
-                total_feedback_count=Count('pluginversion__feedback'),
-                completed_feedback_count=Subquery(feedback_count_subquery)
-            )
-            .filter(
-                total_feedback_count=F('completed_feedback_count')
-            )
+            .filter(total_feedback_count=F("completed_feedback_count"))
             .extra(
                 select={
                     "average_vote": "rating_score / (rating_votes + 0.001)",
@@ -369,34 +368,32 @@ class FeedbackCompletedPlugins(models.Manager):
                         "((5::FLOAT / (rating_votes + 5)) * 3)"
                     ),
                 }
-            ).distinct()
+            )
+            .distinct()
         )
+
 
 class FeedbackReceivedPlugins(models.Manager):
     """
     Show only unapproved plugins with a pending feedback
     """
+
     def get_queryset(self):
-        feedback_count_subquery = PluginVersionFeedback.objects.filter(
-            version=OuterRef('pluginversion'),
-            is_completed=False
-        ).values('version').annotate(
-            received_count=Count('id')
-        ).values('received_count')
+        feedback_count_subquery = (
+            PluginVersionFeedback.objects.filter(
+                version=OuterRef("pluginversion"), is_completed=False
+            )
+            .values("version")
+            .annotate(received_count=Count("id"))
+            .values("received_count")
+        )
 
         return (
             super(FeedbackReceivedPlugins, self)
             .get_queryset()
-            .filter(
-                pluginversion__approved=False,
-                deprecated=False
-            )
-            .annotate(
-                received_feedback_count=Subquery(feedback_count_subquery)
-            )
-            .filter(
-                received_feedback_count__gte=1
-            )
+            .filter(pluginversion__approved=False, deprecated=False)
+            .annotate(received_feedback_count=Subquery(feedback_count_subquery))
+            .filter(received_feedback_count__gte=1)
             .extra(
                 select={
                     "average_vote": "rating_score / (rating_votes + 0.001)",
@@ -411,7 +408,8 @@ class FeedbackReceivedPlugins(models.Manager):
                         "((5::FLOAT / (rating_votes + 5)) * 3)"
                     ),
                 }
-            ).distinct()
+            )
+            .distinct()
         )
 
 
@@ -419,20 +417,16 @@ class FeedbackPendingPlugins(models.Manager):
     """
     Show only unapproved plugins with a feedback
     """
+
     def get_queryset(self):
         return (
             super(FeedbackPendingPlugins, self)
             .get_queryset()
-            .filter(
-                pluginversion__approved=False,
-                deprecated=False
-            )
+            .filter(pluginversion__approved=False, deprecated=False)
             .annotate(
-                total_feedback_count=Count('pluginversion__feedback'),
+                total_feedback_count=Count("pluginversion__feedback"),
             )
-            .filter(
-                total_feedback_count=0
-            )
+            .filter(total_feedback_count=0)
             .extra(
                 select={
                     "average_vote": "rating_score / (rating_votes + 0.001)",
@@ -447,9 +441,9 @@ class FeedbackPendingPlugins(models.Manager):
                         "((5::FLOAT / (rating_votes + 5)) * 3)"
                     ),
                 }
-            ).distinct()
+            )
+            .distinct()
         )
-
 
 
 class Plugin(models.Model):
@@ -478,12 +472,11 @@ class Plugin(models.Model):
         related_name="plugins_maintainer",
         on_delete=models.CASCADE,
         blank=True,
-        null=True
+        null=True,
     )
 
     display_created_by = models.BooleanField(
-        _('Display "Created by" in plugin details'),
-        default=False
+        _('Display "Created by" in plugin details'), default=False
     )
 
     author = models.CharField(
@@ -516,9 +509,9 @@ class Plugin(models.Model):
     )
 
     allow_update_name = models.BooleanField(
-        _("Allow update name"), 
-        help_text=_("Allow name in metadata.txt to update the plugin name"), 
-        default=False
+        _("Allow update name"),
+        help_text=_("Allow name in metadata.txt to update the plugin name"),
+        default=False,
     )
 
     description = models.TextField(_("Description"))
@@ -537,13 +530,13 @@ class Plugin(models.Model):
 
     # True if the plugin has a server interface
     server = models.BooleanField(
-        _("Server"), 
-        default=False, 
+        _("Server"),
+        default=False,
         db_index=True,
         help_text=_(
             "A server plugin is a plugin which can run on QGIS Server,"
             " by having a entrypoint <code>serverClassFactory</code>, see the"
-            " <a href=\"https://docs.qgis.org/latest/en/docs/pyqgis_developer_cookbook/server.html#init-py\" target=\"_blank\">documentation</a>."
+            ' <a href="https://docs.qgis.org/latest/en/docs/pyqgis_developer_cookbook/server.html#init-py" target="_blank">documentation</a>.'
         ),
     )
 
@@ -834,28 +827,24 @@ class PluginOutstandingToken(models.Model):
     """
     Plugin outstanding token
     """
-    plugin = models.ForeignKey(
-        Plugin,
-        on_delete=models.CASCADE
-    )
-    token = models.ForeignKey(
-        OutstandingToken,
-        on_delete=models.CASCADE
-    )
+
+    plugin = models.ForeignKey(Plugin, on_delete=models.CASCADE)
+    token = models.ForeignKey(OutstandingToken, on_delete=models.CASCADE)
     is_blacklisted = models.BooleanField(default=False)
     is_newly_created = models.BooleanField(default=False)
     description = models.CharField(
         verbose_name=_("Description"),
-        help_text=_("Describe this token so that it's easier to remember where you're using it."),
+        help_text=_(
+            "Describe this token so that it's easier to remember where you're using it."
+        ),
         max_length=512,
         blank=True,
         null=True,
     )
     last_used_on = models.DateTimeField(
-        verbose_name=_("Last used on"),
-        blank=True,
-        null=True
+        verbose_name=_("Last used on"), blank=True, null=True
     )
+
 
 class PluginVersion(models.Model):
     """
@@ -872,7 +861,11 @@ class PluginVersion(models.Model):
     downloads = models.IntegerField(_("Downloads"), default=0, editable=False)
     # owners
     created_by = models.ForeignKey(
-        User, verbose_name=_("Created by"), on_delete=models.CASCADE, null=True, blank=True
+        User,
+        verbose_name=_("Created by"),
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
     )
     # version info, the first should be read from plugin
     min_qg_version = QGVersionZeroForcedField(
@@ -908,13 +901,14 @@ class PluginVersion(models.Model):
         blank=False,
         null=True,
     )
-    is_from_token = models.BooleanField(
-        _("Is uploaded using token"),
-        default=False
-    )
+    is_from_token = models.BooleanField(_("Is uploaded using token"), default=False)
     # Link to the token if upload is using token
     token = models.ForeignKey(
-        PluginOutstandingToken, verbose_name=_("Token used"), on_delete=models.CASCADE, null=True, blank=True
+        PluginOutstandingToken,
+        verbose_name=_("Token used"),
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
     )
 
     # Managers, used in xml output
@@ -1026,9 +1020,7 @@ class PluginVersionFeedback(models.Model):
     """Feedback for a plugin version."""
 
     version = models.ForeignKey(
-        PluginVersion,
-        on_delete=models.CASCADE,
-        related_name="feedback"
+        PluginVersion, on_delete=models.CASCADE, related_name="feedback"
     )
     reviewer = models.ForeignKey(
         User,
@@ -1038,43 +1030,67 @@ class PluginVersionFeedback(models.Model):
     )
     task = models.TextField(
         verbose_name=_("Task"),
-        help_text=_("A feedback task. Please write your review as a task for this plugin."),
+        help_text=_(
+            "A feedback task. Please write your review as a task for this plugin."
+        ),
         max_length=1000,
         blank=False,
-        null=False
+        null=False,
     )
     created_on = models.DateTimeField(
-        verbose_name=_("Created on"),
-        auto_now_add=True,
-        editable=False
+        verbose_name=_("Created on"), auto_now_add=True, editable=False
     )
     modified_on = models.DateTimeField(
-        _("Modified on"), 
-        editable=False,
-        blank=True,
-        null=True
+        _("Modified on"), editable=False, blank=True, null=True
     )
 
     completed_on = models.DateTimeField(
-        verbose_name=_("Completed on"),
-        blank=True,
-        null=True
+        verbose_name=_("Completed on"), blank=True, null=True
     )
     is_completed = models.BooleanField(
-        verbose_name=_("Completed"),
-        default=False,
-        db_index=True
+        verbose_name=_("Completed"), default=False, db_index=True
     )
 
     class Meta:
-        ordering = ["created_on"]
+        verbose_name = _("Plugin Version Feedback")
+        verbose_name_plural = _("Plugin Version Feedbacks")
 
     def save(self, *args, **kwargs):
         if self.is_completed is True:
-            self.completed_on = datetime.datetime.now()
+            self.completed_on = timezone.now()
         else:
             self.completed_on = None
         super(PluginVersionFeedback, self).save(*args, **kwargs)
+
+
+class PluginVersionFeedbackAttachment(models.Model):
+    """Image attachments for feedback."""
+
+    feedback = models.ForeignKey(
+        PluginVersionFeedback, on_delete=models.CASCADE, related_name="attachments"
+    )
+    image = models.ImageField(
+        verbose_name=_("Image"),
+        upload_to=PLUGINS_STORAGE_PATH,
+        help_text=_("Upload screenshots or images to support your feedback"),
+    )
+    caption = models.CharField(
+        verbose_name=_("Caption"),
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Optional caption for the image"),
+    )
+    created_on = models.DateTimeField(
+        verbose_name=_("Created on"), auto_now_add=True, editable=False
+    )
+
+    class Meta:
+        verbose_name = _("Feedback Attachment")
+        verbose_name_plural = _("Feedback Attachments")
+
+    def __str__(self):
+        return f"Attachment for {self.feedback}"
 
 
 def delete_version_package(sender, instance, **kw):
@@ -1092,7 +1108,17 @@ def delete_plugin_icon(sender, instance, **kw):
     Removes the plugin icon
     """
     try:
-        os.remove(instance.icon.path)
+        instance.icon.delete(False)
+    except:
+        pass
+
+
+def delete_feedback_attachment(sender, instance, **kw):
+    """
+    Removes the feedback attachment image
+    """
+    try:
+        instance.image.delete(False)
     except:
         pass
 
@@ -1101,26 +1127,24 @@ class PluginVersionDownload(models.Model):
     """
     Plugin version downloads
     """
-    plugin_version = models.ForeignKey(
-        PluginVersion, 
-        on_delete=models.CASCADE
-    )
-    download_date = models.DateField(
-        default=timezone.now
-    )
-    country_code = models.CharField(max_length=3, default='N/D')
-    country_name = models.CharField(max_length=100, default='N/D')
-    download_count = models.IntegerField(
-        default=0
-    )
+
+    plugin_version = models.ForeignKey(PluginVersion, on_delete=models.CASCADE)
+    download_date = models.DateField(default=timezone.now)
+    country_code = models.CharField(max_length=3, default="N/D")
+    country_name = models.CharField(max_length=100, default="N/D")
+    download_count = models.IntegerField(default=0)
+
     class Meta:
         unique_together = (
-            'plugin_version',
-            'download_date',
-            'country_code',
-            'country_name'
+            "plugin_version",
+            "download_date",
+            "country_code",
+            "country_name",
         )
 
 
 models.signals.post_delete.connect(delete_version_package, sender=PluginVersion)
 models.signals.post_delete.connect(delete_plugin_icon, sender=Plugin)
+models.signals.post_delete.connect(
+    delete_feedback_attachment, sender=PluginVersionFeedbackAttachment
+)
