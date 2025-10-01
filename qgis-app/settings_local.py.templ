@@ -1,9 +1,9 @@
 # Host for sending e-mail.
-EMAIL_HOST = "smtp.gmail.com"
-# Port for sending e-mail.
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.resend.com'
 EMAIL_PORT = 587
-# SMTP authentication information for EMAIL_HOST.
-# See fig.yml for where these are defined
-EMAIL_HOST_USER = "automation@qgis.org"
-EMAIL_HOST_PASSWORD = "hello_password"
 EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "resend"
+EMAIL_HOST_PASSWORD = ""
+EMAIL_SUBJECT_PREFIX = '[QGIS Plugins] '
+DEFAULT_FROM_EMAIL = 'no-reply-plugins@qgis.org'
