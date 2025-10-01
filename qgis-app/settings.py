@@ -220,7 +220,7 @@ TAGGIT_TAGCLOUD_MAX = 30
 
 INTERNAL_IPS = ("127.0.0.1",)
 
-DEFAULT_FROM_EMAIL = os.environ.get("EMAIL_HOST_USER", "automation")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "no-reply-plugins@qgis.org")
 
 
 # TINYMCE_JS_URL = 'http://debug.example.org/tiny_mce/tiny_mce_src.js'

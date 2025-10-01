@@ -84,7 +84,7 @@ class PluginUploadTestCase(TestCase):
         # Should use the new email
         self.assertEqual(
             mail.outbox[0].from_email,
-            settings.EMAIL_HOST_USER
+            settings.DEFAULT_FROM_EMAIL
         )
     def tearDown(self):
         self.client.logout()

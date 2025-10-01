@@ -94,7 +94,7 @@ class TestFeedbackNotify(SetupMixin, TestCase):
         # Should use the new email
         self.assertEqual(
             mail.outbox[0].from_email,
-            settings.EMAIL_HOST_USER
+            settings.DEFAULT_FROM_EMAIL
         )
 
     def test_add_recipient_in_email_notification(self):
@@ -119,7 +119,7 @@ class TestFeedbackNotify(SetupMixin, TestCase):
         # Should use the new email
         self.assertEqual(
             mail.outbox[0].from_email,
-            settings.EMAIL_HOST_USER
+            settings.DEFAULT_FROM_EMAIL
         )
 
 class TestPluginFeedbackCompletedList(SetupMixin, TestCase):
@@ -160,7 +160,7 @@ class TestPluginFeedbackCompletedList(SetupMixin, TestCase):
         # Should use the new email
         self.assertEqual(
             mail.outbox[0].from_email,
-            settings.EMAIL_HOST_USER
+            settings.DEFAULT_FROM_EMAIL
         )
 
     def test_staff_should_see_plugin_feedback_completed(self):
