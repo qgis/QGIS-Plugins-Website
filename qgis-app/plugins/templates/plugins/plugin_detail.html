@@ -250,7 +250,7 @@
                         </button>
                     </div>
                 </div>
-                <p class="plugin-details-description">{{ object.description|safe|linebreaksbr }}</p>
+                <p class="plugin-details-description">{{ object.description|linebreaksbr }}</p>
                 <div id="rating"> (<span id="votes">{% firstof votes '0' %}</span>) {% trans "votes" %}&nbsp;<span id="loading" style="display:none">Loading...</span><span id="vote-message" style="display:none"></span></div>
 
                 <a class="button mt-3" href="{% if object.stable %}{{ object.stable.get_download_url }}{% else %}{{ object.experimental.get_download_url }}{% endif %}">
@@ -363,7 +363,7 @@
             <div class="tab-content">
                 {% if object.about %}
                 <div class="tab-pane is-active" id="plugin-about">
-                    <p>{{ object.about|safe|linebreaksbr }}</p>
+                    <p>{{ object.about|linebreaksbr }}</p>
                 </div>
                 {% endif %}
                 <div class="tab-pane{% if not object.about %} is-active{% endif %}" id="plugin-details">
