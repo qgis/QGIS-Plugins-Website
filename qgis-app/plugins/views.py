@@ -509,6 +509,7 @@ def plugin_upload(request):
                     "approved": request.user.has_perm("plugins.can_approve")
                     or plugin.approved,
                     "experimental": form.cleaned_data.get("experimental", False),
+                    "supports_qt6": form.cleaned_data.get("supportsQt6", False),
                     "changelog": form.cleaned_data.get("changelog", ""),
                     "external_deps": form.cleaned_data.get("external_deps", ""),
                 }
