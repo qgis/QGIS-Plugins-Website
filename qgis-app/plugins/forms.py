@@ -6,7 +6,12 @@ from django.contrib.auth.models import User
 from django.forms import CharField, ModelForm, ValidationError
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
-from plugins.models import Plugin, PluginOutstandingToken, PluginVersion, PluginVersionFeedback
+from plugins.models import (
+    Plugin,
+    PluginOutstandingToken,
+    PluginVersion,
+    PluginVersionFeedback,
+)
 from plugins.validator import validator
 from taggit.forms import TagField
 
@@ -51,16 +56,19 @@ class PluginForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(PluginForm, self).__init__(*args, **kwargs)
-        self.fields['owners'].label = "Collaborators"
+        self.fields["owners"].label = "Collaborators"
 
         choices = (
-            (self.instance.created_by.pk, self.instance.created_by.username + " (Plugin creator)"),
+            (
+                self.instance.created_by.pk,
+                self.instance.created_by.username + " (Plugin creator)",
+            ),
         )
         for owner in self.instance.owners.exclude(pk=self.instance.created_by.pk):
             choices += ((owner.pk, owner.username + " (Collaborator)"),)
 
-        self.fields['maintainer'].choices = choices
-        self.fields['maintainer'].label = "Maintainer"
+        self.fields["maintainer"].choices = choices
+        self.fields["maintainer"].label = "Maintainer"
 
     def clean(self):
         """
@@ -142,7 +150,7 @@ class PluginVersionForm(ModelForm):
             )
             self.instance.server = self.cleaned_data.get("server")
 
-            # Check plugin folder name 
+            # Check plugin folder name
             if (
                 self.cleaned_data.get("package_name")
                 and self.cleaned_data.get("package_name")
@@ -165,6 +173,8 @@ class PluginVersionForm(ModelForm):
         self.instance.changelog = self.cleaned_data.get("changelog")
         if "experimental" in self.cleaned_data:
             self.instance.experimental = self.cleaned_data.get("experimental")
+        if "supportsQt6" in self.cleaned_data:
+            self.instance.supports_qt6 = self.cleaned_data.get("supportsQt6")
         return super(PluginVersionForm, self).clean()
 
 
@@ -233,25 +243,26 @@ class VersionFeedbackForm(forms.Form):
                     "- [ ] second task"
                 ),
                 "rows": "5",
-                "class": "textarea is-fullwidth"
+                "class": "textarea is-fullwidth",
             }
         )
     )
 
     def clean(self):
         super().clean()
-        feedback = self.cleaned_data.get('feedback')
+        feedback = self.cleaned_data.get("feedback")
 
         if feedback:
-            lines: list = feedback.split('\n')
+            lines: list = feedback.split("\n")
             bullet_points: list = [
-                line[6:].strip() for line in lines if line.strip().startswith('- [ ]')
+                line[6:].strip() for line in lines if line.strip().startswith("- [ ]")
             ]
             has_bullet_point = len(bullet_points) >= 1
             tasks: list = bullet_points if has_bullet_point else [feedback]
-            self.cleaned_data['tasks'] = tasks
+            self.cleaned_data["tasks"] = tasks
 
         return self.cleaned_data
+
 
 class PluginTokenForm(ModelForm):
     """
@@ -260,6 +271,4 @@ class PluginTokenForm(ModelForm):
 
     class Meta:
         model = PluginOutstandingToken
-        fields = (
-            "description",
-        )
+        fields = ("description",)
