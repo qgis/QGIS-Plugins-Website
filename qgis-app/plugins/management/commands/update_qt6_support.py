@@ -145,7 +145,7 @@ class Command(BaseCommand):
                 if verbose:
                     self.stdout.write(
                         self.style.WARNING(
-                            f"  → Skipped: No version found with min_qg_version >= 3.0"
+                            "  → Skipped: No version found with min_qg_version >= 3.0"
                         )
                     )
                 skipped_count += 1
@@ -161,7 +161,7 @@ class Command(BaseCommand):
                     if verbose:
                         self.stdout.write(
                             self.style.WARNING(
-                                f"  → Skipped: Could not read supportsQt6 from metadata.txt"
+                                "  → Skipped: Could not read supportsQt6 from metadata.txt"
                             )
                         )
                     skipped_count += 1
