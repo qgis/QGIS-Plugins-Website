@@ -5,6 +5,7 @@ volumes:
   static-data:
   media-data:
   backups-data:
+  plugins-data:
 services:
   maindev:
     build:
@@ -73,12 +74,26 @@ services:
       - ${QGISPLUGINS_STATIC_VOLUME}:/home/web/static:rw
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw
       - celerybeat-schedule:/home/web/celerybeat-schedule:rw
+      - plugins-data:/home/web/shared
     command: bash -c "npm install && npm run build && uwsgi --ini /uwsgi.conf"
     depends_on:
       - db
       - rabbitmq
     restart: unless-stopped
     user: root
+    networks:
+      internal:
+
+  qgis-qt6:
+    container_name: qgis-qt6
+    image: registry.gitlab.com/oslandia/qgis/pyqgis-4-checker/pyqgis-qt-checker:latest
+    volumes:
+      - ../qgis-check/api:/api 
+      - plugins-data:/home/web/shared
+    working_dir: /api
+    command: bash -c "python3 -m ensurepip && python3 -m pip install flask && python3 app.py"
+    environment:
+      - PYTHONUNBUFFERED=1
     networks:
       internal:
 

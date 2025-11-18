@@ -11,10 +11,11 @@ import re
 import zipfile
 from io import StringIO
 from urllib.parse import urlparse
+import io
 
 import requests
 from django.conf import settings
-from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.uploadedfile import SimpleUploadedFile, InMemoryUploadedFile, TemporaryUploadedFile
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 
@@ -272,6 +273,13 @@ def validator(package, is_new: bool = False):
                         % (forbidden_dir, zname)
                     )
                 )
+
+    try:
+        unzip_dir = save_zip_to_shared_dir(package)
+        run_check_qt6(unzip_dir)
+    except Exception as e:
+        raise ValidationError(_("Could not save file to shared directory: %s") % str(e))
+
     bad_file = zip.testzip()
     if bad_file:
         zip.close()
@@ -472,3 +480,42 @@ def validator(package, is_new: bool = False):
                 % (k, e)
             )
     return checked_metadata
+
+
+def run_check_qt6(plugin_path):
+    data = {'plugin_path': plugin_path}
+    response = requests.post('http://qgis-qt6:5000/check-qt6', data=data)
+
+
+def save_zip_to_shared_dir(package, target_dir="/home/web/shared"):
+    """
+    Save the uploaded zip file to the shared directory and unzip it to a specified directory.
+    Supports InMemoryUploadedFile and TemporaryUploadedFile.
+    Returns the full path of the saved file and the path to the unzipped contents.
+    """
+    os.makedirs(target_dir, exist_ok=True)
+    destination_path = os.path.join(target_dir, package.name)
+
+    # Save zip
+    if isinstance(package, InMemoryUploadedFile):
+        with open(destination_path, 'wb+') as dest:
+            for chunk in package.chunks():
+                dest.write(chunk)
+    elif isinstance(package, TemporaryUploadedFile):
+        shutil.copy(package.temporary_file_path(), destination_path)
+    else:
+        raise TypeError(f"Unsupported uploaded file type: {type(package)}")
+
+    # Extract
+    with zipfile.ZipFile(destination_path, 'r') as zip_ref:
+        zip_ref.extractall(target_dir)
+        # Find folder plugin name
+        root_dirs = {name.split('/')[0] for name in zip_ref.namelist() if '/' in name}
+        if len(root_dirs) != 1:
+            raise ValueError(f"Expected one root plugin directory in zip, found: {root_dirs}")
+        plugin_dir = os.path.join(target_dir, root_dirs.pop())
+
+    print(plugin_dir)
+    return plugin_dir
+
+
