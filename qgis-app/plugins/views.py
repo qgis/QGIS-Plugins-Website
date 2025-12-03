@@ -892,6 +892,9 @@ class PluginsList(ListView):
         """
         try:
             paginate_by = int(self.request.GET.get("per_page", self.paginate_by))
+            # Limit maximum items per page to 100
+            if paginate_by > 100:
+                paginate_by = 100
         except ValueError:
             paginate_by = self.paginate_by
         return paginate_by
@@ -1718,31 +1721,33 @@ def version_feedback_delete(request, package_name, version, feedback):
 
 def version_download(request, package_name, version):
     """
-    Update download counter(s)
+    Update download counter(s) using atomic operations to prevent race conditions
+    and improve performance under high concurrent load.
     """
+    from django.db.models import F
+
     plugin = get_object_or_404(Plugin, package_name=package_name)
     version = get_object_or_404(PluginVersion, plugin=plugin, version=version)
-    version.downloads = version.downloads + 1
-    version.save()
-    plugin = version.plugin
-    plugin.downloads = plugin.downloads + 1
-    plugin.save(keep_date=True)
+
+    # Atomic increment using F() expressions - prevents race conditions
+    PluginVersion.objects.filter(pk=version.pk).update(downloads=F("downloads") + 1)
+
+    # Atomic increment for plugin - single query, no race condition
+    Plugin.objects.filter(pk=plugin.pk).update(downloads=F("downloads") + 1)
 
     remote_addr = parse_remote_addr(request)
     g = GeoIP2()
 
+    country_code = "N/D"
+    country_name = "N/D"
+
     if remote_addr:
         try:
             country_data = g.country(remote_addr)
-            country_code = country_data["country_code"]
-            country_name = country_data["country_name"]
+            country_code = country_data["country_code"] or "N/D"
+            country_name = country_data["country_name"] or "N/D"
         except Exception as e:  # AddressNotFoundErrors:
-            country_code = "N/D"
-            country_name = "N/D"
-
-    # Handle null values
-    country_code = country_code or "N/D"
-    country_name = country_name or "N/D"
+            pass
 
     download_record, created = PluginVersionDownload.objects.get_or_create(
         plugin_version=version,
@@ -1752,8 +1757,10 @@ def version_download(request, package_name, version):
         defaults={"download_count": 1},
     )
     if not created:
-        download_record.download_count = download_record.download_count + 1
-        download_record.save()
+        # Atomic increment for download tracking
+        PluginVersionDownload.objects.filter(pk=download_record.pk).update(
+            download_count=F("download_count") + 1
+        )
 
     if not version.package.file.file.closed:
         version.package.file.file.close()
