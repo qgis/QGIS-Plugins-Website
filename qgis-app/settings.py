@@ -2,8 +2,8 @@
 # Django settings for qgis project.
 # ABP: More portable config
 import os
-
 from datetime import timedelta
+
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 
 TEMPLATE_DEBUG = False
@@ -152,12 +152,12 @@ INSTALLED_APPS = [
     "leaflet",
     "bootstrapform",
     "rest_framework",
-    'rest_framework.authtoken',
-    'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist',
+    "rest_framework.authtoken",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "rest_framework_gis",
     "preferences",
-    "matomo"
+    "matomo",
 ]
 
 TEMPLATES = [
@@ -328,12 +328,9 @@ RESULT_BACKEND = BROKER_URL
 CELERY_BROKER_URL = BROKER_URL
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
-GEOIP_PATH='/var/opt/maxmind/'
+GEOIP_PATH = "/var/opt/maxmind/"
 # Token access and refresh validity
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=15),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=15),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=15),
 }
-
-MATOMO_SITE_ID="1"
-MATOMO_URL="//matomo.qgis.org/"
