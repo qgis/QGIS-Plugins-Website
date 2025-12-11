@@ -32,12 +32,15 @@ class BasePluginManager(models.Manager):
     most recent approved plugin version.
     * weighted_rating uses the Bayesian Average formula
     to provide a more balanced rating that mitigates the effect of low vote counts.
+
+    Excludes soft-deleted plugins by default.
     """
 
     def get_queryset(self):
         return (
             super(BasePluginManager, self)
             .get_queryset()
+            .filter(is_deleted=False)
             .extra(
                 select={
                     "average_vote": "rating_score / (rating_votes + 0.001)",
@@ -327,6 +330,7 @@ class ServerPlugins(ApprovedPlugins):
 class FeedbackCompletedPlugins(models.Manager):
     """
     Show only unapproved plugins with resolved feedbacks
+    Excludes soft-deleted plugins.
     """
 
     def get_queryset(self):
@@ -349,6 +353,7 @@ class FeedbackCompletedPlugins(models.Manager):
         return (
             super(FeedbackCompletedPlugins, self)
             .get_queryset()
+            .filter(is_deleted=False)
             .annotate(latest_version_approved=Subquery(latest_version_subquery))
             .filter(latest_version_approved=False, deprecated=False)
             .annotate(
@@ -378,6 +383,7 @@ class FeedbackCompletedPlugins(models.Manager):
 class FeedbackReceivedPlugins(models.Manager):
     """
     Show only unapproved plugins with a pending feedback
+    Excludes soft-deleted plugins.
     """
 
     def get_queryset(self):
@@ -393,7 +399,11 @@ class FeedbackReceivedPlugins(models.Manager):
         return (
             super(FeedbackReceivedPlugins, self)
             .get_queryset()
-            .filter(pluginversion__approved=False, deprecated=False)
+            .filter(
+                pluginversion__approved=False,
+                deprecated=False,
+                is_deleted=False,
+            )
             .annotate(received_feedback_count=Subquery(feedback_count_subquery))
             .filter(received_feedback_count__gte=1)
             .extra(
@@ -418,13 +428,18 @@ class FeedbackReceivedPlugins(models.Manager):
 class FeedbackPendingPlugins(models.Manager):
     """
     Show only unapproved plugins with a feedback
+    Excludes soft-deleted plugins.
     """
 
     def get_queryset(self):
         return (
             super(FeedbackPendingPlugins, self)
             .get_queryset()
-            .filter(pluginversion__approved=False, deprecated=False)
+            .filter(
+                pluginversion__approved=False,
+                deprecated=False,
+                is_deleted=False,
+            )
             .annotate(
                 total_feedback_count=Count("pluginversion__feedback"),
             )
@@ -529,6 +544,22 @@ class Plugin(models.Model):
     # Flags
     featured = models.BooleanField(_("Featured"), default=False, db_index=True)
     deprecated = models.BooleanField(_("Deprecated"), default=False, db_index=True)
+
+    # Soft delete fields
+    is_deleted = models.BooleanField(
+        _("Marked for deletion"),
+        default=False,
+        db_index=True,
+        help_text=_(
+            "Plugin marked for deletion. Will be permanently deleted after one month."
+        ),
+    )
+    deleted_on = models.DateTimeField(
+        _("Deleted on"),
+        null=True,
+        blank=True,
+        help_text=_("Date when the plugin was marked for deletion"),
+    )
 
     # True if the plugin has a server interface
     server = models.BooleanField(
@@ -718,7 +749,7 @@ class Plugin(models.Model):
 
 class ApprovedPluginVersions(models.Manager):
     """
-    Shows only public plugin versions:
+    Shows only public plugin versions.
     """
 
     def get_queryset(self):

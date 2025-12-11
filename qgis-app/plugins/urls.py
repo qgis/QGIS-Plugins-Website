@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from django.urls import re_path as url
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.urls import re_path as url
 from django.utils.translation import gettext_lazy as _
 from plugins.models import Plugin, PluginVersion
 from plugins.views import *
@@ -40,6 +40,18 @@ urlpatterns = [
         plugin_delete,
         {},
         name="plugin_delete",
+    ),
+    url(
+        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/restore/$",
+        plugin_restore,
+        {},
+        name="plugin_restore",
+    ),
+    url(
+        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/permanent-delete/$",
+        plugin_permanent_delete,
+        {},
+        name="plugin_permanent_delete",
     ),
     url(
         r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/update/$",
@@ -93,19 +105,25 @@ urlpatterns = [
         UserDetailsPluginsList.as_view(),
         name="user_details",
     ),
-    url(r"^$", PluginsList.as_view(
-        additional_context={
-            "title": _("All Plugins"),
-            "description": _("List of all approved plugins."),
-        }
-    ), name="approved_plugins"),
+    url(
+        r"^$",
+        PluginsList.as_view(
+            additional_context={
+                "title": _("All Plugins"),
+                "description": _("List of all approved plugins."),
+            }
+        ),
+        name="approved_plugins",
+    ),
     url(
         r"^my$",
         login_required(
             MyPluginsList.as_view(
                 additional_context={
                     "title": _("My Plugins"),
-                    "description": _("List of plugins created or maintained by the current user."),
+                    "description": _(
+                        "List of plugins created or maintained by the current user."
+                    ),
                 }
             )
         ),
@@ -141,7 +159,9 @@ urlpatterns = [
             queryset=Plugin.unapproved_objects.all().order_by("-latest_version_date"),
             additional_context={
                 "title": _("Unapproved Plugins"),
-                "description": _("List of plugins that are not yet approved and not deprecated."),
+                "description": _(
+                    "List of plugins that are not yet approved and not deprecated."
+                ),
             },
         ),
         name="unapproved_plugins",
@@ -152,7 +172,9 @@ urlpatterns = [
             queryset=Plugin.deprecated_objects.all(),
             additional_context={
                 "title": _("Deprecated Plugins"),
-                "description": _("List of plugins that are no longer maintained or recommended."),
+                "description": _(
+                    "List of plugins that are no longer maintained or recommended."
+                ),
             },
         ),
         name="deprecated_plugins",
@@ -163,7 +185,9 @@ urlpatterns = [
             queryset=Plugin.fresh_objects.all(),
             additional_context={
                 "title": _("New plugins"),
-                "description": _("List of plugins that have been created in the last 30 days."),
+                "description": _(
+                    "List of plugins that have been created in the last 30 days."
+                ),
             },
         ),
         name="fresh_plugins",
@@ -174,7 +198,9 @@ urlpatterns = [
             queryset=Plugin.latest_objects.all(),
             additional_context={
                 "title": _("Updated plugins"),
-                "description": _("List of plugins that have been updated in the last 30 days."),
+                "description": _(
+                    "List of plugins that have been updated in the last 30 days."
+                ),
             },
         ),
         name="latest_plugins",
@@ -185,7 +211,9 @@ urlpatterns = [
             queryset=Plugin.stable_objects.all(),
             additional_context={
                 "title": _("Stable Plugins"),
-                "description": _("List of approved plugins with at least one stable version."),
+                "description": _(
+                    "List of approved plugins with at least one stable version."
+                ),
             },
         ),
         name="stable_plugins",
@@ -196,7 +224,9 @@ urlpatterns = [
             queryset=Plugin.experimental_objects.all(),
             additional_context={
                 "title": _("Experimental Plugins"),
-                "description": _("List of approved plugins with at least one experimental version."),
+                "description": _(
+                    "List of approved plugins with at least one experimental version."
+                ),
             },
         ),
         name="experimental_plugins",
@@ -207,12 +237,13 @@ urlpatterns = [
             queryset=Plugin.new_qgis_ready_objects.all(),
             additional_context={
                 "title": _(f"QGIS {settings.NEW_QGIS_MAJOR_VERSION} Ready Plugins"),
-                "description": _(f"List of approved plugins that are ready for QGIS {settings.NEW_QGIS_MAJOR_VERSION}."),
+                "description": _(
+                    f"List of approved plugins that are ready for QGIS {settings.NEW_QGIS_MAJOR_VERSION}."
+                ),
             },
         ),
         name="new_qgis_ready_plugins",
     ),
-
     url(
         r"^popular/$",
         PluginsList.as_view(
@@ -234,7 +265,9 @@ urlpatterns = [
             queryset=Plugin.most_voted_objects.all(),
             additional_context={
                 "title": _("Most Voted Plugins"),
-                "description": _("List of approved plugins sorted by the number of votes."),
+                "description": _(
+                    "List of approved plugins sorted by the number of votes."
+                ),
             },
         ),
         name="most_voted_plugins",
@@ -245,7 +278,9 @@ urlpatterns = [
             queryset=Plugin.most_downloaded_objects.all(),
             additional_context={
                 "title": _("Most Downloaded Plugins"),
-                "description": _("List of approved plugins sorted by the number of downloads."),
+                "description": _(
+                    "List of approved plugins sorted by the number of downloads."
+                ),
             },
         ),
         name="most_downloaded_plugins",
@@ -256,7 +291,9 @@ urlpatterns = [
             queryset=Plugin.best_rated_objects.all(),
             additional_context={
                 "title": _("Best Rated Plugins"),
-                "description": _("List of approved plugins sorted by the number of ratings."),
+                "description": _(
+                    "List of approved plugins sorted by the number of ratings."
+                ),
             },
         ),
         name="best_rated_plugins",
@@ -276,10 +313,24 @@ urlpatterns = [
         FeedbackPendingPluginsList.as_view(
             additional_context={
                 "title": _("Awaiting review"),
-                "description": _("List of unapproved plugins awaiting feedback review."),
+                "description": _(
+                    "List of unapproved plugins awaiting feedback review."
+                ),
             }
         ),
         name="feedback_pending_plugins",
+    ),
+    url(
+        r"^awaiting_deletion/$",
+        AwaitingDeletionPluginsList.as_view(
+            additional_context={
+                "title": _("Awaiting Deletion"),
+                "description": _(
+                    "List of plugins marked for deletion. These plugins will be permanently deleted after 30 days."
+                ),
+            }
+        ),
+        name="awaiting_deletion_plugins",
     ),
     url(
         r"^feedback_received/$",
@@ -436,7 +487,8 @@ urlpatterns += [
     url(
         r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/$",
         PluginDetailView.as_view(
-            slug_url_kwarg="package_name", slug_field="package_name",
+            slug_url_kwarg="package_name",
+            slug_field="package_name",
         ),
         name="plugin_detail",
     ),

@@ -1,16 +1,16 @@
 {% extends 'plugins/plugin_base.html' %}{% load i18n %}
 {% block content %}
-    <h2 class="title is-4">{% trans "Delete plugin" %}: {{ plugin.title }}</h2>
+    <h2 class="title is-4">{% trans "Mark plugin for deletion" %}: {{ plugin.title }}</h2>
     <form action="" method="post">
         {% csrf_token %}
-        <div class="notification">
-            <p>{% trans "You asked to delete the plugin and all its versions. The plugin will be permanently deleted. This action cannot be undone. Please confirm." %}</p>
+        <div class="notification is-warning">
+            <p class="has-text-white">{% trans "You're about to mark the plugin for deletion. It will be hidden from public lists and will be permanently deleted after 30 days. You can undo this it from 'My Plugins' before that time. Please confirm." %}</p>
         </div>
         <div class="field is-grouped">
             <p class="control">
                 <button type="submit" class="button is-danger" name="delete_confirm">
                     <span class="icon"><i class="fas fa-trash"></i></span>
-                    <span>{% trans "Ok" %}</span>
+                    <span>{% trans "Mark for deletion" %}</span>
                 </button>
             </p>
             <p class="control">

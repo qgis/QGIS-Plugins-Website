@@ -612,15 +612,73 @@ class PluginDetailView(DetailView):
 
 @login_required
 def plugin_delete(request, package_name):
+    """
+    Marks a plugin for deletion (soft delete).
+    The plugin will be hidden from public lists but visible in 'My Plugins'.
+    """
     plugin = get_object_or_404(Plugin, package_name=package_name)
     if not check_plugin_access(request.user, plugin):
         return render(request, "plugins/plugin_permission_deny.html", {})
     if "delete_confirm" in request.POST:
-        plugin.delete()
-        msg = _("The Plugin has been successfully deleted.")
+        plugin.is_deleted = True
+        plugin.deleted_on = datetime.datetime.now()
+        plugin.save()
+        msg = _(
+            "The Plugin has been marked for deletion and will be permanently deleted in 30 days."
+        )
         messages.success(request, msg, fail_silently=True)
-        return HttpResponseRedirect(reverse("approved_plugins"))
+        return HttpResponseRedirect(reverse("my_plugins"))
     return render(request, "plugins/plugin_delete_confirm.html", {"plugin": plugin})
+
+
+@login_required
+def plugin_restore(request, package_name):
+    """
+    Restores a soft-deleted plugin.
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name, is_deleted=True)
+    if not check_plugin_access(request.user, plugin):
+        return render(request, "plugins/plugin_permission_deny.html", {})
+    if "restore_confirm" in request.POST:
+        plugin.is_deleted = False
+        plugin.deleted_on = None
+        plugin.save()
+        msg = _("The Plugin has been successfully restored.")
+        messages.success(request, msg, fail_silently=True)
+        return HttpResponseRedirect(
+            reverse("plugin_detail", args=(plugin.package_name,))
+        )
+    return render(request, "plugins/plugin_restore_confirm.html", {"plugin": plugin})
+
+
+@login_required
+def plugin_permanent_delete(request, package_name):
+    """
+    Permanently deletes a soft-deleted plugin.
+    Only staff users can permanently delete plugins.
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name, is_deleted=True)
+    if not check_plugin_access(request.user, plugin):
+        return render(request, "plugins/plugin_permission_deny.html", {})
+
+    # Only staff users can permanently delete
+    if not request.user.is_staff:
+        msg = _(
+            "Only staff users can permanently delete plugins. Please contact the plugin approvers to request permanent deletion."
+        )
+        messages.error(request, msg, fail_silently=True)
+        return HttpResponseRedirect(
+            reverse("plugin_detail", args=(plugin.package_name,))
+        )
+
+    if "permanent_delete_confirm" in request.POST:
+        plugin.delete()
+        msg = _("The Plugin has been permanently deleted.")
+        messages.success(request, msg, fail_silently=True)
+        return HttpResponseRedirect(reverse("my_plugins"))
+    return render(
+        request, "plugins/plugin_permanent_delete_confirm.html", {"plugin": plugin}
+    )
 
 
 def _check_optional_metadata(form, request):
@@ -996,13 +1054,40 @@ class PluginsList(ListView):
 
 class MyPluginsList(PluginsList):
     """
-    List of plugins created by the user
+    List of plugins created by the user.
+    Includes soft-deleted plugins so users can restore or permanently delete them.
     """
+
+    def get_queryset(self):
+        """Override to include soft-deleted plugins for the user's own plugins."""
+        # Use objects.all() to bypass the BasePluginManager filter that excludes soft-deleted items
+        qs = Plugin.objects.all()
+        # Apply the user filter
+        qs = self.get_filtered_queryset(qs)
+
+        # Handle sorting (copied from parent class)
+        sort_by = self.request.GET.get("sort", None)
+        sort_order = self.request.GET.get("order", None)
+
+        if sort_by and sort_order:
+            if sort_order == "desc":
+                sort_by = "-" + sort_by
+
+            if sort_by.lstrip("-") in [
+                "average_vote",
+                "latest_version_date",
+                "weighted_rating",
+            ] or self._is_valid_field(sort_by.lstrip("-")):
+                qs = qs.order_by(sort_by)
+            elif not qs.ordered:
+                qs = qs.order_by(Lower("name"))
+
+        return qs
 
     def get_filtered_queryset(self, qs):
         return (
-            Plugin.base_objects.filter(owners=self.request.user).distinct()
-            | Plugin.objects.filter(created_by=self.request.user).distinct()
+            qs.filter(owners=self.request.user).distinct()
+            | qs.filter(created_by=self.request.user).distinct()
         )
 
 
@@ -1114,6 +1199,21 @@ class FeedbackPendingPluginsList(PluginsList):
     """
 
     queryset = Plugin.feedback_pending_objects.all().order_by("-latest_version_date")
+
+    def get_filtered_queryset(self, qs):
+        user = get_object_or_404(User, username=self.request.user)
+        if not user.is_staff:
+            raise Http404
+        return qs
+
+
+class AwaitingDeletionPluginsList(PluginsList):
+    """List of plugins marked for deletion (soft-deleted).
+
+    Only staff can see this list.
+    """
+
+    queryset = Plugin.objects.filter(is_deleted=True).order_by("-deleted_on")
 
     def get_filtered_queryset(self, qs):
         user = get_object_or_404(User, username=self.request.user)
