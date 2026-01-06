@@ -20,5 +20,5 @@ PROJECT_NAME="qgis-plugins"
 # Renew SSL certificates
 docker compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" run certbot renew
 
-# Restart web service to apply new certificates
-docker compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" restart web
+# Hot reload the web service to apply new certificates
+docker compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" kill -s SIGHUP web
