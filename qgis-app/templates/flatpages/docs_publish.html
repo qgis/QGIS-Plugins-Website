@@ -105,17 +105,41 @@
       `plugin`.
     </li>
     <li>
-      Plugins should make use of QgsNetworkAccessManager instead of using
-      urllib2/requests/etc... which often fail to use correct proxy settings.
+      Plugins should make use of 
+      <a href="https://qgis.org/pyqgis/latest/core/QgsNetworkAccessManager.html">QgsNetworkAccessManager</a>
+      instead of using urllib2/requests/etc... which often fail to use correct proxy settings.
+    </li>
+    <li>
+      Plugins should make use of QGIS widgets, such as
+      <a href="https://qgis.org/pyqgis/latest/gui/QgsMapLayerComboBox.html">QgsMapLayerComboBox</a>
+      for a drop down menu with layers.
+      Other widgets are available, check the <a href="https://qgis.org/pyqgis/latest/gui/index.html">list on the documentation</a>.
     </li>
     <li>
       The
-      <a title="Plugin builder" href="/plugins/pluginbuilder3/"
-        >plugin builder</a
+      <a title="QGIS Plugin Templater GUI" href="/plugins/qgis_plugin_templater_gui/"
+        >QGIS Plugin Templater GUI</a
+      > or 
+      <a title="QGIS Minimal Plugin" href="https://github.com/wonder-sk/qgis-minimal-plugin"
+        >QGIS Minimal Plugin</a
       >
-      plugin is recommended, especially for new users.
-    </li>
-  </ul>
+      are recommended.
+</li>
+<li>
+      Experienced developers with quality standards for quality and tools and used to git workflow are encouraged to use
+      one of the well-known <a title="Cookiecutter" href="https://cookiecutter.readthedocs.io/" target="_blank">Cookiecutter</a>
+      templates:
+      <ul>
+        <li>
+            <a title="QGIS Plugin Templater" href="https://oslandia.gitlab.io/qgis/template-qgis-plugin/" target="_blank">QGIS Plugin Templater</a>
+            (used behind the scenes of the plugin listed above)
+        </li>
+        <li>
+            <a title="Cookiecutter QGIS Plugin" href="https://github.com/GispoCoding/cookiecutter-qgis-plugin" target="_blank">Cookiecutter QGIS Plugin</a>
+        </li>
+      </ul>
+</li>
+</ul>
   <div
     id="_mcePaste"
     class="mcePaste"
