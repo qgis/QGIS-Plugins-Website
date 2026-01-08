@@ -2,6 +2,7 @@
 Plugin validator class
 
 """
+
 import codecs
 import configparser
 import mimetypes
@@ -46,10 +47,13 @@ PLUGIN_OPTIONAL_METADATA = getattr(
         "experimental",
         "external_deps",
         "server",
+        "supportsQt6",
     ),
 )
 PLUGIN_BOOLEAN_METADATA = getattr(
-    settings, "PLUGIN_BOOLEAN_METADATA", ("experimental", "deprecated", "server")
+    settings,
+    "PLUGIN_BOOLEAN_METADATA",
+    ("experimental", "deprecated", "server", "supportsQt6"),
 )
 
 
@@ -87,20 +91,26 @@ def _check_required_metadata(metadata):
     Checks if required metadata are in place, raise ValidationError if not found
     """
 
-    missing_fields = [field for field in PLUGIN_REQUIRED_METADATA if field not in [item[0] for item in metadata]]
+    missing_fields = [
+        field
+        for field in PLUGIN_REQUIRED_METADATA
+        if field not in [item[0] for item in metadata]
+    ]
     if len(missing_fields) > 0:
-        missing_fields_str = ', '.join(missing_fields)
+        missing_fields_str = ", ".join(missing_fields)
         raise ValidationError(
             _(
                 f'Cannot find metadata <strong>{missing_fields_str}</strong> in metadata source <code>{dict(metadata).get("metadata_source")}</code>.<br />For further informations about metadata, please see: <a target="_blank"  href="https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/plugins/plugins.html#metadata-txt">metadata documentation</a>'
             )
         )
 
+
 def _check_url_link(urls):
     """
     Checks if all the url link is valid.
     """
-    def error_check(url: str, forbidden_url: str)->bool:
+
+    def error_check(url: str, forbidden_url: str) -> bool:
         # Check against forbidden_url
         if url == forbidden_url:
             return True
@@ -114,7 +124,7 @@ def _check_url_link(urls):
             print(f"Error occurred: {e}")
             return True
 
-    def error_check_if_exist(url: str)->bool:
+    def error_check_if_exist(url: str) -> bool:
         # Check if url is exist
         try:
             # https://stackoverflow.com/a/41950438/10268058
@@ -141,37 +151,62 @@ def _check_url_link(urls):
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/117.0.0.0 Safari/537.36"
             }
-            req = requests.head(url, headers=headers, timeout=10)  # Set timeout to 10 seconds
+            req = requests.head(
+                url, headers=headers, timeout=10
+            )  # Set timeout to 10 seconds
         except requests.exceptions.Timeout:
             return True
         except Exception:
             return True
         return req.status_code >= 400
 
-    timeout_url_error = [item for item in [url_item['metadata_attr'] for url_item in urls if error_check_if_timeout(url_item['url'])]]
+    timeout_url_error = [
+        item
+        for item in [
+            url_item["metadata_attr"]
+            for url_item in urls
+            if error_check_if_timeout(url_item["url"])
+        ]
+    ]
     if len(timeout_url_error) > 0:
         timeout_url_error_str = ", ".join(timeout_url_error)
         raise ValidationError(
-        _(
-            f"Please provide valid url link for the following key(s) in the metadata source: <strong>{timeout_url_error_str}</strong>. "
-            "The website(s) cannot be reached within 10 seconds."
+            _(
+                f"Please provide valid url link for the following key(s) in the metadata source: <strong>{timeout_url_error_str}</strong>. "
+                "The website(s) cannot be reached within 10 seconds."
             )
-    )
-    url_error = [item for item in [url_item['metadata_attr'] for url_item in urls if error_check(url_item['url'], url_item['forbidden_url'])]]
+        )
+    url_error = [
+        item
+        for item in [
+            url_item["metadata_attr"]
+            for url_item in urls
+            if error_check(url_item["url"], url_item["forbidden_url"])
+        ]
+    ]
     if len(url_error) > 0:
         url_error_str = ", ".join(url_error)
         raise ValidationError(
-        _(f"Please provide valid url link for the following key(s) in the metadata source: <strong>{url_error_str}</strong>. ")
-    )
-    exist_url_error = [item for item in [url_item['metadata_attr'] for url_item in urls if error_check_if_exist(url_item['url'])]]
+            _(
+                f"Please provide valid url link for the following key(s) in the metadata source: <strong>{url_error_str}</strong>. "
+            )
+        )
+    exist_url_error = [
+        item
+        for item in [
+            url_item["metadata_attr"]
+            for url_item in urls
+            if error_check_if_exist(url_item["url"])
+        ]
+    ]
     if len(exist_url_error) > 0:
         exist_url_error_str = ", ".join(exist_url_error)
         raise ValidationError(
-        _(
-            f"Please provide valid url link for the following key(s) in the metadata source: <strong>{exist_url_error_str}</strong>. "
-            "The website(s) cannot be reached."
+            _(
+                f"Please provide valid url link for the following key(s) in the metadata source: <strong>{exist_url_error_str}</strong>. "
+                "The website(s) cannot be reached."
             )
-    )
+        )
 
 
 def validator(package, is_new: bool = False):
@@ -210,8 +245,10 @@ def validator(package, is_new: bool = False):
     for zname in zip.namelist():
         if zname.find("..") != -1 or zname.find(os.path.sep) == 0:
             raise ValidationError(
-                _("For security reasons, zip file cannot contain path "
-                  "information (found '{}')".format(zname))
+                _(
+                    "For security reasons, zip file cannot contain path "
+                    "information (found '{}')".format(zname)
+                )
             )
         if zname.find(".pyc") != -1:
             raise ValidationError(
@@ -224,13 +261,15 @@ def validator(package, is_new: bool = False):
                     raise ValidationError(
                         _(
                             "For security reasons, zip file "
-                            "cannot contain <strong> '%s' </strong> directory. However, there is one present at the root of the archive." % (forbidden_dir,)
+                            "cannot contain <strong> '%s' </strong> directory. However, there is one present at the root of the archive."
+                            % (forbidden_dir,)
                         )
                     )
                 raise ValidationError(
                     _(
                         "For security reasons, zip file "
-                        "cannot contain <strong> '%s' </strong> directory. However, it has been found at <strong> '%s' </strong>." % (forbidden_dir, zname)
+                        "cannot contain <strong> '%s' </strong> directory. However, it has been found at <strong> '%s' </strong>."
+                        % (forbidden_dir, zname)
                     )
                 )
     bad_file = zip.testzip()
@@ -247,16 +286,16 @@ def validator(package, is_new: bool = False):
                 errors="replace",
             )
 
-    # Metadata list, also usefull to pass warnings to the main view 
+    # Metadata list, also usefull to pass warnings to the main view
     metadata = []
 
     namelist = zip.namelist()
     # Check if the zip file contains multiple parent folders
     # If it is, show a warning for now
     try:
-        parent_folders = list(set([str(name).split('/')[0] for name in namelist]))
+        parent_folders = list(set([str(name).split("/")[0] for name in namelist]))
         if len(parent_folders) > 1:
-            metadata.append(("multiple_parent_folders", ', '.join(parent_folders)))
+            metadata.append(("multiple_parent_folders", ", ".join(parent_folders)))
     except:
         pass
 
@@ -377,22 +416,35 @@ def validator(package, is_new: bool = False):
             )
     # check url_link
     urls_to_check = [
-        {'url': dict(metadata).get("tracker"), 'forbidden_url': "http://bugs", 'metadata_attr': "tracker"},
-        {'url': dict(metadata).get("repository"), 'forbidden_url': "http://repo", 'metadata_attr': "repository"},
-        {'url': dict(metadata).get("homepage"), 'forbidden_url': "http://homepage", 'metadata_attr': "homepage"},
+        {
+            "url": dict(metadata).get("tracker"),
+            "forbidden_url": "http://bugs",
+            "metadata_attr": "tracker",
+        },
+        {
+            "url": dict(metadata).get("repository"),
+            "forbidden_url": "http://repo",
+            "metadata_attr": "repository",
+        },
+        {
+            "url": dict(metadata).get("homepage"),
+            "forbidden_url": "http://homepage",
+            "metadata_attr": "homepage",
+        },
     ]
 
     _check_url_link(urls_to_check)
 
-
     # Checks for LICENSE file presence
-    # Making it mandatory as of 03 June 2024 
+    # Making it mandatory as of 03 June 2024
     # according to https://github.com/qgis/QGIS-Enhancement-Proposals/issues/279
     licensename = package_name + "/LICENSE"
     if licensename not in namelist:
-        raise ValidationError(_(
-            "Cannot find LICENSE in the plugin package. "
-            "This file is required, please consider adding it to the plugin package.")
+        raise ValidationError(
+            _(
+                "Cannot find LICENSE in the plugin package. "
+                "This file is required, please consider adding it to the plugin package."
+            )
         )
 
     zip.close()

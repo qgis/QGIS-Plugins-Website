@@ -106,7 +106,8 @@ class NewQgisMajorVersionReadyPlugins(BasePluginManager):
     """
     Shows only public plugins: i.e. those with "approved" flag set
     and with one version that is compatible with the new QGIS major version.
-    This is determined by checking if the max_qg_version is greater than or equal to the new QGIS major version.
+    This is determined by checking if the max_qg_version is greater than
+    or equal to the current QGIS major version and has supports_qt6 flag set.
     This manager filters out deprecated plugins as well.
     """
 
@@ -116,7 +117,8 @@ class NewQgisMajorVersionReadyPlugins(BasePluginManager):
             .get_queryset()
             .filter(
                 pluginversion__approved=True,
-                pluginversion__max_qg_version__gte=f"{settings.NEW_QGIS_MAJOR_VERSION}.0",
+                pluginversion__min_qg_version__gte=f"{settings.CURRENT_QGIS_MAJOR_VERSION}.0",
+                pluginversion__supports_qt6=True,
                 deprecated=False,
             )
             .distinct()
@@ -873,6 +875,12 @@ class PluginVersion(models.Model):
     )
     max_qg_version = QGVersionZeroForcedField(
         _("Maximum QGIS version"), max_length=32, null=True, blank=True, db_index=True
+    )
+    supports_qt6 = models.BooleanField(
+        _("Supports Qt6"),
+        default=False,
+        help_text=_("Check this box if this version supports Qt6."),
+        db_index=True,
     )
     version = VersionField(_("Version"), max_length=32, db_index=True)
     changelog = models.TextField(_("Changelog"), null=True, blank=True)

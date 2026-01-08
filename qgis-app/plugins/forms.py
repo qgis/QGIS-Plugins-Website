@@ -5,7 +5,11 @@ from django import forms
 from django.forms import ModelForm, ValidationError
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
-from plugins.models import Plugin, PluginOutstandingToken, PluginVersion
+from plugins.models import (
+    Plugin,
+    PluginOutstandingToken,
+    PluginVersion,
+)
 from plugins.validator import validator
 from taggit.forms import TagField
 
@@ -185,6 +189,8 @@ class PluginVersionForm(ModelForm):
         self.instance.changelog = self.cleaned_data.get("changelog")
         if "experimental" in self.cleaned_data:
             self.instance.experimental = self.cleaned_data.get("experimental")
+        if "supportsQt6" in self.cleaned_data:
+            self.instance.supports_qt6 = self.cleaned_data.get("supportsQt6")
         return super(PluginVersionForm, self).clean()
 
 
