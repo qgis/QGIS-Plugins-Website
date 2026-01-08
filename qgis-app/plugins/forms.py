@@ -283,10 +283,10 @@ class VersionFeedbackForm(forms.Form):
                 # Validate file type
                 if not image.content_type.startswith("image/"):
                     raise forms.ValidationError(_("Only image files are allowed."))
-                # Validate file size (max 10MB)
-                if image.size > 10 * 1024 * 1024:
+                # Validate file size (max 5MB)
+                if image.size > 5 * 1024 * 1024:
                     raise forms.ValidationError(
-                        _("Image file size must be less than 10MB.")
+                        _("Image file size must be less than 5MB.")
                     )
         return images
 

@@ -138,7 +138,7 @@
                     <div id="image-preview" class="image-preview mt-3"></div>
 
                     <p class="help has-text-grey">
-                        {% trans "Supported formats: JPG, PNG, GIF. Maximum file size: 10MB per image." %}
+                        {% trans "Supported formats: JPG, PNG, GIF. Maximum file size: 5MB per image." %}
                     </p>
                 </div>
 
@@ -423,7 +423,7 @@
 
         function handleFiles(files) {
             const validFiles = [];
-            const maxSize = 10 * 1024 * 1024; // 10MB
+            const maxSize = 5 * 1024 * 1024; // 5MB
             const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
 
             Array.from(files).forEach(file => {
@@ -433,7 +433,7 @@
                 }
 
                 if (file.size > maxSize) {
-                    alert(`File ${file.name} is too large. Maximum size is 10MB.`);
+                    alert(`File ${file.name} is too large. Maximum size is 5MB.`);
                     return;
                 }
 
@@ -500,7 +500,7 @@
 
         function handleEditFiles(files, selectedFiles, fileInput, previewArea, feedbackId) {
             const validFiles = [];
-            const maxSize = 10 * 1024 * 1024; // 10MB
+            const maxSize = 5 * 1024 * 1024; // 5MB
             const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
 
             Array.from(files).forEach(file => {
@@ -510,7 +510,7 @@
                 }
 
                 if (file.size > maxSize) {
-                    alert(`File ${file.name} is too large. Maximum size is 10MB.`);
+                    alert(`File ${file.name} is too large. Maximum size is 5MB.`);
                     return;
                 }
 

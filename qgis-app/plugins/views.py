@@ -1786,11 +1786,11 @@ def version_feedback_edit(request, package_name, version, feedback):
                     {"success": False, "error": "Only image files are allowed."},
                     status=400,
                 )
-            if image.size > 10 * 1024 * 1024:  # 10MB
+            if image.size > 5 * 1024 * 1024:  # 5MB
                 return JsonResponse(
                     {
                         "success": False,
-                        "error": "Image file size must be less than 10MB.",
+                        "error": "Image file size must be less than 5MB.",
                     },
                     status=400,
                 )
