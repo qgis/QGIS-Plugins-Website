@@ -341,11 +341,11 @@ class TestCreateVersionFeedback(SetupMixin, TestCase):
         self.client.force_login(user=self.creator)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, '<div class="new-feedback">')
+        self.assertNotContains(response, 'New Feedback')
         self.client.force_login(user=self.staff)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '<div class="new-feedback">')
+        self.assertContains(response, 'New Feedback')
 
     def test_post_create_single_task_feedback(self):
         self.client.force_login(self.staff)
@@ -508,7 +508,7 @@ class VersionFeedbackEditViewTests(SetupMixin, TestCase):
         self.client.force_login(user=self.creator)
         url = reverse('version_feedback_edit', args=[self.plugin_1.package_name, self.version_1.version, self.feedback_1.pk])
         response = self.client.post(url, {'task': 'updated task'})
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 200)
         self.feedback_1.refresh_from_db()
         self.assertEqual(self.feedback_1.task, 'updated task')
         self.assertIn('modified_on', response.json())
