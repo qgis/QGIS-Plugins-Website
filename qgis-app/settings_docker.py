@@ -159,7 +159,7 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=365 * 1000),
 }
 
-MATOMO_SITE_ID = "1"
+MATOMO_SITE_ID = "2"
 MATOMO_URL = "//matomo.qgis.org/"
 
 # Default primary key type
