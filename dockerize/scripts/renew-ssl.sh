@@ -13,5 +13,12 @@
 
 #25 11 * * * /bin/bash /home/web/QGIS-Plugins-Website/dockerize/scripts/renew_ssl.sh > /tmp/ssl-renewal-logs.txt
 
+# Set common variables
+COMPOSE_FILE="/home/web/QGIS-Plugins-Website/dockerize/docker-compose.yml"
+PROJECT_NAME="qgis-plugins"
 
-docker compose -f /home/web/QGIS-Plugins-Website/dockerize/docker-compose.yml -p qgis-plugins run certbot renew
+# Renew SSL certificates
+docker compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" run certbot renew
+
+# Hot reload the web service to apply new certificates
+docker compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" kill -s SIGHUP web
