@@ -1851,7 +1851,7 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         # For QGIS 4.x, only include plugins that support Qt6
-        # and have max_qg_version >= 3.99. This has been set automatically
+        # and have min_qg_version >= 3.0. This has been set automatically
         # if it was not defined by the plugin author in the plugin metadata.
         # See: https://github.com/qgis/QGIS-Plugins-Website/issues/181
         # and https://github.com/qgis/QGIS-Plugins-Website/issues/185
@@ -1860,15 +1860,15 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
             version_filters.update({"supports_qt6": True})
             filters.update(
                 {
-                    "pluginversion__max_qg_version__gte": vjust(
-                        "3.99", fillchar="0", level=2, force_zero=True
+                    "pluginversion__min_qg_version__gte": vjust(
+                        "3.0", fillchar="0", level=2, force_zero=True
                     )
                 }
             )
             version_filters.update(
                 {
-                    "max_qg_version__gte": vjust(
-                        "3.99", fillchar="0", level=2, force_zero=True
+                    "min_qg_version__gte": vjust(
+                        "3.0", fillchar="0", level=2, force_zero=True
                     )
                 }
             )
@@ -2002,7 +2002,7 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         # For QGIS 4.x, only include plugins that support Qt6
-        # and have max_qg_version >= 3.99. This has been set automatically
+        # and have min_qg_version >= 3.0. This has been set automatically
         # if it was not defined by the plugin author in the plugin metadata.
         # See: https://github.com/qgis/QGIS-Plugins-Website/issues/181
         # and https://github.com/qgis/QGIS-Plugins-Website/issues/185
@@ -2011,15 +2011,15 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
             version_filters.update({"supports_qt6": True})
             filters.update(
                 {
-                    "pluginversion__max_qg_version__gte": vjust(
-                        "3.99", fillchar="0", level=2, force_zero=True
+                    "pluginversion__min_qg_version__gte": vjust(
+                        "3.0", fillchar="0", level=2, force_zero=True
                     )
                 }
             )
             version_filters.update(
                 {
-                    "max_qg_version__gte": vjust(
-                        "3.99", fillchar="0", level=2, force_zero=True
+                    "min_qg_version__gte": vjust(
+                        "3.0", fillchar="0", level=2, force_zero=True
                     )
                 }
             )
