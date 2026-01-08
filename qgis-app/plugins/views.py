@@ -2072,63 +2072,60 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
             OR "auth_user"."is_superuser" = True))
         """
 
-        sql = """
-        SELECT DISTINCT ON (pv.plugin_id) pv.*,
-        pv.created_by_id IN %(trusted_users_ids)s AS is_trusted
-            FROM %(pv_table)s pv
-            WHERE (
-                pv.approved = True
-                AND pv."max_qg_version" >= '%(qg_version_with_patch_0)s'
-                AND pv."min_qg_version" <= '%(qg_version_with_patch_99)s'
-                AND pv.experimental = %(experimental)s
+        # Check if QGIS version is 4.x
+        is_qgis_4 = qg_version.split(".")[0] == "004"
+
+        if is_qgis_4:
+            # For QGIS 4.x, only include plugins that support Qt6 and have min_qg_version >= 3.0
+            sql = """
+            SELECT DISTINCT ON (pv.plugin_id) pv.*,
+            pv.created_by_id IN %(trusted_users_ids)s AS is_trusted
+                FROM %(pv_table)s pv
+                WHERE (
+                    pv.approved = True
+                    AND pv."min_qg_version" <= '%(qg_version_with_patch_99)s'
+                    AND pv."min_qg_version" >= '%(min_qg_version_3_0)s'
+                    AND pv.supports_qt6 = True
+                    AND pv.experimental = %(experimental)s
+                )
+                ORDER BY pv.plugin_id, pv.version DESC
+            """
+        else:
+            sql = """
+            SELECT DISTINCT ON (pv.plugin_id) pv.*,
+            pv.created_by_id IN %(trusted_users_ids)s AS is_trusted
+                FROM %(pv_table)s pv
+                WHERE (
+                    pv.approved = True
+                    AND pv."max_qg_version" >= '%(qg_version_with_patch_0)s'
+                    AND pv."min_qg_version" <= '%(qg_version_with_patch_99)s'
+                    AND pv.experimental = %(experimental)s
+                )
+                ORDER BY pv.plugin_id, pv.version DESC
+            """
+
+        sql_params = {
+            "pv_table": PluginVersion._meta.db_table,
+            "p_table": Plugin._meta.db_table,
+            "qg_version_with_patch_0": _add_patch_version(qg_version, "0"),
+            "qg_version_with_patch_99": _add_patch_version(qg_version, "99"),
+            "experimental": "False",
+            "trusted_users_ids": str(trusted_users_ids),
+        }
+
+        if is_qgis_4:
+            sql_params["min_qg_version_3_0"] = vjust(
+                "3.0", fillchar="0", level=2, force_zero=True
             )
-            ORDER BY pv.plugin_id, pv.version DESC
-        """
 
-        object_list_new = PluginVersion.objects.raw(
-            sql
-            % {
-                "pv_table": PluginVersion._meta.db_table,
-                "p_table": Plugin._meta.db_table,
-                "qg_version": qg_version,
-                "qg_version_with_patch_0": _add_patch_version(qg_version, "0"),
-                "qg_version_with_patch_99": _add_patch_version(qg_version, "99"),
-                "experimental": "False",
-                "trusted_users_ids": str(trusted_users_ids),
-            }
-        )
-
-        object_list_new = PluginVersion.objects.raw(
-            sql
-            % {
-                "pv_table": PluginVersion._meta.db_table,
-                "p_table": Plugin._meta.db_table,
-                "qg_version_with_patch_0": _add_patch_version(qg_version, "0"),
-                "qg_version_with_patch_99": _add_patch_version(qg_version, "99"),
-                "experimental": "False",
-                "trusted_users_ids": str(trusted_users_ids),
-            }
-        )
+        object_list_new = PluginVersion.objects.raw(sql % sql_params)
 
         if stable_only != "1":
             # Do the query
             object_list_new = [o for o in object_list_new]
-            object_list_new += [
-                o
-                for o in PluginVersion.objects.raw(
-                    sql
-                    % {
-                        "pv_table": PluginVersion._meta.db_table,
-                        "p_table": Plugin._meta.db_table,
-                        "qg_version_with_patch_0": _add_patch_version(qg_version, "0"),
-                        "qg_version_with_patch_99": _add_patch_version(
-                            qg_version, "99"
-                        ),
-                        "experimental": "True",
-                        "trusted_users_ids": str(trusted_users_ids),
-                    }
-                )
-            ]
+
+            sql_params["experimental"] = "True"
+            object_list_new += [o for o in PluginVersion.objects.raw(sql % sql_params)]
 
     return render(
         request,
