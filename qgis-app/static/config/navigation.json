@@ -127,6 +127,13 @@
           {
             "type": "second-menu",
             "settings": {
+              "name": "Awaiting Deletion",
+              "href": "/plugins/awaiting_deletion/"
+            }
+          },
+          {
+            "type": "second-menu",
+            "settings": {
               "name": "Metrics",
               "href": "/metabase/public/dashboard/7ecd345f-7321-423d-9844-71e526a454a9"
             }

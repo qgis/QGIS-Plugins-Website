@@ -1,0 +1,26 @@
+{% extends 'plugins/plugin_base.html' %}{% load i18n %}
+{% block content %}
+    <h2 class="title is-4">{% trans "Permanently delete plugin" %}: {{ plugin.title }}</h2>
+    <form action="" method="post">
+        {% csrf_token %}
+        <div class="notification is-danger">
+            <p class="has-text-white"><strong>{% trans "WARNING: This action cannot be undone!" %}</strong></p>
+            <p class="has-text-white">{% trans "You asked to permanently delete the plugin and all its versions. All data will be lost forever. Please confirm." %}</p>
+        </div>
+        <div class="field is-grouped">
+            <p class="control">
+                <button type="submit" class="button is-danger" name="permanent_delete_confirm">
+                    <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
+                    <span>{% trans "Permanently Delete" %}</span>
+                </button>
+            </p>
+            <p class="control">
+                <a class="button is-success" href="javascript:history.back()">
+                    <span class="icon"><i class="fas fa-undo"></i></span>
+                    <span>{% trans "Cancel" %}</span>
+                </a>
+            </p>
+        </div>
+    </form>
+
+{% endblock %}

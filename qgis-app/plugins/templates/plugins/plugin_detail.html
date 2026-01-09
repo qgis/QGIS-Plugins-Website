@@ -180,19 +180,21 @@
 
     .tooltip .tooltiptext {
       visibility: hidden;
-      width: 140px;
-      background-color: #555;
+      width: 200px;
+      background-color: #363636;
       color: #fff;
       text-align: center;
       border-radius: 6px;
-      padding: 5px;
+      padding: 8px;
       position: absolute;
-      z-index: 1;
-      bottom: 150%;
+      z-index: 1000;
+      bottom: 125%;
       left: 50%;
-      margin-left: -75px;
+      margin-left: -100px;
       opacity: 0;
       transition: opacity 0.3s;
+      font-size: 0.875rem;
+      line-height: 1.4;
     }
 
     .tooltip .tooltiptext::after {
@@ -203,7 +205,7 @@
       margin-left: -5px;
       border-width: 5px;
       border-style: solid;
-      border-color: #555 transparent transparent transparent;
+      border-color: #363636 transparent transparent transparent;
     }
 
     .tooltip:hover .tooltiptext {
@@ -238,6 +240,16 @@
                 {% endif %}
             </div>
             <div class="column is-10">
+                {% if object.is_deleted %}
+                <div class="notification is-warning">
+                    <p class="has-text-white"><strong>{% trans "This plugin is marked for deletion" %}</strong></p>
+                    <p class="has-text-white">{% trans "This plugin will be permanently deleted on" %} {{ object.deleted_on|add_days:30|date:"F d, Y" }}.
+                    {% if user.is_staff or user in object.editors %}
+                    {% trans "You can restore it before that date." %}
+                    {% endif %}
+                    </p>
+                </div>
+                {% endif %}
                 <h2>
                     {{ object.name }}
                 </h2>
@@ -333,14 +345,45 @@
                         </p>
                     {% endif %} {% endcomment %}
                     {% if user.is_staff or user in object.editors %}
-                        <p class="control">
-                            <a class="button is-danger" href="{% url "plugin_delete" object.package_name %}">
-                                <span class="icon">
-                                    <i class="fas fa-trash"></i>
-                                </span>
-                                <span>{% trans "Delete" %}</span>
-                            </a>
-                        </p>
+                        {% if object.is_deleted %}
+                            <p class="control">
+                                <a class="button is-info" href="{% url "plugin_restore" object.package_name %}">
+                                    <span class="icon">
+                                        <i class="fas fa-undo"></i>
+                                    </span>
+                                    <span>{% trans "Restore" %}</span>
+                                </a>
+                            </p>
+                            <p class="control">
+                                {% if user.is_staff %}
+                                    <a class="button is-danger is-outlined" href="{% url "plugin_permanent_delete" object.package_name %}">
+                                        <span class="icon">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        </span>
+                                        <span>{% trans "Permanently Delete" %}</span>
+                                    </a>
+                                {% else %}
+                                    <div class="tooltip">
+                                        <button class="button is-danger is-outlined" disabled style="cursor: not-allowed;">
+                                            <span class="icon">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                            </span>
+                                            <span>{% trans "Permanently Delete" %}</span>
+                                        </button>
+                                        <span class="tooltiptext">{% trans "To permanently delete this plugin, please contact the plugin approvers via email (see the Documentation > Approval process page)" %}</span>
+                                    </div>
+                                {% endif %}
+                            </p>
+                        {% else %}
+                            <p class="control">
+                                <a class="button is-danger is-outlined" href="{% url "plugin_delete" object.package_name %}">
+                                    <span class="icon">
+                                        <i class="fas fa-trash"></i>
+                                    </span>
+                                    <span>{% trans "Delete" %}</span>
+                                </a>
+                            </p>
+                        {% endif %}
                     {% endif %}
                 </div>
                 </form>
