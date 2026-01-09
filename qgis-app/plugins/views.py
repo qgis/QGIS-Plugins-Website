@@ -13,7 +13,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.geoip2 import GeoIP2
 from django.contrib.sites.models import Site
 from django.core.exceptions import FieldDoesNotExist
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage, send_mail
 from django.db import IntegrityError, connection, transaction
 from django.db.models import Q
 from django.db.models.expressions import RawSQL
@@ -40,6 +40,8 @@ from plugins.models import (
     PluginOutstandingToken,
     PluginVersion,
     PluginVersionDownload,
+    PluginVersionFeedback,
+    PluginVersionFeedbackAttachment,
     vjust,
 )
 from plugins.utils import parse_remote_addr
@@ -68,6 +70,36 @@ def send_mail_wrapper(subject, message, mail_from, recipients, fail_silently=Tru
         logging.debug("Mail not sent (DEBUG=True)")
     else:
         send_mail(subject, message, mail_from, recipients, fail_silently)
+
+
+def send_mail_with_attachments(
+    subject, message, mail_from, recipients, attachments=None, fail_silently=True
+):
+    """
+    Send email with optional file attachments
+    """
+    if settings.DEBUG:
+        logging.debug("Mail with attachments not sent (DEBUG=True)")
+    else:
+        email = EmailMessage(
+            subject=subject, body=message, from_email=mail_from, to=recipients
+        )
+
+        if attachments:
+            for attachment in attachments:
+                try:
+                    with attachment.image.open("rb") as f:
+                        email.attach(
+                            attachment.image.name.split("/")[-1],  # filename
+                            f.read(),  # file content
+                            "image/jpeg",  # MIME type - could be made dynamic
+                        )
+                except Exception as e:
+                    logging.warning(
+                        f"Failed to attach image {attachment.image.name}: {e}"
+                    )
+
+        email.send(fail_silently=fail_silently)
 
 
 def plugin_notify(plugin):
@@ -209,19 +241,35 @@ def version_feedback_notify(version, user):
             "Sending email feedback notification for %s plugin version %s, recipients:  %s"
             % (plugin, version.version, recipients)
         )
-        send_mail_wrapper(
-            _("Plugin %s feedback notification.") % (plugin,),
-            _(
-                "\r\nPlugin %s reviewed by %s and received a feedback.\r\nLink: http://%s%sfeedback/\r\n"
+
+        # Get latest feedback attachments for this version
+        recent_attachments = PluginVersionFeedbackAttachment.objects.filter(
+            feedback__version=version, feedback__reviewer=user
+        ).order_by("-created_on")[
+            :5
+        ]  # Limit to 5 most recent attachments
+
+        message = _(
+            "\r\nPlugin %s reviewed by %s and received a feedback.\r\nLink: http://%s%sfeedback/\r\n"
+        ) % (
+            plugin.name,
+            user,
+            domain,
+            version.get_absolute_url(),
+        )
+
+        if recent_attachments:
+            message += (
+                _("\r\nThis feedback includes %d image attachment(s).\r\n")
+                % recent_attachments.count()
             )
-            % (
-                plugin.name,
-                user,
-                domain,
-                version.get_absolute_url(),
-            ),
+
+        send_mail_with_attachments(
+            _("Plugin %s feedback notification.") % (plugin,),
+            message,
             mail_from,
             recipients,
+            attachments=recent_attachments,
             fail_silently=True,
         )
     else:
@@ -1710,19 +1758,37 @@ def version_feedback(request, package_name, version):
             status=403,
         )
     if request.method == "POST":
-        form = VersionFeedbackForm(request.POST)
+        form = VersionFeedbackForm(request.POST, request.FILES)
         if form.is_valid():
             tasks = form.cleaned_data["tasks"]
+            images = form.cleaned_data.get("images", [])
+
+            # Create feedback entries for each task
+            feedback_objects = []
             for task in tasks:
-                PluginVersionFeedback.objects.create(
+                feedback = PluginVersionFeedback.objects.create(
                     version=version, reviewer=request.user, task=task
                 )
+                feedback_objects.append(feedback)
+
+            # If images are uploaded, create attachment entries for the first feedback
+            if images and feedback_objects:
+                for image in images:
+                    PluginVersionFeedbackAttachment.objects.create(
+                        feedback=feedback_objects[0],  # Attach to first feedback
+                        image=image,
+                        caption=f"Attachment for {feedback_objects[0].task}",
+                    )
+
             version_feedback_notify(version, request.user)
             return HttpResponseRedirect(
                 reverse("version_feedback", args=[package_name, version.version])
             )
     form = VersionFeedbackForm()
-    feedbacks = PluginVersionFeedback.objects.filter(version=version)
+    feedbacks = PluginVersionFeedback.objects.filter(version=version).prefetch_related(
+        "attachments"
+    )
+
     return render(
         request,
         "plugins/plugin_feedback.html",
@@ -1782,12 +1848,62 @@ def version_feedback_edit(request, package_name, version, feedback):
     )
     if not has_update_permission:
         return JsonResponse({"success": False}, status=401)
+
+    # Update task text
     task = request.POST.get("task")
     feedback.task = str(task)
     feedback.modified_on = datetime.datetime.now()
     feedback.save()
+
+    # Handle attachment deletions
+    deleted_attachments = request.POST.get("deleted_attachments", "")
+    if deleted_attachments:
+        deleted_urls = [
+            url.strip() for url in deleted_attachments.split(",") if url.strip()
+        ]
+        for url in deleted_urls:
+            # Extract attachment ID or filename from URL to identify the attachment
+            # Assuming URL format like /media/feedback_attachments/filename.jpg
+            try:
+                import os
+
+                filename = os.path.basename(url)
+                attachment = PluginVersionFeedbackAttachment.objects.filter(
+                    feedback=feedback, image__endswith=filename
+                ).first()
+                if attachment:
+                    attachment.delete()  # This will trigger the signal to delete the file
+            except Exception as e:
+                logging.warning(f"Failed to delete attachment {url}: {e}")
+
+    # Handle new image uploads
+    new_images = request.FILES.getlist("new_images")
+    if new_images:
+        for image in new_images:
+            # Validate file type and size (same as in form)
+            if not image.content_type.startswith("image/"):
+                return JsonResponse(
+                    {"success": False, "error": "Only image files are allowed."},
+                    status=400,
+                )
+            if image.size > 5 * 1024 * 1024:  # 5MB
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Image file size must be less than 5MB.",
+                    },
+                    status=400,
+                )
+
+            # Create new attachment
+            PluginVersionFeedbackAttachment.objects.create(
+                feedback=feedback,
+                image=image,
+                caption=f"Additional attachment for {feedback.task}",
+            )
+
     return JsonResponse(
-        {"success": True, "modified_on": feedback.modified_on}, status=201
+        {"success": True, "modified_on": feedback.modified_on}, status=200
     )
 
 

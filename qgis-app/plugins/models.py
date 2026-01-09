@@ -1091,14 +1091,45 @@ class PluginVersionFeedback(models.Model):
     )
 
     class Meta:
-        ordering = ["created_on"]
+        verbose_name = _("Plugin Version Feedback")
+        verbose_name_plural = _("Plugin Version Feedbacks")
 
     def save(self, *args, **kwargs):
         if self.is_completed is True:
-            self.completed_on = datetime.datetime.now()
+            self.completed_on = timezone.now()
         else:
             self.completed_on = None
         super(PluginVersionFeedback, self).save(*args, **kwargs)
+
+
+class PluginVersionFeedbackAttachment(models.Model):
+    """Image attachments for feedback."""
+
+    feedback = models.ForeignKey(
+        PluginVersionFeedback, on_delete=models.CASCADE, related_name="attachments"
+    )
+    image = models.ImageField(
+        verbose_name=_("Image"),
+        upload_to=PLUGINS_STORAGE_PATH,
+        help_text=_("Upload screenshots or images to support your feedback"),
+    )
+    caption = models.CharField(
+        verbose_name=_("Caption"),
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Optional caption for the image"),
+    )
+    created_on = models.DateTimeField(
+        verbose_name=_("Created on"), auto_now_add=True, editable=False
+    )
+
+    class Meta:
+        verbose_name = _("Feedback Attachment")
+        verbose_name_plural = _("Feedback Attachments")
+
+    def __str__(self):
+        return f"Attachment for {self.feedback}"
 
 
 def delete_version_package(sender, instance, **kw):
@@ -1116,7 +1147,17 @@ def delete_plugin_icon(sender, instance, **kw):
     Removes the plugin icon
     """
     try:
-        os.remove(instance.icon.path)
+        instance.icon.delete(False)
+    except:
+        pass
+
+
+def delete_feedback_attachment(sender, instance, **kw):
+    """
+    Removes the feedback attachment image
+    """
+    try:
+        instance.image.delete(False)
     except:
         pass
 
@@ -1143,3 +1184,6 @@ class PluginVersionDownload(models.Model):
 
 models.signals.post_delete.connect(delete_version_package, sender=PluginVersion)
 models.signals.post_delete.connect(delete_plugin_icon, sender=Plugin)
+models.signals.post_delete.connect(
+    delete_feedback_attachment, sender=PluginVersionFeedbackAttachment
+)

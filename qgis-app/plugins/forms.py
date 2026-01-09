@@ -2,18 +2,34 @@
 import re
 
 from django import forms
-from django.contrib.auth.models import User
-from django.forms import CharField, ModelForm, ValidationError
+from django.forms import ModelForm, ValidationError
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from plugins.models import (
     Plugin,
     PluginOutstandingToken,
     PluginVersion,
-    PluginVersionFeedback,
 )
 from plugins.validator import validator
 from taggit.forms import TagField
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = single_file_clean(data, initial)
+        return result
 
 
 def _clean_tags(tags):
@@ -247,6 +263,32 @@ class VersionFeedbackForm(forms.Form):
             }
         )
     )
+
+    images = MultipleFileField(
+        required=False,
+        widget=MultipleFileInput(
+            attrs={"multiple": True, "accept": "image/*", "class": "file-input"}
+        ),
+        help_text=_("Upload images or GIFs to support your feedback (optional)"),
+    )
+
+    def clean_images(self):
+        images = self.cleaned_data.get("images")
+        if images:
+            # Handle both single file and list of files
+            if not isinstance(images, list):
+                images = [images] if images else []
+
+            for image in images:
+                # Validate file type
+                if not image.content_type.startswith("image/"):
+                    raise forms.ValidationError(_("Only image files are allowed."))
+                # Validate file size (max 5MB)
+                if image.size > 5 * 1024 * 1024:
+                    raise forms.ValidationError(
+                        _("Image file size must be less than 5MB.")
+                    )
+        return images
 
     def clean(self):
         super().clean()
