@@ -1,0 +1,102 @@
+/**
+ * Security Scan Results Styles
+ * 
+ * Styles for displaying security scan results in plugin version details
+ */
+
+// Tab content management
+.tab-content {
+  .tab-pane {
+    display: none;
+    
+    &.is-active {
+      display: block;
+    }
+  }
+}
+
+// Security scan specific styles
+#security-tab {
+  // Details summary styling
+  details summary {
+    cursor: pointer;
+    user-select: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+  
+  // Badge in tab
+  .tabs a .tag {
+    font-size: 0.65rem;
+    height: 1.2em;
+    padding: 0 0.5em;
+  }
+  
+  // Scan status colors
+  .badge-success {
+    background-color: #48c78e;
+    color: white;
+  }
+  
+  .badge-danger {
+    background-color: #f14668;
+    color: white;
+  }
+  
+  .badge-warning {
+    background-color: #ffe08a;
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .badge-info {
+    background-color: #3e8ed0;
+    color: white;
+  }
+  
+  .badge-secondary {
+    background-color: #b5b5b5;
+    color: white;
+  }
+}
+
+// Mobile optimizations for security scan
+@media screen and (max-width: 768px) {
+  .tabs.is-toggle {
+    li {
+      flex-grow: 1;
+    }
+    
+    a {
+      font-size: 0.85rem;
+      padding: 0.5em 0.5em;
+    }
+  }
+  
+  #security-tab {
+    .notification .columns {
+      margin-bottom: 0;
+    }
+    
+    .notification .column {
+      padding-bottom: 0.5rem;
+    }
+    
+    .box {
+      padding: 1rem;
+    }
+    
+    .title.is-3 {
+      font-size: 2rem;
+    }
+    
+    .card-header-title {
+      font-size: 0.9rem;
+    }
+    
+    .card-content .content {
+      font-size: 0.9rem;
+    }
+  }
+}
