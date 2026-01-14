@@ -74,7 +74,7 @@ def main():
         scanner = PluginSecurityScanner(zip_path)
         report = scanner.scan()
 
-        self.assertEqual(report["summary"]["total_checks"], 6)
+        self.assertEqual(report["summary"]["total_checks"], 5)
         self.assertGreater(report["summary"]["passed"], 0)
         self.assertEqual(report["summary"]["critical"], 0)
 
@@ -94,16 +94,15 @@ db_password = 'mydbpass'
         scanner = PluginSecurityScanner(zip_path)
         report = scanner.scan()
 
-        # Find the sensitive data check
+        # Find the secrets detection check
         sensitive_check = next(
-            (c for c in report["checks"] if c["name"] == "Sensitive Data Detection"),
+            (c for c in report["checks"] if c["name"] == "Secrets Detection"),
             None,
         )
 
         self.assertIsNotNone(sensitive_check)
         self.assertFalse(sensitive_check["passed"])
         self.assertGreater(sensitive_check["issues_found"], 0)
-        self.assertEqual(report["summary"]["critical"], 1)
 
         # Clean up
         os.remove(zip_path)
@@ -122,10 +121,11 @@ secret_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
         report = scanner.scan()
 
         sensitive_check = next(
-            (c for c in report["checks"] if c["name"] == "Sensitive Data Detection"),
+            (c for c in report["checks"] if c["name"] == "Secrets Detection"),
             None,
         )
 
+        self.assertIsNotNone(sensitive_check)
         self.assertFalse(sensitive_check["passed"])
         self.assertGreater(sensitive_check["issues_found"], 0)
 
@@ -150,12 +150,15 @@ def run_command(cmd):
         report = scanner.scan()
 
         dangerous_check = next(
-            (c for c in report["checks"] if c["name"] == "Dangerous Functions"), None
+            (c for c in report["checks"] if c["name"] == "Bandit Security Analysis"),
+            None,
         )
 
         self.assertIsNotNone(dangerous_check)
         self.assertFalse(dangerous_check["passed"])
-        self.assertGreaterEqual(dangerous_check["issues_found"], 2)  # eval and exec
+        self.assertGreaterEqual(
+            dangerous_check["issues_found"], 1
+        )  # Bandit detects eval/exec
 
         # Clean up
         os.remove(zip_path)
@@ -179,9 +182,11 @@ def run_subprocess(cmd):
         report = scanner.scan()
 
         dangerous_check = next(
-            (c for c in report["checks"] if c["name"] == "Dangerous Functions"), None
+            (c for c in report["checks"] if c["name"] == "Bandit Security Analysis"),
+            None,
         )
 
+        self.assertIsNotNone(dangerous_check)
         self.assertFalse(dangerous_check["passed"])
         self.assertGreater(dangerous_check["issues_found"], 0)
 
@@ -202,7 +207,7 @@ def broken_function(
         report = scanner.scan()
 
         quality_check = next(
-            (c for c in report["checks"] if c["name"] == "Code Quality"), None
+            (c for c in report["checks"] if c["name"] == "Code Quality (Flake8)"), None
         )
 
         self.assertIsNotNone(quality_check)
@@ -222,9 +227,10 @@ def broken_function(
         report = scanner.scan()
 
         quality_check = next(
-            (c for c in report["checks"] if c["name"] == "Code Quality"), None
+            (c for c in report["checks"] if c["name"] == "Code Quality (Flake8)"), None
         )
 
+        self.assertIsNotNone(quality_check)
         self.assertGreater(quality_check["issues_found"], 0)
 
         # Clean up
@@ -279,43 +285,14 @@ def broken_function(
         # Clean up
         os.remove(zip_path)
 
-    def test_detect_typosquatting_packages(self):
-        """Test detection of typosquatting package names"""
-        requirements = """
-requets==2.28.0
-nump==1.21.0
-pandsa==1.3.0
-"""
-
-        zip_path = self._create_test_zip(
-            {
-                "test_plugin/__init__.py": "# Clean code",
-                "requirements.txt": requirements,
-            }
-        )
-
-        scanner = PluginSecurityScanner(zip_path)
-        report = scanner.scan()
-
-        deps_check = next(
-            (c for c in report["checks"] if c["name"] == "Dependencies Check"), None
-        )
-
-        self.assertIsNotNone(deps_check)
-        self.assertFalse(deps_check["passed"])
-        self.assertGreaterEqual(deps_check["issues_found"], 3)  # All three typos
-
-        # Clean up
-        os.remove(zip_path)
-
     def test_multiple_file_types_scanned(self):
         """Test that scanner checks multiple file types"""
         zip_path = self._create_test_zip(
             {
-                "test_plugin/__init__.py": "# Python file",
+                "test_plugin/__init__.py": "# Python file\ndef func1(): pass",
+                "test_plugin/utils.py": "# Utils file\ndef func2(): pass",
+                "test_plugin/helpers.py": "# Helpers file\ndef func3(): pass",
                 "test_plugin/config.ini": "[section]\nkey=value",
-                "test_plugin/settings.json": '{"key": "value"}',
-                "test_plugin/config.yaml": "key: value",
                 "test_plugin/README.txt": "Readme content",
             }
         )
@@ -323,13 +300,15 @@ pandsa==1.3.0
         scanner = PluginSecurityScanner(zip_path)
         report = scanner.scan()
 
-        # At least the sensitive data check should have scanned multiple files
-        sensitive_check = next(
-            (c for c in report["checks"] if c["name"] == "Sensitive Data Detection"),
+        # Bandit and Flake8 scan all Python files, so check those
+        bandit_check = next(
+            (c for c in report["checks"] if c["name"] == "Bandit Security Analysis"),
             None,
         )
 
-        self.assertGreater(sensitive_check["files_checked"], 1)
+        # Should have scanned multiple Python files
+        self.assertIsNotNone(bandit_check)
+        self.assertGreaterEqual(bandit_check["files_checked"], 3)
 
         # Clean up
         os.remove(zip_path)
