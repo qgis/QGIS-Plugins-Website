@@ -4,9 +4,8 @@ Security, quality, and code analysis scanner for QGIS plugins
 This module performs non-blocking security and quality checks on uploaded plugin packages.
 Results are informational and do not prevent plugin upload.
 
-Uses professional security scanning libraries:
+Uses professional security scanning tools via subprocess:
 - Bandit: Security vulnerability scanner for Python code
-- Safety: Checks dependencies against known vulnerabilities
 - detect-secrets: Finds hardcoded secrets
 - Flake8: Code quality and style checker
 """
@@ -14,7 +13,6 @@ Uses professional security scanning libraries:
 import ast
 import json
 import os
-import re
 import subprocess
 import tempfile
 import zipfile
@@ -22,36 +20,7 @@ from typing import Dict
 
 from django.utils.translation import gettext_lazy as _
 
-# Import security tools
-try:
-    from bandit.core import config as bandit_config
-    from bandit.core import manager as bandit_manager
-
-    BANDIT_AVAILABLE = True
-except ImportError:
-    BANDIT_AVAILABLE = False
-
-try:
-    from detect_secrets import SecretsCollection
-    from detect_secrets.settings import default_settings
-
-    DETECT_SECRETS_AVAILABLE = True
-except ImportError:
-    DETECT_SECRETS_AVAILABLE = False
-
-try:
-    import safety
-
-    SAFETY_AVAILABLE = True
-except ImportError:
-    SAFETY_AVAILABLE = False
-
-try:
-    from flake8.api import legacy as flake8_legacy
-
-    FLAKE8_AVAILABLE = True
-except ImportError:
-    FLAKE8_AVAILABLE = False
+# All security tools are invoked via subprocess to avoid import/dependency issues
 
 
 class SecurityCheck:
@@ -72,11 +41,10 @@ class PluginSecurityScanner:
     """
     Performs comprehensive security and quality checks on plugin packages
 
-    Uses professional security tools:
+    Uses professional security tools via subprocess:
     - Bandit for Python security issues
     - detect-secrets for hardcoded secrets
     - flake8 for code quality
-    - safety for vulnerable dependencies
     """
 
     def __init__(self, package_path: str):
@@ -109,7 +77,6 @@ class PluginSecurityScanner:
             self._check_with_bandit()
             self._check_secrets()
             self._check_code_quality()
-            self._check_dependencies_safety()
             self._check_file_permissions()
             self._check_suspicious_files()
 
@@ -130,21 +97,7 @@ class PluginSecurityScanner:
             description="Professional security vulnerability scanner for Python code (checks for SQL injection, hardcoded passwords, unsafe functions, etc.)",
         )
 
-        if not BANDIT_AVAILABLE:
-            check.details.append(
-                {"file": "N/A", "message": "Bandit not installed (pip install bandit)"}
-            )
-            check.passed = True  # Don't fail if tool unavailable
-            self.checks.append(check)
-            return
-
         try:
-            # Configure Bandit
-            b_conf = bandit_config.BanditConfig()
-            b_mgr = bandit_manager.BanditManager(
-                b_conf, "file", debug=False, verbose=False
-            )
-
             # Find all Python files to scan
             python_files = []
             for root, dirs, files in os.walk(self.extracted_dir):
@@ -158,32 +111,79 @@ class PluginSecurityScanner:
                 self.checks.append(check)
                 return
 
-            # Discover and run tests
-            b_mgr.discover_files(python_files)
-            b_mgr.run_tests()
-
-            # Get results
             check.files_checked = len(python_files)
-            results = b_mgr.get_issue_list()
 
-            # Filter for medium/high severity only
-            filtered_results = [r for r in results if r.severity in ["MEDIUM", "HIGH"]]
-            check.issues_found = len(filtered_results)
+            # Run Bandit via subprocess with JSON output
+            # Note: Bandit returns exit code 1 when issues are found, which is normal
+            result = subprocess.run(
+                [
+                    "bandit",
+                    "-r",
+                    self.extracted_dir,
+                    "-f",
+                    "json",
+                    "-ll",  # Only medium/high severity
+                    "--quiet",  # Suppress progress bar and other non-JSON output
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,  # Capture stderr too
+                text=True,
+                timeout=60,
+            )
 
-            for issue in filtered_results[:10]:  # Limit to first 10
-                check.details.append(
-                    {
-                        "file": issue.fname.replace(self.extracted_dir, ""),
-                        "line": issue.lineno,
-                        "type": issue.test_id,
-                        "severity": issue.severity,
-                        "confidence": issue.confidence,
-                        "message": issue.text,
-                        "code": issue.get_code() if hasattr(issue, "get_code") else "",
-                    }
-                )
+            # Bandit outputs JSON to stdout even when exit code is 1 (issues found)
+            if result.stdout and result.stdout.strip():
+                try:
+                    bandit_report = json.loads(result.stdout)
+                    results = bandit_report.get("results", [])
+                    check.issues_found = len(results)
 
-            check.passed = check.issues_found == 0
+                    for issue in results[:10]:  # Limit to first 10
+                        check.details.append(
+                            {
+                                "file": issue.get("filename", "").replace(
+                                    self.extracted_dir, ""
+                                ),
+                                "line": issue.get("line_number", 0),
+                                "type": issue.get("test_id", ""),
+                                "severity": issue.get("issue_severity", ""),
+                                "confidence": issue.get("issue_confidence", ""),
+                                "message": issue.get("issue_text", ""),
+                                "code": issue.get("code", ""),
+                            }
+                        )
+
+                    check.passed = check.issues_found == 0
+                except json.JSONDecodeError as e:
+                    # If JSON parsing fails, show what we got for debugging
+                    check.details.append(
+                        {
+                            "file": "N/A",
+                            "message": f"Bandit JSON parse error. Output preview: {result.stdout[:100]}",
+                        }
+                    )
+                    check.passed = True
+            else:
+                # No output - could be no issues or an error
+                if result.stderr and result.stderr.strip():
+                    check.details.append(
+                        {
+                            "file": "N/A",
+                            "message": f"Bandit error: {result.stderr[:200]}",
+                        }
+                    )
+                else:
+                    # No stdout and no stderr - assume no issues found
+                    check.details.append(
+                        {"message": "No security issues detected by Bandit"}
+                    )
+                check.passed = True
+
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            check.details.append(
+                {"file": "N/A", "message": "Bandit not installed (pip install bandit)"}
+            )
+            check.passed = True  # Don't fail if tool unavailable
 
         except Exception as e:
             check.details.append(
@@ -202,21 +202,11 @@ class PluginSecurityScanner:
             description="Scans for hardcoded secrets, API keys, passwords, and tokens using detect-secrets",
         )
 
-        if not DETECT_SECRETS_AVAILABLE:
-            check.passed = True
-            check.details.append(
-                {
-                    "file": "N/A",
-                    "message": "detect-secrets not installed (pip install detect-secrets)",
-                }
-            )
-            self.checks.append(check)
-            return
-
         try:
-            # Use subprocess instead of Python API to completely avoid logging issues
+            # Use subprocess to avoid any import/logging issues
             result = subprocess.run(
-                ["detect-secrets", "scan", "--all-files", self.extracted_dir],
+                ["detect-secrets", "scan", "--all-files", "."],
+                cwd=self.extracted_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,  # Suppress stderr completely
                 text=True,
@@ -276,7 +266,7 @@ class PluginSecurityScanner:
             name="Code Quality (Flake8)",
             category="quality",
             severity="info",
-            description="Python code quality and style checker. 💡 Showing first 20 issues. Run `flake8 --ignore=E501 .` in your plugin root to see all issues.",
+            description="Python code quality and style checker.",
         )
 
         try:
@@ -303,7 +293,7 @@ class PluginSecurityScanner:
                         "flake8",
                         "--format=json",
                         "--max-line-length=120",
-                        "--ignore=E501",
+                        "--ignore=E501",  # Ignore line length for quality check
                     ]
                     + python_files,
                     capture_output=True,
@@ -467,165 +457,6 @@ class PluginSecurityScanner:
         except Exception:
             pass
 
-    def _check_dependencies_safety(self):
-        """Check dependencies for known vulnerabilities using safety"""
-        check = SecurityCheck(
-            name="Dependencies Vulnerability Check",
-            category="security",
-            severity="warning",
-            description="Checks Python dependencies against known vulnerability databases",
-        )
-
-        if not SAFETY_AVAILABLE:
-            check.passed = True
-            check.details.append(
-                {"file": "N/A", "message": "Safety not installed (pip install safety)"}
-            )
-            self.checks.append(check)
-            return
-
-        requirements_files = []
-
-        # Search for requirements files in all subdirectories
-        for root, dirs, files in os.walk(self.extracted_dir):
-            for file in files:
-                if file in [
-                    "requirements.txt",
-                    "requirements-dev.txt",
-                    "requirements-test.txt",
-                ]:
-                    requirements_files.append(os.path.join(root, file))
-
-        if not requirements_files:
-            check.passed = True
-            check.details.append(
-                {
-                    "file": "N/A",
-                    "message": "No requirements files found (requirements.txt, requirements-dev.txt, requirements-test.txt)",
-                }
-            )
-            self.checks.append(check)
-            return
-
-        try:
-            for req_path in requirements_files:
-                check.files_checked += 1
-
-                try:
-                    # Read requirements
-                    with open(req_path, "r") as f:
-                        requirements = f.read()
-
-                    # Check with Safety
-                    # Try multiple API versions (Safety 3.x vs 2.x)
-                    vulnerabilities = []
-                    try:
-                        # Safety 3.x API
-                        from safety.models import Project
-                        from safety.scan.command import scan_projects
-
-                        # This is more complex in v3, so fall back to simpler approach
-                        raise ImportError("Use v2 API")
-                    except (ImportError, AttributeError):
-                        try:
-                            # Safety 2.x API
-                            from safety.safety import check as safety_check
-
-                            vulnerabilities, _ = safety_check(
-                                packages=requirements.splitlines(),
-                                key=None,
-                                db_mirror=None,
-                                cached=False,
-                                ignore_ids=set(),
-                            )
-                        except (ImportError, AttributeError, TypeError):
-                            try:
-                                # Even older Safety API
-                                from safety import check as safety_check
-
-                                vulnerabilities = safety_check(
-                                    packages=requirements.splitlines()
-                                )
-                            except Exception:
-                                # All Safety APIs failed, use fallback
-                                self._check_typosquatting(req_path, check)
-                                continue
-
-                    # Process vulnerabilities if we got any
-                    for vuln in vulnerabilities:
-                        check.issues_found += 1
-                        # Handle different vulnerability object formats
-                        package = getattr(
-                            vuln, "package_name", getattr(vuln, "package", "unknown")
-                        )
-                        version = getattr(
-                            vuln,
-                            "analyzed_version",
-                            getattr(vuln, "installed_version", "unknown"),
-                        )
-                        vuln_id = getattr(
-                            vuln,
-                            "vulnerability_id",
-                            getattr(vuln, "vuln_id", "unknown"),
-                        )
-
-                        check.details.append(
-                            {
-                                "file": os.path.basename(req_path),
-                                "package": package,
-                                "version": version,
-                                "message": f"Vulnerability: {vuln_id}",
-                                "severity": "warning",
-                            }
-                        )
-
-                except FileNotFoundError:
-                    pass
-                except Exception:
-                    # Fallback to basic typosquatting check
-                    self._check_typosquatting(req_path, check)
-
-            check.passed = check.issues_found == 0
-
-        except Exception:
-            check.passed = True  # Don't fail if tool unavailable
-
-        self.checks.append(check)
-
-    def _check_typosquatting(self, req_path, check):
-        """Fallback: Check for typosquatting package names"""
-        suspicious_packages = [
-            "requets",
-            "urllib3s",
-            "requests2",
-            "beautifulsoup",
-            "dateutil2",
-            "python-dateutil2",
-            "setup-tools",
-            "pip-tools",
-            "nump",
-            "pandsa",
-            "djagno",
-            "flaск",
-            "requеsts",  # Note: some use unicode lookalikes
-        ]
-
-        try:
-            with open(req_path, "r") as f:
-                content = f.read()
-
-            for package in suspicious_packages:
-                if re.search(rf"\b{package}\b", content, re.IGNORECASE):
-                    check.issues_found += 1
-                    check.details.append(
-                        {
-                            "file": os.path.basename(req_path),
-                            "message": f"Suspicious package name detected: {package} (possible typosquatting)",
-                        }
-                    )
-        except Exception:
-            pass
-
     def _check_file_permissions(self):
         """Check for files with unusual permissions"""
         check = SecurityCheck(
@@ -651,7 +482,7 @@ class PluginSecurityScanner:
                             check.details.append(
                                 {
                                     "file": file_info.filename,
-                                    "message": f"Python file has executable permission (may be suspicious)",
+                                    "message": "Python file has executable permission (may be suspicious)",
                                 }
                             )
 
@@ -721,25 +552,6 @@ class PluginSecurityScanner:
             check.details.append(
                 {"file": "N/A", "message": f"Error during scan: {str(e)}"}
             )
-
-        self.checks.append(check)
-
-    def _check_dependencies(self):
-        """Check for known vulnerable dependencies or suspicious packages"""
-        check = SecurityCheck(
-            name="Dependencies Check",
-            category="best_practice",
-            severity="info",
-            description="Reviews plugin dependencies for potential issues",
-        )
-
-        # Fallback if safety not available - checked in _check_dependencies_safety
-        check.passed = True
-        check.details.append(
-            {
-                "message": "Basic dependency check (use safety tool for comprehensive vulnerability scanning)"
-            }
-        )
 
         self.checks.append(check)
 

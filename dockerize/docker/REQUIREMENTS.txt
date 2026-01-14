@@ -57,19 +57,15 @@ django-webpack-loader~=3.1
 beautifulsoup4~=4.12
 setuptools~=75.1
 
-# Security scanning tools for QGIS Plugin analysis
+# Security scanning tools for QGIS Plugin analysis (invoked via subprocess)
 # Bandit - Security vulnerability scanner for Python code
 bandit~=1.9
 
 # detect-secrets - Finds hardcoded secrets in code
 detect-secrets~=1.5
 
-# safety - Checks Python dependencies against known vulnerabilities
-# Note: Requires API key for full features, basic scanning works without
-safety~=3.7
-
-# Optional: flake8 for code quality
+# flake8 for code quality
 flake8~=7.3
 
-# Optional: flake8-json for structured output
+# flake8-json for structured output (optional but recommended)
 flake8-json~=24.4
