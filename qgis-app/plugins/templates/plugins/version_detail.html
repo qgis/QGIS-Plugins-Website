@@ -158,14 +158,31 @@
         </div>
 
         <div class="tab-pane" id="security-tab">
-            <h4 class="title is-5 mb-4">
-                <span class="icon-text">
-                    <span class="icon"><i class="fas fa-shield-alt"></i></span>
-                    <span>{% trans "Security & Quality Scan Results" %}</span>
-                </span>
-            </h4>
 
             {% if security_scan %}
+
+                <!-- Important Notes -->
+                <div class="container rich">
+                    <div class="cont coloring-2 p-5">
+                        <h3>{% trans "Important Information" %}</h3>
+                        <p>
+                            <ul>
+                                <li>{% trans "These security checks are informational and do not block plugin upload." %}</li>
+                                <li>{% trans "Warnings and issues should be reviewed and addressed when possible to ensure plugin security and quality." %}</li>
+                                <li>{% trans "Critical issues may indicate security vulnerabilities that should be fixed immediately." %}</li>
+                                <li>{% trans "False positives may occur - review results in context of your plugin's functionality." %}</li>
+                            </ul>
+
+                        </p>
+                    </div>
+                </div>
+
+                <h4 class="title is-5 mb-4">
+                    <span class="icon-text">
+                        <span class="icon"><i class="fas fa-shield-alt"></i></span>
+                        <span>{% trans "Security & Quality Scan Results" %}</span>
+                    </span>
+                </h4>
                 <!-- Scan Summary -->
                 <div class="notification {% if security_scan.overall_status == 'passed' %}is-success{% elif security_scan.overall_status == 'critical' %}is-danger{% elif security_scan.overall_status == 'warning' %}is-warning{% else %}is-info{% endif %} is-light mb-5">
                     <div class="columns is-vcentered">
@@ -198,46 +215,41 @@
 
                 <!-- Quick Stats -->
                 <div class="columns is-multiline mb-5">
-                    <div class="column is-3-tablet is-6-mobile">
-                        <div class="box has-background-light has-text-centered">
-                            <p class="heading">{% trans "Total Checks" %}</p>
-                            <p class="title is-4">{{ security_scan.total_checks }}</p>
+                    <div class="column is-3-tablet">
+                        <div class="notification is-success has-text-centered">
+                            <p class="heading has-text-success-light has-text-weight-medium">{% trans "Passed" %}</p>
+                            <p class="title is-4">{{ security_scan.passed_checks }}</p>
                         </div>
                     </div>
-                    <div class="column is-3-tablet is-6-mobile">
-                        <div class="box has-background-success-light has-text-centered">
-                            <p class="heading has-text-success-dark">{% trans "Passed" %}</p>
-                            <p class="title is-4 has-text-success">{{ security_scan.passed_checks }}</p>
+
+                    <div class="column is-3-tablet">
+                        <div class="notification is-info has-text-centered">
+                            <p class="heading has-text-info-light has-text-weight-medium">{% trans "Info Items" %}</p>
+                            <p class="title is-4">{{ security_scan.info_count }}</p>
                         </div>
                     </div>
-                    <div class="column is-3-tablet is-6-mobile">
-                        <div class="box has-background-warning-light has-text-centered">
-                            <p class="heading has-text-warning-dark">{% trans "Warnings" %}</p>
-                            <p class="title is-4 has-text-warning-dark">{{ security_scan.warning_count }}</p>
+                    <div class="column is-3-tablet">
+                        <div class="notification is-warning has-text-centered">
+                            <p class="heading has-text-warning-light has-text-weight-medium">{% trans "Warnings" %}</p>
+                            <p class="title is-4">{{ security_scan.warning_count }}</p>
                         </div>
                     </div>
-                    <div class="column is-3-tablet is-6-mobile">
-                        <div class="box has-background-danger-light has-text-centered">
-                            <p class="heading has-text-danger-dark">{% trans "Critical" %}</p>
-                            <p class="title is-4 has-text-danger">{{ security_scan.critical_count }}</p>
+                    <div class="column is-3-tablet">
+                        <div class="notification is-danger has-text-centered">
+                            <p class="heading has-text-danger-light has-text-weight-medium">{% trans "Critical" %}</p>
+                            <p class="title is-4">{{ security_scan.critical_count }}</p>
                         </div>
                     </div>
-                    <div class="column is-4-tablet is-6-mobile">
-                        <div class="box has-background-light has-text-centered">
-                            <p class="heading">{% trans "Files Scanned" %}</p>
+                    <div class="column is-6-tablet">
+                        <div class="notification has-text-centered">
+                            <p class="heading has-text-weight-medium">{% trans "Files Scanned" %}</p>
                             <p class="title is-5">{{ security_scan.files_scanned }}</p>
                         </div>
                     </div>
-                    <div class="column is-4-tablet is-6-mobile">
-                        <div class="box has-background-light has-text-centered">
-                            <p class="heading">{% trans "Total Issues" %}</p>
+                    <div class="column is-6-tablet">
+                        <div class="notification has-text-centered">
+                            <p class="heading has-text-weight-medium">{% trans "Total Issues" %}</p>
                             <p class="title is-5">{{ security_scan.total_issues }}</p>
-                        </div>
-                    </div>
-                    <div class="column is-4-tablet is-12-mobile">
-                        <div class="box has-background-light has-text-centered">
-                            <p class="heading">{% trans "Info Items" %}</p>
-                            <p class="title is-5">{{ security_scan.info_count }}</p>
                         </div>
                     </div>
                 </div>
@@ -326,20 +338,6 @@
                 </div>
                 {% endfor %}
 
-                <!-- Important Notes -->
-                <div class="message is-info mt-5">
-                    <div class="message-header">
-                        <p>{% trans "Important Information" %}</p>
-                    </div>
-                    <div class="message-body">
-                        <ul>
-                            <li>{% trans "These security checks are informational and do not block plugin upload." %}</li>
-                            <li>{% trans "Warnings and issues should be reviewed and addressed when possible to ensure plugin security and quality." %}</li>
-                            <li>{% trans "Critical issues may indicate security vulnerabilities that should be fixed immediately." %}</li>
-                            <li>{% trans "False positives may occur - review results in context of your plugin's functionality." %}</li>
-                        </ul>
-                    </div>
-                </div>
 
             {% else %}
                 <!-- No scan available -->
