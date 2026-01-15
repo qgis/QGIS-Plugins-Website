@@ -33,3 +33,14 @@ def docs_faq(request):
         "flatpages/docs_faq.html",
         {},
     )
+
+
+def docs_security_scanning(request):
+    """
+    Renders the docs_security_scanning page
+    """
+    return render(
+        request,
+        "flatpages/docs_security_scanning.html",
+        {},
+    )

@@ -171,6 +171,14 @@
                                 <li>{% trans "Warnings and issues should be reviewed and addressed when possible to ensure plugin security and quality." %}</li>
                                 <li>{% trans "Critical issues may indicate security vulnerabilities that should be fixed immediately." %}</li>
                                 <li>{% trans "False positives may occur - review results in context of your plugin's functionality." %}</li>
+                                <li>
+                                    <a href="{% url 'docs_security_scanning' %}" target="_blank" class="has-text-weight-semibold">
+                                        <span class="icon-text">
+                                            <span class="icon"><i class="fas fa-book"></i></span>
+                                            <span>{% trans "Learn more about security scanning" %}</span>
+                                        </span>
+                                    </a>
+                                </li>
                             </ul>
 
                         </p>
