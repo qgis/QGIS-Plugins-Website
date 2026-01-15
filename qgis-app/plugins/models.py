@@ -1182,6 +1182,64 @@ class PluginVersionDownload(models.Model):
         )
 
 
+class PluginVersionSecurityScan(models.Model):
+    """
+    Security and quality scan results for plugin versions
+    Stores non-blocking security, quality, and code analysis results
+    """
+
+    plugin_version = models.OneToOneField(
+        PluginVersion, on_delete=models.CASCADE, related_name="security_scan"
+    )
+    scanned_on = models.DateTimeField(
+        _("Scanned on"), auto_now_add=True, editable=False
+    )
+
+    # Summary statistics
+    total_checks = models.IntegerField(_("Total checks"), default=0)
+    passed_checks = models.IntegerField(_("Passed checks"), default=0)
+    warning_count = models.IntegerField(_("Warnings"), default=0)
+    critical_count = models.IntegerField(_("Critical issues"), default=0)
+    info_count = models.IntegerField(_("Info items"), default=0)
+    files_scanned = models.IntegerField(_("Files scanned"), default=0)
+    total_issues = models.IntegerField(_("Total issues"), default=0)
+
+    # Full scan report (JSON field)
+    scan_report = models.JSONField(
+        _("Scan report"),
+        default=dict,
+        blank=True,
+        help_text=_("Complete scan report with all check details"),
+    )
+
+    class Meta:
+        verbose_name = _("Plugin Version Security Scan")
+        verbose_name_plural = _("Plugin Version Security Scans")
+        ordering = ["-scanned_on"]
+
+    def __str__(self):
+        return f"Security scan for {self.plugin_version} ({self.scanned_on})"
+
+    @property
+    def overall_status(self):
+        """Returns overall scan status"""
+        if self.critical_count > 0:
+            return "critical"
+        elif self.warning_count > 0:
+            return "warning"
+        elif self.info_count > 0:
+            return "info"
+        else:
+            return "passed"
+
+    @property
+    def pass_rate(self):
+        """Calculate percentage of passed checks"""
+        if self.total_checks == 0:
+            return 0
+        return round((self.passed_checks / self.total_checks) * 100, 1)
+
+
 models.signals.post_delete.connect(delete_version_package, sender=PluginVersion)
 models.signals.post_delete.connect(delete_plugin_icon, sender=Plugin)
 models.signals.post_delete.connect(
