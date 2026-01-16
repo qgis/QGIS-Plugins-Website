@@ -198,7 +198,8 @@ HAYSTACK_CONNECTIONS = {
 }
 
 # Migration: see http://django-haystack.readthedocs.org/en/latest/migration_from_1_to_2.html#removal-of-realtimesearchindex
-HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
+# Use CelerySignalProcessor for async indexing via Celery
+HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.CelerySignalProcessor"
 
 # Added by Tim for database based caching
 # See http://docs.djangoproject.com/en/dev/topics/cache/
