@@ -24,6 +24,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.encoding import DjangoUnicodeDecodeError
+from django.utils.html import mark_safe
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.cache import never_cache
@@ -42,8 +43,10 @@ from plugins.models import (
     PluginVersionDownload,
     PluginVersionFeedback,
     PluginVersionFeedbackAttachment,
+    PluginVersionSecurityScan,
     vjust,
 )
+from plugins.security_utils import get_scan_badge_info, run_security_scan
 from plugins.utils import parse_remote_addr
 from plugins.validator import PLUGIN_REQUIRED_METADATA
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -566,6 +569,39 @@ def plugin_upload(request):
                 new_version.save()
                 msg = _("The Plugin has been successfully created.")
                 messages.success(request, msg, fail_silently=True)
+
+                # Run security scan on the uploaded package
+                security_scan = run_security_scan(new_version)
+                if security_scan:
+                    # Add security scan results to messages with link to details
+                    scan_url = f"{new_version.get_absolute_url()}#security-tab"
+                    badge_info = get_scan_badge_info(security_scan)
+                    if security_scan.overall_status == "passed":
+                        messages.success(
+                            request,
+                            mark_safe(
+                                _(
+                                    f"✓ Security scan completed: {badge_info['text']}. <a href='{scan_url}'>View detailed report</a>"
+                                )
+                            ),
+                            fail_silently=True,
+                        )
+                    elif security_scan.overall_status == "critical":
+                        warnings.append(
+                            mark_safe(
+                                _(
+                                    f"⚠ Security scan found {security_scan.critical_count} critical issues. <a href='{scan_url}'><strong>View details and address these issues</strong></a>"
+                                )
+                            )
+                        )
+                    elif security_scan.overall_status == "warning":
+                        warnings.append(
+                            mark_safe(
+                                _(
+                                    f"ℹ Security scan found {security_scan.warning_count} warnings. <a href='{scan_url}'>Review details</a>"
+                                )
+                            )
+                        )
 
                 # Update plugins cached xml
                 generate_plugins_xml.delay()
@@ -1475,6 +1511,44 @@ def _version_create(request, plugin, version, is_trusted=False):
                 new_object = form.save()
                 msg = _("The Plugin Version has been successfully created.")
                 messages.success(request, msg, fail_silently=True)
+
+                # Run security scan on the uploaded package
+                security_scan = run_security_scan(new_object)
+                if security_scan:
+                    # Add security scan results to messages with link to details
+                    scan_url = f"{new_object.get_absolute_url()}#security-tab"
+                    badge_info = get_scan_badge_info(security_scan)
+                    if security_scan.overall_status == "passed":
+                        messages.success(
+                            request,
+                            mark_safe(
+                                _(
+                                    f"✓ Security scan completed: {badge_info['text']}. <a href='{scan_url}'>View detailed report</a>"
+                                )
+                            ),
+                            fail_silently=True,
+                        )
+                    elif security_scan.overall_status == "critical":
+                        messages.warning(
+                            request,
+                            mark_safe(
+                                _(
+                                    f"⚠ Security scan found {security_scan.critical_count} critical issues. <a href='{scan_url}'><strong>View details and address these issues</strong></a>"
+                                )
+                            ),
+                            fail_silently=True,
+                        )
+                    elif security_scan.overall_status == "warning":
+                        messages.info(
+                            request,
+                            mark_safe(
+                                _(
+                                    f"ℹ Security scan found {security_scan.warning_count} warnings. <a href='{scan_url}'>Review details</a>"
+                                )
+                            ),
+                            fail_silently=True,
+                        )
+
                 # The approved flag is also controlled in the form, but we
                 # are checking it here in any case for additional security
                 if not is_trusted:
@@ -1996,7 +2070,24 @@ def version_detail(request, package_name, version):
     """
     plugin = get_object_or_404(Plugin, package_name=package_name)
     version = get_object_or_404(PluginVersion, plugin=plugin, version=version)
-    return render(request, "plugins/version_detail.html", {"version": version})
+
+    # Get security scan results if available
+    try:
+        security_scan = version.security_scan
+        scan_badge = get_scan_badge_info(security_scan)
+    except PluginVersionSecurityScan.DoesNotExist:
+        security_scan = None
+        scan_badge = get_scan_badge_info(None)
+
+    return render(
+        request,
+        "plugins/version_detail.html",
+        {
+            "version": version,
+            "security_scan": security_scan,
+            "scan_badge": scan_badge,
+        },
+    )
 
 
 ###############################################
