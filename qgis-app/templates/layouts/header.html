@@ -83,11 +83,15 @@
 
                 </div>
                 <div class="navbar-end">
-                    <div>
-                        <div class="control has-icons-right search-control">
-                            <form action="{% url "haystack_search" %}" method="get" style="margin:0;">
+                    <div class="navbar-item">
+                        <div class="control search-control">
+                            <form action="{% url "haystack_search" %}" method="get" style="margin:0; display: flex; gap: 0.5rem; align-items: center;">
                                 <input class="input is-small"  id="id_q" name="q" type="text" placeholder="Search">
-                                <span class="icon is-right"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                <button type="submit" class="button is-info is-small">
+                                    <span class="icon">
+                                        <i class="fa-solid fa-magnifying-glass"></i>
+                                    </span>
+                                </button>
                             </form>
                         </div>
                     </div>
