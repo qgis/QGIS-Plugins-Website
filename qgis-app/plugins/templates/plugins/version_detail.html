@@ -67,6 +67,7 @@
     <div class="tabs is-toggle is-centered" id="versiontab">
         <ul>
             <li class="is-active" data-tab="1"><a href="#details-tab">{% trans "Details" %}</a></li>
+            {% if user.is_staff or user in object.editors %}
             <li data-tab="2"><a href="#security-tab">
                 <span>{% trans "Security Scan" %}</span>
                 {% if security_scan %}
@@ -75,6 +76,7 @@
                 </span>
                 {% endif %}
             </a></li>
+            {% endif %}
             <li data-tab="3"><a href="#manage-tab">{% trans "Manage" %}</a></li>
         </ul>
     </div>
@@ -157,6 +159,7 @@
             </div>
         </div>
 
+        {% if user.is_staff or user in object.editors %}
         <div class="tab-pane" id="security-tab">
 
             {% if security_scan %}
@@ -358,6 +361,7 @@
                 </div>
             {% endif %}
         </div>
+        {% endif %}
 
         <div class="tab-pane" id="manage-tab">
             <h4 class="title is-6 mb-2">{% trans "Version management"%}</h4>
