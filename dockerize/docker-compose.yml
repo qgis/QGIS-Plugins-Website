@@ -208,7 +208,7 @@ services:
       internal:
 
   metabase:
-    image: metabase/metabase:latest
+    image: ${METABASE_DOCKER_IMAGE}
     environment:
       - MB_DB_TYPE=postgres
       - MB_DB_CONNECTION_URI=jdbc:postgresql://${DATABASE_HOST:-db}:5432/metabase?user=${DATABASE_USERNAME:-docker}&password=${DATABASE_PASSWORD:-docker}
