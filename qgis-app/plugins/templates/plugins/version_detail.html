@@ -67,7 +67,7 @@
     <div class="tabs is-toggle is-centered" id="versiontab">
         <ul>
             <li class="is-active" data-tab="1"><a href="#details-tab">{% trans "Details" %}</a></li>
-            {% if user.is_staff or user in object.editors %}
+            {% if user.is_staff or user in version.plugin.editors %}
             <li data-tab="2"><a href="#security-tab">
                 <span>{% trans "Security Scan" %}</span>
                 {% if security_scan %}
@@ -159,7 +159,7 @@
             </div>
         </div>
 
-        {% if user.is_staff or user in object.editors %}
+        {% if user.is_staff or user in version.plugin.editors %}
         <div class="tab-pane" id="security-tab">
 
             {% if security_scan %}
