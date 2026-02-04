@@ -50,7 +50,7 @@ def plugin_upload(package, **kwargs):
     try:
         # JSON-RPC cannot deserialize base64 strings to bytes, do it here instead
         if isinstance(package, str):
-            package = b64decode(package.encode('utf-8'))
+            package = b64decode(package.encode("utf-8"))
 
         request = kwargs.get("request")
         package = BytesIO(package)
@@ -130,10 +130,17 @@ def plugin_upload(package, **kwargs):
             version_data["changelog"] = cleaned_data.get("changelog")
         if cleaned_data.get("qgisMaximumVersion"):
             version_data["max_qg_version"] = cleaned_data.get("qgisMaximumVersion")
+        if cleaned_data.get("screenshot_file"):
+            version_data["screenshot"] = cleaned_data.get("screenshot_file")
 
         new_version = PluginVersion(**version_data)
         new_version.clean()
         new_version.save()
+
+        # Update plugin-level screenshot when version has one
+        if cleaned_data.get("screenshot_file"):
+            plugin.screenshot = cleaned_data.get("screenshot_file")
+            plugin.save(update_fields=["screenshot"])
     except IntegrityError as e:
         # Avoids error: current transaction is aborted, commands ignored until
         # end of transaction block

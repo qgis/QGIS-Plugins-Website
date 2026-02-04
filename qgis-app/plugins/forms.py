@@ -56,6 +56,7 @@ class PluginForm(ModelForm):
         fields = (
             "description",
             "about",
+            "screenshot",
             "author",
             "email",
             "icon",
@@ -191,6 +192,11 @@ class PluginVersionForm(ModelForm):
             self.instance.experimental = self.cleaned_data.get("experimental")
         if "supportsQt6" in self.cleaned_data:
             self.instance.supports_qt6 = self.cleaned_data.get("supportsQt6")
+
+        # Handle screenshot from package only
+        if self.cleaned_data.get("screenshot_file"):
+            self.instance.screenshot = self.cleaned_data.get("screenshot_file")
+
         return super(PluginVersionForm, self).clean()
 
 

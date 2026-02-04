@@ -565,8 +565,19 @@ def plugin_upload(request):
                     "external_deps": form.cleaned_data.get("external_deps", ""),
                 }
 
+                # Add screenshot if available from package
+                if form.cleaned_data.get("screenshot_file"):
+                    version_data["screenshot"] = form.cleaned_data.get(
+                        "screenshot_file"
+                    )
+
                 new_version = PluginVersion(**version_data)
                 new_version.save()
+
+                # Update plugin-level screenshot when version has one
+                if form.cleaned_data.get("screenshot_file"):
+                    plugin.screenshot = form.cleaned_data.get("screenshot_file")
+                    plugin.save(update_fields=["screenshot"])
                 msg = _("The Plugin has been successfully created.")
                 messages.success(request, msg, fail_silently=True)
 
@@ -1564,6 +1575,16 @@ def _version_create(request, plugin, version, is_trusted=False):
                     version_notify(new_object)
                 if form.cleaned_data.get("icon_file"):
                     form.cleaned_data["icon"] = form.cleaned_data.get("icon_file")
+
+                # Handle screenshot from package if available
+                if form.cleaned_data.get("screenshot_file"):
+                    new_object.screenshot = form.cleaned_data.get("screenshot_file")
+                    new_object.save()
+                    # Also update plugin-level screenshot
+                    new_object.plugin.screenshot = form.cleaned_data.get(
+                        "screenshot_file"
+                    )
+                    new_object.plugin.save(update_fields=["screenshot"])
 
                 if form.cleaned_data.get("multiple_parent_folders"):
                     parent_folders = form.cleaned_data.get("multiple_parent_folders")

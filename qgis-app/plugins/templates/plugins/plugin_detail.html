@@ -407,6 +407,15 @@
                 {% if object.about %}
                 <div class="tab-pane is-active" id="plugin-about">
                     <p>{{ object.about|linebreaksbr }}</p>
+
+                    {% comment %}Display plugin screenshot if available{% endcomment %}
+                    {% if object.screenshot %}
+                        <div class="mt-4">
+                            <figure class="image">
+                                <img src="{{ object.screenshot.url }}" alt="{% trans "Plugin screenshot" %}" style="max-width: 100%; height: auto;">
+                            </figure>
+                        </div>
+                    {% endif %}
                 </div>
                 {% endif %}
                 <div class="tab-pane{% if not object.about %} is-active{% endif %}" id="plugin-details">
