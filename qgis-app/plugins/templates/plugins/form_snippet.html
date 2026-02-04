@@ -20,7 +20,7 @@
           {% for error in field.errors  %}
             <p class="help is-danger has-text-weight-medium">{{ error }}</p>
           {% endfor %}
-        {% endif %} 
+        {% endif %}
     </div>
     {% elif field.field.widget|klass == 'ClearableFileInput' %}
     <div class="file has-name">
@@ -37,35 +37,35 @@
           </span>
           <span class="file-label"> {{ field.label }} </span>
         </span>
-        <span class="file-name" id="filename"> Choose a file… </span>
+        <span class="file-name" id="filename-{{ field.html_name }}"> Choose a file… </span>
       </label>
     </div>
     {% if field.errors %}
       {% for error in field.errors  %}
         <p class="help is-danger has-text-weight-medium">{{ error }}</p>
       {% endfor %}
-    {% endif %} 
+    {% endif %}
     {% elif field.field.widget|klass == 'Textarea' %}
       <div class="field">
         <label class="label">{{ field.label_tag }}</label>
         <div class="control">
-            <textarea 
-              class="textarea" 
-              placeholder="{{ field.help_text | safe }}" 
+            <textarea
+              class="textarea"
+              placeholder="{{ field.help_text | safe }}"
               id="{{ field.html_name }}"
               name="{{ field.html_name }}"
             >{{ field.value|default_if_none:'' }}</textarea>
         </div>
         {% if field.errors %}
           <p class="help is-danger">{{ field.errors }}</p>
-        {% endif %} 
+        {% endif %}
       </div>
     {% elif field.field.widget|klass == 'TextInput' or field.field.widget|klass == 'URLInput' %}
       <div class="field">
         <label class="label">{{ field.label_tag }}</label>
         <div class="control">
-          <input class="input" type="text" 
-          placeholder="{{ field.help_text | safe }}" 
+          <input class="input" type="text"
+          placeholder="{{ field.help_text | safe }}"
           id="{{ field.html_name }}"
           name="{{ field.html_name }}"
           value="{{ field.value|default_if_none:'' }}"
@@ -75,13 +75,13 @@
           {% for error in field.errors  %}
             <p class="help is-danger has-text-weight-medium">{{ error }}</p>
           {% endfor %}
-        {% endif %} 
+        {% endif %}
       </div>
     {% elif field.field.widget|klass == 'EmailInput' %}
     <div class="field">
       <label class="label">{{ field.label_tag }}</label>
       <div class="control has-icons-left">
-        <input class="input" type="email" 
+        <input class="input" type="email"
         id="{{ field.html_name }}"
         name="{{ field.html_name }}"
         value="{{ field.value|default_if_none:'' }}"
@@ -94,7 +94,7 @@
           {% for error in field.errors  %}
             <p class="help is-danger has-text-weight-medium">{{ error }}</p>
           {% endfor %}
-        {% endif %} 
+        {% endif %}
     </div>
     {% elif field.field.widget|klass == 'Select' %}
     <div class="field">
@@ -114,9 +114,9 @@
           {% for error in field.errors  %}
             <p class="help is-danger has-text-weight-medium">{{ error }}</p>
           {% endfor %}
-        {% endif %} 
+        {% endif %}
     </div>
-    {% else %} 
+    {% else %}
     <div class="field">
       <label class="label">{{ field.label_tag }}</label>
       <div class="control">
@@ -126,7 +126,7 @@
           {% for error in field.errors  %}
             <p class="help is-danger has-text-weight-medium">{{ error }}</p>
           {% endfor %}
-        {% endif %} 
+        {% endif %}
     </div>
     {% endif %}
     <div class="help has-text-grey">{{ field.help_text | safe }}</div>
@@ -136,15 +136,21 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    const fileInput = document.querySelector(".file-input");
-    const fileName = document.querySelector("#filename");
+    const fileInputs = document.querySelectorAll(".file-input");
 
-    fileInput.addEventListener("change", function () {
-      if (fileInput.files.length > 0) {
-        fileName.textContent = fileInput.files[0].name;
-      } else {
-        fileName.textContent = "Choose a file…";
-      }
+    fileInputs.forEach(function (fileInput) {
+      fileInput.addEventListener("change", function () {
+        const fieldName = fileInput.getAttribute("name");
+        const fileName = document.querySelector("#filename-" + fieldName);
+
+        if (fileName) {
+          if (fileInput.files.length > 0) {
+            fileName.textContent = fileInput.files[0].name;
+          } else {
+            fileName.textContent = "Choose a file…";
+          }
+        }
+      });
     });
   });
 </script>

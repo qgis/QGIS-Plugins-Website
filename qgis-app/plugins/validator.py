@@ -48,6 +48,7 @@ PLUGIN_OPTIONAL_METADATA = getattr(
         "external_deps",
         "server",
         "supportsQt6",
+        "screenshot",
     ),
 )
 PLUGIN_BOOLEAN_METADATA = getattr(
@@ -376,6 +377,56 @@ def validator(package, is_new: bool = False):
 
     metadata.append(("icon_file", icon_file))
 
+    # Process Screenshot (optional)
+    screenshot_file = None
+    if "screenshot" in dict(metadata):
+        try:
+            # Strip leading dir for ccrook plugins
+            if dict(metadata)["screenshot"].startswith("./"):
+                screenshot_path = dict(metadata)["screenshot"][2:]
+            else:
+                screenshot_path = dict(metadata)["screenshot"]
+
+            screenshot_data = zip.read(package_name + "/" + screenshot_path)
+            screenshot_size = len(screenshot_data)
+
+            # Check file size (max 2MB)
+            max_screenshot_size = 2 * 1024 * 1024  # 2MB
+            if screenshot_size > max_screenshot_size:
+                raise ValidationError(
+                    _(
+                        "Screenshot file is too large (%.2f MB). Maximum allowed size is 2 MB."
+                    )
+                    % (screenshot_size / (1024 * 1024))
+                )
+
+            # Check if it's a valid image format
+            mime_type = mimetypes.guess_type(dict(metadata)["screenshot"])[0]
+            allowed_image_types = ["image/png", "image/jpeg", "image/jpg", "image/gif"]
+
+            if mime_type not in allowed_image_types:
+                raise ValidationError(
+                    _(
+                        "Screenshot must be a valid image file (png, jpg, jpeg, or gif). Found: %s"
+                    )
+                    % (mime_type or "unknown type")
+                )
+
+            screenshot_file = SimpleUploadedFile(
+                dict(metadata)["screenshot"], screenshot_data, mime_type
+            )
+        except KeyError:
+            # Screenshot file specified in metadata but not found in zip
+            pass
+        except ValidationError:
+            # Re-raise validation errors
+            raise
+        except Exception:
+            # Log other errors but don't fail the upload
+            pass
+
+    metadata.append(("screenshot_file", screenshot_file))
+
     # Transforms booleans flags (experimental)
     for flag in PLUGIN_BOOLEAN_METADATA:
         if flag in dict(metadata):
@@ -459,7 +510,11 @@ def validator(package, is_new: bool = False):
     checked_metadata = []
     for k, v in metadata:
         try:
-            if not (k in PLUGIN_BOOLEAN_METADATA or k == "icon_file"):
+            if not (
+                k in PLUGIN_BOOLEAN_METADATA
+                or k == "icon_file"
+                or k == "screenshot_file"
+            ):
                 # v.decode('UTF-8')
                 checked_metadata.append((k, v.strip()))
             else:

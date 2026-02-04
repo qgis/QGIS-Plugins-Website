@@ -157,6 +157,16 @@
                     </div>
                 </div>
             </div>
+
+            {% comment %}Display screenshot if available{% endcomment %}
+            {% if version.screenshot %}
+            <div class="mt-4">
+                <label class="label has-text-weight-bold">{% trans "Preview Screenshot" %}</label>
+                <figure class="image">
+                    <img src="{{ version.screenshot.url }}" alt="{% trans "Plugin screenshot" %}" style="max-width: 100%; height: auto;">
+                </figure>
+            </div>
+            {% endif %}
         </div>
 
         {% if user.is_staff or user in version.plugin.editors %}

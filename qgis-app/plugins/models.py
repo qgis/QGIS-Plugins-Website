@@ -538,6 +538,16 @@ class Plugin(models.Model):
         _("Icon"), blank=True, null=True, upload_to=PLUGINS_STORAGE_PATH
     )
 
+    screenshot = models.ImageField(
+        _("Screenshot"),
+        blank=True,
+        null=True,
+        upload_to=PLUGINS_STORAGE_PATH,
+        help_text=_(
+            "Default preview screenshot for the plugin. This will be used if no version-specific screenshot is available. Maximum size: 2MB. Supported formats: PNG, JPG, JPEG, GIF."
+        ),
+    )
+
     # downloads (soft trigger from versions)
     downloads = models.IntegerField(_("Downloads"), default=0, editable=False)
 
@@ -918,6 +928,16 @@ class PluginVersion(models.Model):
 
     # the file!
     package = models.FileField(_("Plugin package"), upload_to=PLUGINS_STORAGE_PATH)
+    # Preview screenshot
+    screenshot = models.ImageField(
+        _("Screenshot"),
+        blank=True,
+        null=True,
+        upload_to=PLUGINS_STORAGE_PATH,
+        help_text=_(
+            "Optional preview screenshot for the plugin. Maximum size: 2MB. Supported formats: PNG, JPG, JPEG, GIF."
+        ),
+    )
     # Flags: checks on unique current/experimental are done in save() and possibly in the views
     experimental = models.BooleanField(
         _("Experimental flag"),
@@ -1142,12 +1162,28 @@ def delete_version_package(sender, instance, **kw):
         pass
 
 
+def delete_version_screenshot(sender, instance, **kw):
+    """
+    Removes the version screenshot
+    """
+    try:
+        if instance.screenshot:
+            instance.screenshot.delete(False)
+    except:
+        pass
+
+
 def delete_plugin_icon(sender, instance, **kw):
     """
-    Removes the plugin icon
+    Removes the plugin icon and screenshot
     """
     try:
         instance.icon.delete(False)
+    except:
+        pass
+    try:
+        if instance.screenshot:
+            instance.screenshot.delete(False)
     except:
         pass
 
@@ -1241,6 +1277,7 @@ class PluginVersionSecurityScan(models.Model):
 
 
 models.signals.post_delete.connect(delete_version_package, sender=PluginVersion)
+models.signals.post_delete.connect(delete_version_screenshot, sender=PluginVersion)
 models.signals.post_delete.connect(delete_plugin_icon, sender=Plugin)
 models.signals.post_delete.connect(
     delete_feedback_attachment, sender=PluginVersionFeedbackAttachment
