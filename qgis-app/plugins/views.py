@@ -1479,7 +1479,6 @@ def version_create_api(request, package_name):
     version = PluginVersion(
         plugin=plugin, is_from_token=True, token=request.plugin_token
     )
-
     return _version_create(request, plugin, version)
 
 
@@ -1491,16 +1490,16 @@ def version_create(request, package_name):
             request, "plugins/version_permission_deny.html", {"plugin": plugin}
         )
     version = PluginVersion(plugin=plugin, created_by=request.user)
-    is_trusted = request.user.has_perm("plugins.can_approve")
-    return _version_create(request, plugin, version, is_trusted=is_trusted)
+    return _version_create(request, plugin, version)
 
 
-def _version_create(request, plugin, version, is_trusted=False):
+def _version_create(request, plugin, version):
     """
     The form will create versions according to permissions,
     plugin name and description are updated according to the info
     contained in the package metadata
     """
+    is_trusted = request.user.has_perm("plugins.can_approve") or plugin.approved
     if request.method == "POST":
 
         form = PluginVersionForm(
