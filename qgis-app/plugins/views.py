@@ -1529,6 +1529,7 @@ def _version_create(request, plugin, version):
     plugin name and description are updated according to the info
     contained in the package metadata
     """
+    is_api_request = getattr(version, "is_from_token", False)
     is_trusted = request.user.has_perm("plugins.can_approve") or plugin.approved
     if request.method == "POST":
 
@@ -1539,80 +1540,150 @@ def _version_create(request, plugin, version):
             try:
                 new_object = form.save()
                 msg = _("The Plugin Version has been successfully created.")
-                messages.success(request, msg, fail_silently=True)
+
+                # Prepare response data
+                response_data = {
+                    "success": True,
+                    "message": str(msg),
+                    "version": new_object.version,
+                    "plugin_id": new_object.plugin.pk,
+                    "version_id": new_object.pk,
+                }
 
                 # Run security scan on the uploaded package
                 security_scan = run_security_scan(new_object)
                 if security_scan:
-                    # Add security scan results to messages with link to details
+                    # Add security scan results
                     scan_url = f"{new_object.get_absolute_url()}#security-tab"
                     badge_info = get_scan_badge_info(security_scan)
-                    if security_scan.overall_status == "passed":
-                        messages.success(
-                            request,
-                            mark_safe(
-                                _(
-                                    f"✓ Security scan completed: {badge_info['text']}. <a href='{scan_url}'>View detailed report</a>"
-                                )
-                            ),
-                            fail_silently=True,
-                        )
-                    elif security_scan.overall_status == "critical":
-                        messages.warning(
-                            request,
-                            mark_safe(
-                                _(
-                                    f"⚠ Security scan found {security_scan.critical_count} critical issues. <a href='{scan_url}'><strong>View details and address these issues</strong></a>"
-                                )
-                            ),
-                            fail_silently=True,
-                        )
-                    elif security_scan.overall_status == "warning":
-                        messages.info(
-                            request,
-                            mark_safe(
-                                _(
-                                    f"ℹ Security scan found {security_scan.warning_count} warnings. <a href='{scan_url}'>Review details</a>"
-                                )
-                            ),
-                            fail_silently=True,
-                        )
+                    response_data["security_scan"] = {
+                        "status": security_scan.overall_status,
+                        "critical_count": security_scan.critical_count,
+                        "warning_count": security_scan.warning_count,
+                        "info_count": security_scan.info_count,
+                        "scan_url": scan_url,
+                    }
+
+                    if not is_api_request:
+                        if security_scan.overall_status == "passed":
+                            messages.success(
+                                request,
+                                mark_safe(
+                                    _(
+                                        f"✓ Security scan completed: {badge_info['text']}. <a href='{scan_url}'>View detailed report</a>"
+                                    )
+                                ),
+                                fail_silently=True,
+                            )
+                        elif security_scan.overall_status == "critical":
+                            messages.warning(
+                                request,
+                                mark_safe(
+                                    _(
+                                        f"⚠ Security scan found {security_scan.critical_count} critical issues. <a href='{scan_url}'><strong>View details and address these issues</strong></a>"
+                                    )
+                                ),
+                                fail_silently=True,
+                            )
+                        elif security_scan.overall_status == "warning":
+                            messages.info(
+                                request,
+                                mark_safe(
+                                    _(
+                                        f"ℹ Security scan found {security_scan.warning_count} warnings. <a href='{scan_url}'>Review details</a>"
+                                    )
+                                ),
+                                fail_silently=True,
+                            )
 
                 # The approved flag is also controlled in the form, but we
                 # are checking it here in any case for additional security
                 if not is_trusted:
                     new_object.approved = False
                     new_object.save()
-                    messages.warning(
-                        request,
-                        _(
-                            "You do not have approval permissions, plugin version has been set unapproved."
-                        ),
-                        fail_silently=True,
+                    approval_msg = _(
+                        "You do not have approval permissions, plugin version has been set unapproved."
                     )
+                    response_data["approved"] = False
+                    response_data["approval_message"] = str(approval_msg)
+                    if not is_api_request:
+                        messages.warning(
+                            request,
+                            approval_msg,
+                            fail_silently=True,
+                        )
                     version_notify(new_object)
+                else:
+                    response_data["approved"] = new_object.approved
+
                 if form.cleaned_data.get("icon_file"):
                     form.cleaned_data["icon"] = form.cleaned_data.get("icon_file")
 
                 if form.cleaned_data.get("multiple_parent_folders"):
                     parent_folders = form.cleaned_data.get("multiple_parent_folders")
-                    messages.warning(
-                        request,
-                        _(
-                            f"Your plugin includes multiple parent folders: {parent_folders}. Please be aware that only the first folder has been recognized. It is strongly advised to have a single parent folder."
-                        ),
-                        fail_silently=True,
+                    warning_msg = _(
+                        f"Your plugin includes multiple parent folders: {parent_folders}. Please be aware that only the first folder has been recognized. It is strongly advised to have a single parent folder."
                     )
+                    response_data["warnings"] = response_data.get("warnings", [])
+                    response_data["warnings"].append(str(warning_msg))
+                    if not is_api_request:
+                        messages.warning(
+                            request,
+                            warning_msg,
+                            fail_silently=True,
+                        )
                     del form.cleaned_data["multiple_parent_folders"]
 
                 _main_plugin_update(request, new_object.plugin, form)
                 _check_optional_metadata(form, request)
+
+                # Return JSON for API requests
+                if is_api_request:
+                    return JsonResponse(response_data, status=201)
+
+                messages.success(request, msg, fail_silently=True)
                 return HttpResponseRedirect(new_object.plugin.get_absolute_url())
             except (IntegrityError, ValidationError, DjangoUnicodeDecodeError) as e:
+                error_msg = str(e)
+                if is_api_request:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": error_msg,
+                        },
+                        status=400,
+                    )
                 messages.error(request, e, fail_silently=True)
                 connection.close()
+            if is_api_request:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Failed to create version",
+                    },
+                    status=400,
+                )
             return HttpResponseRedirect(plugin.get_absolute_url())
+        else:
+            # Form validation errors
+            if is_api_request:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Validation failed",
+                        "errors": form.errors,
+                    },
+                    status=400,
+                )
     else:
+        if is_api_request:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "Method not allowed. Use POST to upload a package.",
+                },
+                status=405,
+            )
         form = PluginVersionForm(is_trusted=is_trusted)
 
     return render(
@@ -1665,6 +1736,7 @@ def _version_update(request, plugin, version, is_trusted=False):
     """
     The form will update versions according to permissions
     """
+    is_api_request = getattr(version, "is_from_token", False)
 
     if request.method == "POST":
         form = PluginVersionForm(
@@ -1679,24 +1751,77 @@ def _version_update(request, plugin, version, is_trusted=False):
                 # update metadata for the main plugin object
                 _main_plugin_update(request, new_object.plugin, form)
                 msg = _("The Plugin Version has been successfully updated.")
-                messages.success(request, msg, fail_silently=True)
+
+                # Prepare response data
+                response_data = {
+                    "success": True,
+                    "message": str(msg),
+                    "version": new_object.version,
+                    "plugin_id": new_object.plugin.pk,
+                    "version_id": new_object.pk,
+                }
 
                 if form.cleaned_data.get("multiple_parent_folders"):
                     parent_folders = form.cleaned_data.get("multiple_parent_folders")
-                    messages.warning(
-                        request,
-                        _(
-                            f"Your plugin includes multiple parent folders: {parent_folders}. Please be aware that only the first folder has been recognized. It is strongly advised to have a single parent folder."
-                        ),
-                        fail_silently=True,
+                    warning_msg = _(
+                        f"Your plugin includes multiple parent folders: {parent_folders}. Please be aware that only the first folder has been recognized. It is strongly advised to have a single parent folder."
                     )
+                    response_data["warnings"] = response_data.get("warnings", [])
+                    response_data["warnings"].append(str(warning_msg))
+                    if not is_api_request:
+                        messages.warning(
+                            request,
+                            warning_msg,
+                            fail_silently=True,
+                        )
                     del form.cleaned_data["multiple_parent_folders"]
 
+                # Return JSON for API requests
+                if is_api_request:
+                    return JsonResponse(response_data, status=200)
+
+                messages.success(request, msg, fail_silently=True)
             except (IntegrityError, ValidationError, DjangoUnicodeDecodeError) as e:
+                error_msg = str(e)
+                if is_api_request:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": error_msg,
+                        },
+                        status=400,
+                    )
                 messages.error(request, e, fail_silently=True)
                 connection.close()
+            if is_api_request:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Failed to update version",
+                    },
+                    status=400,
+                )
             return HttpResponseRedirect(plugin.get_absolute_url())
+        else:
+            # Form validation errors
+            if is_api_request:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Validation failed",
+                        "errors": form.errors,
+                    },
+                    status=400,
+                )
     else:
+        if is_api_request:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "Method not allowed. Use POST to upload a package.",
+                },
+                status=405,
+            )
         form = PluginVersionForm(instance=version, is_trusted=is_trusted)
 
     return render(
