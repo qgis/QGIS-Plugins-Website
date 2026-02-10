@@ -222,18 +222,20 @@ class PluginCreateForm(forms.Form):
                     "Package name must start with a letter and can contain only ASCII letters, digits, '-' or '_'."
                 )
             )
-        if Plugin.objects.filter(package_name__iexact=package_name).exists():
+        existing = Plugin.objects.filter(package_name__iexact=package_name).first()
+        if existing:
             raise ValidationError(
                 _("A plugin with a similar package name (%s) already exists.")
-                % package_name
+                % existing.package_name
             )
         return package_name
 
     def clean_name(self):
         name = self.cleaned_data.get("name", "").strip()
-        if Plugin.objects.filter(name__iexact=name).exists():
+        existing = Plugin.objects.filter(name__iexact=name).first()
+        if existing:
             raise ValidationError(
-                _("A plugin with a similar name (%s) already exists.") % name
+                _("A plugin with a similar name (%s) already exists.") % existing.name
             )
         return name
 

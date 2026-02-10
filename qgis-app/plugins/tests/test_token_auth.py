@@ -539,3 +539,149 @@ class APIResponseTestCase(TestCase):
         if not self.user.has_perm("plugins.can_approve"):
             self.assertIn("approval_message", data)
             self.assertFalse(data["approved"])
+
+
+class EmptyPluginWithTokenTestCase(TestCase):
+    """Test creating empty plugin and uploading first version via token"""
+
+    fixtures = ["fixtures/auth.json"]
+
+    @override_settings(MEDIA_ROOT="api/tests")
+    def setUp(self):
+        self.client = Client()
+
+        # Create a test user
+        self.user = User.objects.create_user(
+            username="testuser",
+            password="testpassword",
+            email="test@example.com",
+            first_name="Test",
+            last_name="User",
+        )
+
+        self.client.login(username="testuser", password="testpassword")
+
+    def test_create_empty_plugin_then_upload_with_token(self):
+        """Test complete workflow: create empty plugin, generate token, upload version"""
+        from unittest.mock import patch
+
+        # Step 1: Create empty plugin
+        with patch("plugins.views.plugin_notify", new=do_nothing):
+            url_create_empty = reverse("plugin_create_empty")
+            response = self.client.post(
+                url_create_empty,
+                {
+                    "package_name": "test_modul",
+                    "name": "My Test Plugin",
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+
+        plugin = Plugin.objects.get(package_name="test_modul")
+        self.assertEqual(plugin.pluginversion_set.count(), 0)
+
+        # Step 2: Generate token
+        url_token_create = reverse("plugin_token_create", args=[plugin.package_name])
+        response = self.client.post(url_token_create, {})
+        self.assertEqual(response.status_code, 302)
+
+        # Step 3: Get the token
+        outstanding_token = OutstandingToken.objects.last().token
+        refresh = RefreshToken(outstanding_token)
+        refresh["plugin_id"] = plugin.pk
+        refresh["refresh_jti"] = refresh["jti"]
+        access_token = str(refresh.access_token)
+
+        # Step 4: Log out and upload version with token
+        self.client.logout()
+
+        valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin.zip_")
+        with open(valid_plugin, "rb") as file:
+            uploaded_file = SimpleUploadedFile(
+                "valid_plugin.zip_", file.read(), content_type="application/zip"
+            )
+
+        url_add_version = reverse("version_create_api", args=[plugin.package_name])
+
+        with patch("plugins.tasks.generate_plugins_xml", new=do_nothing):
+            with patch("plugins.validator._check_url_link", new=do_nothing):
+                with patch("plugins.security_utils.run_security_scan", new=do_nothing):
+                    c = Client(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+                    response = c.post(
+                        url_add_version,
+                        {
+                            "package": uploaded_file,
+                        },
+                    )
+
+        self.assertEqual(response.status_code, 201)
+        response.json()
+
+        # Verify version was created
+        plugin.refresh_from_db()
+        self.assertEqual(plugin.pluginversion_set.count(), 1)
+
+        version = plugin.pluginversion_set.first()
+        self.assertEqual(version.version, "0.0.1")
+
+        # Verify metadata was updated from package
+        self.assertNotIn("Placeholder", plugin.description)
+        self.assertEqual(plugin.description, "I am here for testing purpose")
+
+    def test_cannot_upload_mismatched_package_name_to_empty_plugin(self):
+        """Test that uploading a package with wrong folder name fails"""
+        from unittest.mock import patch
+
+        # Create empty plugin with specific package_name
+        with patch("plugins.views.plugin_notify", new=do_nothing):
+            url_create_empty = reverse("plugin_create_empty")
+            response = self.client.post(
+                url_create_empty,
+                {
+                    "package_name": "different_name",
+                    "name": "Different Plugin",
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+
+        plugin = Plugin.objects.get(package_name="different_name")
+
+        # Generate token
+        url_token_create = reverse("plugin_token_create", args=[plugin.package_name])
+        response = self.client.post(url_token_create, {})
+        self.assertEqual(response.status_code, 302)
+
+        outstanding_token = OutstandingToken.objects.last().token
+        refresh = RefreshToken(outstanding_token)
+        refresh["plugin_id"] = plugin.pk
+        refresh["refresh_jti"] = refresh["jti"]
+        access_token = str(refresh.access_token)
+
+        self.client.logout()
+
+        # Try to upload package with different folder name (test_modul)
+        valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin.zip_")
+        with open(valid_plugin, "rb") as file:
+            uploaded_file = SimpleUploadedFile(
+                "valid_plugin.zip_", file.read(), content_type="application/zip"
+            )
+
+        url_add_version = reverse("version_create_api", args=[plugin.package_name])
+
+        with patch("plugins.validator._check_url_link", new=do_nothing):
+            c = Client(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+            response = c.post(
+                url_add_version,
+                {
+                    "package": uploaded_file,
+                },
+            )
+
+        # Should fail with 400 bad request
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertIn("error", data)
+
+        # No version should be created
+        plugin.refresh_from_db()
+        self.assertEqual(plugin.pluginversion_set.count(), 0)
