@@ -194,6 +194,65 @@ class PluginVersionForm(ModelForm):
         return super(PluginVersionForm, self).clean()
 
 
+class PluginCreateForm(forms.Form):
+    """
+    Form for creating an empty plugin (no versions yet).
+    Minimal fields - the rest will be populated from metadata.txt on first upload.
+    """
+
+    required_css_class = "required"
+    name = forms.CharField(
+        label=_("Plugin name"),
+        help_text=_("A display name for your plugin. It must be unique."),
+        max_length=256,
+    )
+    package_name = forms.CharField(
+        label=_("Package name"),
+        help_text=_(
+            "This must be the main plugin folder name inside your zip file. Use only ASCII letters, digits, '-' or '_'. This cannot be changed later."
+        ),
+        max_length=256,
+    )
+
+    def clean_package_name(self):
+        package_name = self.cleaned_data.get("package_name", "").strip()
+        if not re.match(r"^[A-Za-z][A-Za-z0-9-_]+$", package_name):
+            raise ValidationError(
+                _(
+                    "Package name must start with a letter and can contain only ASCII letters, digits, '-' or '_'."
+                )
+            )
+        if Plugin.objects.filter(package_name__iexact=package_name).exists():
+            raise ValidationError(
+                _("A plugin with a similar package name (%s) already exists.")
+                % package_name
+            )
+        return package_name
+
+    def clean_name(self):
+        name = self.cleaned_data.get("name", "").strip()
+        if Plugin.objects.filter(name__iexact=name).exists():
+            raise ValidationError(
+                _("A plugin with a similar name (%s) already exists.") % name
+            )
+        return name
+
+    def save(self, created_by, commit=True):
+        plugin = Plugin()
+        # Set all required fields first
+        plugin.created_by = created_by
+        plugin.author = created_by.get_full_name() or created_by.username
+        plugin.email = created_by.email or "noreply@example.com"
+        plugin.description = "Placeholder - will be updated on first version upload"
+        plugin.package_name = self.cleaned_data.get("package_name")
+        plugin.name = self.cleaned_data.get("name")
+
+        if commit:
+            # Skip model validation since we already validated in the form
+            plugin.save()
+        return plugin
+
+
 class PackageUploadForm(forms.Form):
     """
     Single step upload for new plugins
