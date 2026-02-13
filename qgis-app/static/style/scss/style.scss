@@ -2,6 +2,7 @@
 @import "../../../node_modules/highlight.js/scss/atom-one-dark.scss";
 @import "custom.bulma.scss";
 @import "sustaining_members.scss";
+@import "security_scan.scss";
 
 
 html {
@@ -350,4 +351,194 @@ h4:hover > a.heading-anchor,
 h5:hover > a.heading-anchor,
 h6:hover > a.heading-anchor {
   visibility: visible;
+}
+
+/* Plugin Feedback Styles */
+.plugin-feedback-page {
+  // Local variables using brand colors
+  $border-radius-sm: 4px;
+  $border-radius-md: 5px;
+  $border-radius-lg: 10px;
+  $transition-fast: 0.2s ease;
+  $transition-smooth: 0.3s ease;
+  $shadow-light: rgba(0, 0, 0, 0.1);
+  $shadow-medium: rgba(0, 0, 0, 0.2);
+
+  // Feedback box styles
+  .with-box {
+    border: 1px solid $grey-light;
+    padding: 5px;
+    border-radius: $border-radius-md;
+    margin-top: 5px;
+  }
+
+  // Feedback content
+  label.feedback {
+    width: 90%;
+    display: inline-block;
+    vertical-align: top;
+  }
+
+  .feedback-info {
+    font-size: 0.75rem;
+    color: $text-primary2;
+    white-space: nowrap;
+  }
+
+  .update-feedback {
+    margin-top: 10px;
+  }
+
+  // Form elements
+  input.statusCheckbox {
+    margin-right: 5px;
+  }
+
+  button#updateButton {
+    &[disabled] {
+      background-color: $grey-dark;
+    }
+  }
+
+  // Image upload drop zone
+  .drop-zone {
+    border: 2px dashed $grey-light;
+    border-radius: $border-radius-lg;
+    padding: 20px;
+    text-align: center;
+    background-color: $light1;
+    transition: all $transition-smooth;
+    cursor: pointer;
+
+    &.dragover {
+      border-color: $success;
+      background-color: lighten($primary, 40%);
+      transform: scale(1.02);
+    }
+
+    .drop-zone-content {
+      pointer-events: none;
+    }
+  }
+
+  // Image preview
+  .image-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .preview-item {
+    position: relative;
+    display: inline-block;
+
+    img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: $border-radius-md;
+      border: 2px solid $light2;
+    }
+
+    .remove-btn {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: $danger;
+      color: $white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all $transition-fast;
+
+      &:hover {
+        transform: scale(1.1);
+        background: darken($danger, 10%);
+      }
+    }
+  }
+
+  // Feedback attachments
+  .feedback-attachments {
+    border-top: 1px solid $light2;
+    padding-top: 10px;
+  }
+
+  .attachment-thumbnails {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .attachment-link {
+    display: inline-block;
+    position: relative;
+    border-radius: $border-radius-sm;
+    overflow: hidden;
+    box-shadow: 0 2px 4px $shadow-light;
+    transition: transform $transition-fast;
+
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px $shadow-medium;
+
+      .attachment-thumbnail {
+        border-color: $success;
+      }
+    }
+  }
+
+  .attachment-thumbnail {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    display: block;
+    border: 2px solid $white;
+    transition: border-color $transition-fast;
+  }
+
+  // Hidden file input
+  #id_images {
+    display: none;
+  }
+
+  // Edit mode specific styles
+  .existing-attachment {
+    position: relative;
+    display: inline-block;
+    margin-right: 8px;
+
+    .remove-existing-btn {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: $danger;
+      color: $white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all $transition-fast;
+
+      &:hover {
+        transform: scale(1.1);
+        background: darken($danger, 10%);
+      }
+    }
+  }
+
+  .existing-attachments-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
 }

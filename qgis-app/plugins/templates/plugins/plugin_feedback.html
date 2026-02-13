@@ -15,53 +15,81 @@
     </div>
     {% endif %}
     <h2>{% trans "Feedback Plugin" %} {{ version.plugin.name }} {{ version.version }}</h2>
-    <div class="feedback-list">
+    <div class="feedback-list plugin-feedback-page">
         <div class="notification is-success is-light">
             <button class="delete" data-dismiss="alert">&times;</button>
             <p>Please tick the checkbox when the task is completed and click the "Update" button to update status.</p>
         </div>
         <div class="box-content">
-            {% for feedback in feedbacks %}
-            <div class="previous-feedback with-box" data-feedback-id="{{ feedback.id }}">
-                <div class="field ">
-                    <label class="checkbox">
-                        <input type="checkbox" class="statusCheckbox" name="statusCheckbox" data-feedback-id="{{ feedback.id }}" {% if feedback.is_completed %}checked disabled{% endif %}>
-                        <span class="has-text-weight-bold"> 
-                            {% if feedback.reviewer.first_name %}
-                                {{ feedback.reviewer.first_name }} {{ feedback.reviewer.last_name }}
-                            {% else %}
-                                {{ feedback.reviewer.username }}
-                            {% endif %}
-                        </span>
-                        <span class="feedback-info">wrote {{ feedback.created_on|timesince }} ago</span>
-                    </label>
-                    <p class="control is-expanded mt-3">
-                        <label class="feedback">
-                            <span id="feedbackTask">{{ feedback.task }}</span>
-                            <span id="editedOn" class="feedback-info">
-                                {% if feedback.modified_on %}
-                                    &mdash; (edited) {{ feedback.modified_on|timesince }} ago
+            {% if feedbacks %}
+                {% for feedback in feedbacks %}
+                <div class="previous-feedback with-box" data-feedback-id="{{ feedback.id }}">
+                    <div class="field ">
+                        <label class="checkbox">
+                            <input type="checkbox" class="statusCheckbox" name="statusCheckbox" data-feedback-id="{{ feedback.id }}" {% if feedback.is_completed %}checked disabled{% endif %}>
+                            <span class="has-text-weight-bold">
+                                {% if feedback.reviewer.first_name %}
+                                    {{ feedback.reviewer.first_name }} {{ feedback.reviewer.last_name }}
+                                {% else %}
+                                    {{ feedback.reviewer.username }}
                                 {% endif %}
                             </span>
+                            <span class="feedback-info">wrote {{ feedback.created_on|timesince }} ago</span>
                         </label>
-                    </p>
-                    {% if feedback.reviewer == request.user %}
-                    <div class="control has-text-right">
-                        <button type="button" id="editButton" class="button is-small is-outlined is-success" data-feedback-id="{{ feedback.id }}">
-                            <span class="icon is-small">
-                                <i class="fas fa-pencil-alt"></i>
-                            </span>
-                        </button>
-                        <button type="button" class="button is-small is-outlined is-danger deleteButton" data-feedback-id="{{ feedback.id }}">
-                            <span class="icon is-small">
-                                <i class="fas fa-trash-alt"></i>
-                            </span>
-                        </button>
+                        <p class="control is-expanded mt-3">
+                            <label class="feedback">
+                                <span id="feedbackTask">{{ feedback.task }}</span>
+                                <span id="editedOn" class="feedback-info">
+                                    {% if feedback.modified_on %}
+                                        &mdash; (edited) {{ feedback.modified_on|timesince }} ago
+                                    {% endif %}
+                                </span>
+                            </label>
+                        </p>
+
+                        <!-- Display attachments for this feedback -->
+                        {% if feedback.attachments.all %}
+                        <div class="feedback-attachments mt-3">
+                            <p class="is-size-7 has-text-grey mb-2">
+                                <span class="icon is-small">
+                                    <i class="fas fa-paperclip"></i>
+                                </span>
+                                {% trans "Attachments:" %}
+                            </p>
+                            <div class="attachment-thumbnails">
+                                {% for attachment in feedback.attachments.all %}
+                                <a href="{{ attachment.image.url }}" target="_blank" class="attachment-link" title="{{ attachment.caption }}">
+                                    <img src="{{ attachment.image.url }}" alt="{{ attachment.caption }}" class="attachment-thumbnail">
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if feedback.reviewer == request.user %}
+                        <div class="control has-text-right">
+                            <button type="button" id="editButton" class="button is-small is-outlined is-success" data-feedback-id="{{ feedback.id }}">
+                                <span class="icon is-small">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </span>
+                            </button>
+                            <button type="button" class="button is-small is-outlined is-danger deleteButton" data-feedback-id="{{ feedback.id }}">
+                                <span class="icon is-small">
+                                    <i class="fas fa-trash-alt"></i>
+                                </span>
+                            </button>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
-            </div>
-            {% endfor %}
+                {% endfor %}
+            {% else %}
+                <p class="has-text-centered">
+                    <span class="icon">
+                        <i class="fas fa-info-circle"></i>
+                    </span>
+                    {% trans "No feedback has been provided for this version yet." %}
+                </p>
+            {% endif %}
             {% if feedbacks %}
             <div class="has-text-centered update-feedback">
                 <button type="button" id="updateButton" class="button is-success">
@@ -75,14 +103,45 @@
         </div>
 
         {% if is_user_has_approval_rights %}
-        <div class="new-feedback">
-            <form method="post" action="{% url 'version_feedback' version.plugin.package_name version.version %}">{% csrf_token %}
+        <div class="box-content mt-5">
+            <form method="post" action="{% url 'version_feedback' version.plugin.package_name version.version %}" enctype="multipart/form-data">{% csrf_token %}
                 <div class="field">
                     <label class="label">{% trans "New Feedback" %}</label>
                     <div class="control">
                         {{ form.feedback}}
                     </div>
                 </div>
+
+                <div class="field">
+                    <label class="label">{% trans "Attach Images" %} <span class="has-text-grey">(optional)</span></label>
+
+                    <!-- Drag and Drop Area -->
+                    <div id="drop-zone" class="drop-zone">
+                        <div class="drop-zone-content">
+                            <span class="icon is-large has-text-grey-light">
+                                <i class="fas fa-cloud-upload-alt fa-3x"></i>
+                            </span>
+                            <p class="has-text-grey">{% trans "Drag and drop images here, or" %}</p>
+                            <button type="button" class="button is-outlined" id="select-files-btn">
+                                <span class="icon">
+                                    <i class="fas fa-folder-open"></i>
+                                </span>
+                                <span>{% trans "Browse Files" %}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Hidden file input -->
+                    {{ form.images }}
+
+                    <!-- Preview area -->
+                    <div id="image-preview" class="image-preview mt-3"></div>
+
+                    <p class="help has-text-grey">
+                        {% trans "Supported formats: JPG, PNG, GIF. Maximum file size: 5MB per image." %}
+                    </p>
+                </div>
+
                 <div class="field has-text-right mt-3">
                     <div class="control">
                         <button class="button is-success" type="submit">
@@ -101,39 +160,6 @@
 {% endblock %}
 
 {% block extrajs %}
-    <style>
-    .with-box {
-        border: 1px solid #e8e8e8;
-        padding: 5px;
-        border-radius: 5px;
-        margin-top: 5px;
-    }
-    label.feedback{
-        width: 90%;
-        display: inline-block;
-        vertical-align: top;
-    }
-    .feedback-info{
-        font-size: 0.75rem;
-        color: #8D8D8D;
-        white-space: nowrap;
-    }
-    .update-feedback {
-        margin-top: 10px;
-    }
-    .new-feedback{
-        padding: 5px;
-        border-radius: 5px;
-        margin-top: 20px;
-        margin-bottom: 5px;
-    }
-    input.statusCheckbox{
-        margin-right: 5px;
-    }
-    button#updateButton[disabled] {
-        background-color: #545454;
-    }
-    </style>
 
     <script>
     $(document).ready(function(){
@@ -221,26 +247,94 @@
             // Store the original content
             var originalContent = $feedbackDiv.html();
 
+            // Get existing attachments and make them editable
+            var existingAttachments = '';
+            var $existingAttachmentThumbnails = $feedbackDiv.find('.attachment-thumbnails');
+            if ($existingAttachmentThumbnails.length > 0) {
+                var editableAttachments = '';
+                $existingAttachmentThumbnails.find('.attachment-link').each(function() {
+                    var imgSrc = $(this).find('img').attr('src');
+                    var imgTitle = $(this).find('img').attr('title') || 'Attachment';
+                    var attachmentUrl = $(this).attr('href');
+                    editableAttachments += `
+                        <div class="existing-attachment" style="position: relative; display: inline-block; margin-right: 8px;">
+                            <img src="${imgSrc}" alt="${imgTitle}" class="attachment-thumbnail" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
+                            <button type="button" class="remove-existing-btn" data-attachment-url="${attachmentUrl}"
+                                    style="position: absolute; top: -5px; right: -5px; background: #ff3860; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer;">×</button>
+                        </div>
+                    `;
+                });
+
+                existingAttachments = `
+                    <div class="field">
+                        <label class="label is-size-7">Current Attachments</label>
+                        <div class="existing-attachments-container">
+                            ${editableAttachments}
+                        </div>
+                        <input type="hidden" id="deletedAttachments_${feedbackId}" name="deleted_attachments" value="">
+                    </div>
+                `;
+            }
+
             var inputForm = `
-                <textarea class="textarea" id="editFeedbackInput" style="width: 100%; margin-bottom: 0 !important;">${feedbackTask}</textarea>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button type="button" class="button is-success is-small" id="saveButton" data-feedback-id="${feedbackId}">
-                        <span class="icon is-small mr-3">
-                            <i class="fas fa-save"></i>
-                        </span>
-                        Save
-                    </button>
-                    <button type="button" class="button is-secondary is-small" id="cancelButton" data-feedback-id="${feedbackId}">
-                        <span class="icon is-small mr-3">
-                            <i class="fas fa-times"></i>
-                        </span>
-                        Cancel
-                    </button>
-                </div>
+                <form enctype="multipart/form-data" style="width: 100%;">
+                    <textarea class="textarea" id="editFeedbackInput" style="width: 100%; margin-bottom: 10px;">${feedbackTask}</textarea>
+
+                    ${existingAttachments}
+
+                    <div class="field">
+                        <label class="label is-size-7">Add New Attachments (optional)</label>
+                        <div class="file has-name" style="margin-bottom: 10px;">
+                            <label class="file-label">
+                                <input class="file-input" type="file" name="new_images" id="editImages_${feedbackId}" multiple accept="image/*">
+                                <span class="file-cta">
+                                    <span class="file-icon">
+                                        <i class="fas fa-upload"></i>
+                                    </span>
+                                    <span class="file-label">
+                                        Add new images…
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                        <div id="editImagePreview_${feedbackId}" class="image-preview"></div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button type="button" class="button is-success is-small" id="saveButton" data-feedback-id="${feedbackId}">
+                            <span class="icon is-small mr-3">
+                                <i class="fas fa-save"></i>
+                            </span>
+                            Save
+                        </button>
+                        <button type="button" class="button is-secondary is-small" id="cancelButton" data-feedback-id="${feedbackId}">
+                            <span class="icon is-small mr-3">
+                                <i class="fas fa-times"></i>
+                            </span>
+                            Cancel
+                        </button>
+                    </div>
+                </form>
             `;
 
             $feedbackDiv.html(inputForm);
-            $feedbackDiv.attr("style", "display: flex;justify-content: space-between;align-items: center;gap: 10px; flex-direction: column;");
+            $feedbackDiv.attr("style", "display: block; padding: 15px;");
+
+            // Initialize file input for edit mode
+            initializeEditImageUpload(feedbackId);
+
+            // Handle existing attachment deletion
+            $feedbackDiv.find('.remove-existing-btn').on('click', function() {
+                var attachmentUrl = $(this).data('attachment-url');
+                var deletedInput = document.getElementById(`deletedAttachments_${feedbackId}`);
+                var currentDeleted = deletedInput.value ? deletedInput.value.split(',') : [];
+                currentDeleted.push(attachmentUrl);
+                deletedInput.value = currentDeleted.join(',');
+
+                $(this).closest('.existing-attachment').fadeOut(300, function() {
+                    $(this).remove();
+                });
+            });
 
             $(document).on('click', '#cancelButton', function() {
                 // Restore the original content
@@ -250,29 +344,223 @@
 
             $(document).on('click', '#saveButton', function() {
                 var newFeedbackTask = $feedbackDiv.find('#editFeedbackInput').val();
+                var formData = new FormData();
+
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                formData.append('task', newFeedbackTask);
+
+                // Add new images if any were selected
+                var fileInput = document.getElementById(`editImages_${feedbackId}`);
+                if (fileInput && fileInput.files.length > 0) {
+                    for (let i = 0; i < fileInput.files.length; i++) {
+                        formData.append('new_images', fileInput.files[i]);
+                    }
+                }
+
+                // Add deleted attachments data
+                var deletedInput = document.getElementById(`deletedAttachments_${feedbackId}`);
+                if (deletedInput && deletedInput.value) {
+                    formData.append('deleted_attachments', deletedInput.value);
+                }
 
                 $.ajax({
                     url: url + feedbackId + '/edit/',
                     method: 'POST',
-                    data: {
-                        'csrfmiddlewaretoken': '{{ csrf_token }}',
-                        'task': newFeedbackTask
-                    },
+                    data: formData,
+                    processData: false,
+                    contentType: false,
                     success: function(response) {
                         if (response.success) {
-                            $feedbackDiv.html(originalContent);
-                            $feedbackDiv.attr("style", "");
-                            $feedbackDiv.find('#feedbackTask').html(newFeedbackTask);
-                            $feedbackDiv.find('#editedOn').html(
-                                `&mdash; (edited)`
-                            );
+                            // Reload the page to show updated feedback with new attachments
+                            location.reload();
                         } else {
-                            alert('Failed to update feedback.');
+                            alert('Failed to update feedback: ' + (response.error || 'Unknown error'));
                         }
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Failed to update feedback: ' + error);
                     }
                 });
             });
         });
+
+        // Image upload functionality
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('id_images');
+        const selectBtn = document.getElementById('select-files-btn');
+        const previewArea = document.getElementById('image-preview');
+        let selectedFiles = [];
+
+        // Handle file selection button
+        selectBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Handle file input change
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // Handle drag and drop
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        function handleFiles(files) {
+            const validFiles = [];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+
+            Array.from(files).forEach(file => {
+                if (!validTypes.includes(file.type)) {
+                    alert(`File ${file.name} is not a valid image type. Only JPG, PNG, and GIF are allowed.`);
+                    return;
+                }
+
+                if (file.size > maxSize) {
+                    alert(`File ${file.name} is too large. Maximum size is 5MB.`);
+                    return;
+                }
+
+                validFiles.push(file);
+            });
+
+            if (validFiles.length > 0) {
+                selectedFiles = [...selectedFiles, ...validFiles];
+                updateFileInput();
+                updatePreview();
+            }
+        }
+
+        function updateFileInput() {
+            const dt = new DataTransfer();
+            selectedFiles.forEach(file => {
+                dt.items.add(file);
+            });
+            fileInput.files = dt.files;
+        }
+
+        function updatePreview() {
+            previewArea.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.alt = file.name;
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.innerHTML = '×';
+                removeBtn.type = 'button';
+                removeBtn.addEventListener('click', () => {
+                    removeFile(index);
+                });
+
+                previewItem.appendChild(img);
+                previewItem.appendChild(removeBtn);
+                previewArea.appendChild(previewItem);
+            });
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFileInput();
+            updatePreview();
+        }
+
+        // Initialize image upload for edit mode
+        function initializeEditImageUpload(feedbackId) {
+            const editFileInput = document.getElementById(`editImages_${feedbackId}`);
+            const editPreviewArea = document.getElementById(`editImagePreview_${feedbackId}`);
+            let editSelectedFiles = [];
+
+            if (editFileInput) {
+                editFileInput.addEventListener('change', (e) => {
+                    handleEditFiles(e.target.files, editSelectedFiles, editFileInput, editPreviewArea, feedbackId);
+                });
+            }
+        }
+
+        function handleEditFiles(files, selectedFiles, fileInput, previewArea, feedbackId) {
+            const validFiles = [];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+
+            Array.from(files).forEach(file => {
+                if (!validTypes.includes(file.type)) {
+                    alert(`File ${file.name} is not a valid image type. Only JPG, PNG, and GIF are allowed.`);
+                    return;
+                }
+
+                if (file.size > maxSize) {
+                    alert(`File ${file.name} is too large. Maximum size is 5MB.`);
+                    return;
+                }
+
+                validFiles.push(file);
+            });
+
+            if (validFiles.length > 0) {
+                selectedFiles.push(...validFiles);
+                updateEditFileInput(selectedFiles, fileInput);
+                updateEditPreview(selectedFiles, previewArea, feedbackId);
+            }
+        }
+
+        function updateEditFileInput(selectedFiles, fileInput) {
+            const dt = new DataTransfer();
+            selectedFiles.forEach(file => {
+                dt.items.add(file);
+            });
+            fileInput.files = dt.files;
+        }
+
+        function updateEditPreview(selectedFiles, previewArea, feedbackId) {
+            previewArea.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.alt = file.name;
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.innerHTML = '×';
+                removeBtn.type = 'button';
+                removeBtn.addEventListener('click', () => {
+                    removeEditFile(index, selectedFiles, document.getElementById(`editImages_${feedbackId}`), previewArea, feedbackId);
+                });
+
+                previewItem.appendChild(img);
+                previewItem.appendChild(removeBtn);
+                previewArea.appendChild(previewItem);
+            });
+        }
+
+        function removeEditFile(index, selectedFiles, fileInput, previewArea, feedbackId) {
+            selectedFiles.splice(index, 1);
+            updateEditFileInput(selectedFiles, fileInput);
+            updateEditPreview(selectedFiles, previewArea, feedbackId);
+        }
     })
     </script>
 {% endblock %}

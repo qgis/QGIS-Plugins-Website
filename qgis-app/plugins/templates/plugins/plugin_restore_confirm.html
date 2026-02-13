@@ -1,0 +1,25 @@
+{% extends 'plugins/plugin_base.html' %}{% load i18n %}
+{% block content %}
+    <h2 class="title is-4">{% trans "Restore plugin" %}: {{ plugin.title }}</h2>
+    <form action="" method="post">
+        {% csrf_token %}
+        <div class="notification is-info">
+            <p class="has-text-white">{% trans "You asked to restore the plugin. The plugin will be visible again in public lists. Please confirm." %}</p>
+        </div>
+        <div class="field is-grouped">
+            <p class="control">
+                <button type="submit" class="button is-success" name="restore_confirm">
+                    <span class="icon"><i class="fas fa-undo"></i></span>
+                    <span>{% trans "Restore" %}</span>
+                </button>
+            </p>
+            <p class="control">
+                <a class="button is-light" href="javascript:history.back()">
+                    <span class="icon"><i class="fas fa-times"></i></span>
+                    <span>{% trans "Cancel" %}</span>
+                </a>
+            </p>
+        </div>
+    </form>
+
+{% endblock %}

@@ -382,6 +382,7 @@ def validator(package, is_new: bool = False):
             metadata[metadata.index((flag, dict(metadata)[flag]))] = (
                 flag,
                 dict(metadata)[flag].lower() == "true"
+                or dict(metadata)[flag].lower() == "yes"
                 or dict(metadata)[flag].lower() == "1",
             )
 

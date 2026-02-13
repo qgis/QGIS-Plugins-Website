@@ -152,6 +152,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "plugins.tasks.get_sustaining_members.get_sustaining_members",
         "schedule": crontab(minute="*/30"),  # Execute every 30 minutes.
     },
+    "delete_marked_plugins": {
+        "task": "plugins.tasks.delete_marked_plugins.delete_marked_plugins",
+        "schedule": crontab(minute=0, hour=2),  # Execute every day at 2 AM.
+        "kwargs": {"days": 30},  # Delete items marked for 30+ days
+    },
 }
 # Set plugin token access and refresh validity to a very long duration
 SIMPLE_JWT = {
@@ -159,7 +164,7 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=365 * 1000),
 }
 
-MATOMO_SITE_ID = "1"
+MATOMO_SITE_ID = "2"
 MATOMO_URL = "//matomo.qgis.org/"
 
 # Default primary key type
@@ -279,6 +284,11 @@ REVIEW_MENU = [
         "name": "Awaiting Review",
         "url": "/plugins/feedback_pending/",
         "order": 2,
+    },
+    {
+        "name": "Awaiting Deletion",
+        "url": "/plugins/awaiting_deletion/",
+        "order": 3,
     },
 ]
 

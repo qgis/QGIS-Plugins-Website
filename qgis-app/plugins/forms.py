@@ -2,18 +2,34 @@
 import re
 
 from django import forms
-from django.contrib.auth.models import User
-from django.forms import CharField, ModelForm, ValidationError
+from django.forms import ModelForm, ValidationError
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from plugins.models import (
     Plugin,
     PluginOutstandingToken,
     PluginVersion,
-    PluginVersionFeedback,
 )
 from plugins.validator import validator
 from taggit.forms import TagField
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = single_file_clean(data, initial)
+        return result
 
 
 def _clean_tags(tags):
@@ -178,6 +194,67 @@ class PluginVersionForm(ModelForm):
         return super(PluginVersionForm, self).clean()
 
 
+class PluginCreateForm(forms.Form):
+    """
+    Form for creating an empty plugin (no versions yet).
+    Minimal fields - the rest will be populated from metadata.txt on first upload.
+    """
+
+    required_css_class = "required"
+    name = forms.CharField(
+        label=_("Plugin name"),
+        help_text=_("A display name for your plugin. It must be unique."),
+        max_length=256,
+    )
+    package_name = forms.CharField(
+        label=_("Package name"),
+        help_text=_(
+            "This must be the main plugin folder name inside your zip file. Use only ASCII letters, digits, '-' or '_'. This cannot be changed later."
+        ),
+        max_length=256,
+    )
+
+    def clean_package_name(self):
+        package_name = self.cleaned_data.get("package_name", "").strip()
+        if not re.match(r"^[A-Za-z][A-Za-z0-9-_]+$", package_name):
+            raise ValidationError(
+                _(
+                    "Package name must start with a letter and can contain only ASCII letters, digits, '-' or '_'."
+                )
+            )
+        existing = Plugin.objects.filter(package_name__iexact=package_name).first()
+        if existing:
+            raise ValidationError(
+                _("A plugin with a similar package name (%s) already exists.")
+                % existing.package_name
+            )
+        return package_name
+
+    def clean_name(self):
+        name = self.cleaned_data.get("name", "").strip()
+        existing = Plugin.objects.filter(name__iexact=name).first()
+        if existing:
+            raise ValidationError(
+                _("A plugin with a similar name (%s) already exists.") % existing.name
+            )
+        return name
+
+    def save(self, created_by, commit=True):
+        plugin = Plugin()
+        # Set all required fields first
+        plugin.created_by = created_by
+        plugin.author = created_by.get_full_name() or created_by.username
+        plugin.email = created_by.email or "noreply@example.com"
+        plugin.description = "Placeholder - will be updated on first version upload"
+        plugin.package_name = self.cleaned_data.get("package_name")
+        plugin.name = self.cleaned_data.get("name")
+
+        if commit:
+            # Skip model validation since we already validated in the form
+            plugin.save()
+        return plugin
+
+
 class PackageUploadForm(forms.Form):
     """
     Single step upload for new plugins
@@ -247,6 +324,32 @@ class VersionFeedbackForm(forms.Form):
             }
         )
     )
+
+    images = MultipleFileField(
+        required=False,
+        widget=MultipleFileInput(
+            attrs={"multiple": True, "accept": "image/*", "class": "file-input"}
+        ),
+        help_text=_("Upload images or GIFs to support your feedback (optional)"),
+    )
+
+    def clean_images(self):
+        images = self.cleaned_data.get("images")
+        if images:
+            # Handle both single file and list of files
+            if not isinstance(images, list):
+                images = [images] if images else []
+
+            for image in images:
+                # Validate file type
+                if not image.content_type.startswith("image/"):
+                    raise forms.ValidationError(_("Only image files are allowed."))
+                # Validate file size (max 5MB)
+                if image.size > 5 * 1024 * 1024:
+                    raise forms.ValidationError(
+                        _("Image file size must be less than 5MB.")
+                    )
+        return images
 
     def clean(self):
         super().clean()

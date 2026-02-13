@@ -1,12 +1,14 @@
-from django import template
-from PIL import Image, UnidentifiedImageError
-import xml.etree.ElementTree as ET
-import os.path
-from django.conf import settings
-from bs4 import BeautifulSoup
-import requests
 import datetime
 import json
+import os.path
+import xml.etree.ElementTree as ET
+from datetime import timedelta
+
+import requests
+from bs4 import BeautifulSoup
+from django import template
+from django.conf import settings
+from PIL import Image, UnidentifiedImageError
 
 register = template.Library()
 
@@ -14,6 +16,17 @@ register = template.Library()
 @register.filter("klass")
 def klass(ob):
     return ob.__class__.__name__
+
+
+@register.filter
+def add_days(value, days):
+    """Add days to a datetime value"""
+    if value is None:
+        return None
+    try:
+        return value + timedelta(days=int(days))
+    except (ValueError, TypeError):
+        return value
 
 
 @register.simple_tag(takes_context=True)
@@ -33,16 +46,18 @@ def plugin_title(context):
         title = context["page_title"]
     return title
 
+
 @register.filter
 def file_extension(value):
-    return value.split('.')[-1].lower()
+    return value.split(".")[-1].lower()
+
 
 @register.filter
 def is_image_valid(image):
     if not image:
         return False
     # Check if the file is an SVG by extension
-    if image.path.lower().endswith('.svg'):
+    if image.path.lower().endswith(".svg"):
         return _validate_svg(image.path)
     return _validate_image(image.path)
 
@@ -55,6 +70,7 @@ def _validate_svg(file_path):
     except (ET.ParseError, FileNotFoundError):
         return False
 
+
 def _validate_image(file_path):
     try:
         img = Image.open(file_path)
@@ -63,11 +79,15 @@ def _validate_image(file_path):
     except (FileNotFoundError, UnidentifiedImageError):
         return False
 
+
 @register.filter
 def feedbacks_not_completed(feedbacks):
     return feedbacks.filter(is_completed=False)
 
+
 PLUGINS_FRESH_DAYS = getattr(settings, "PLUGINS_FRESH_DAYS", 30)
+
+
 @register.filter
 def is_new(plugin, days=PLUGINS_FRESH_DAYS):
     """
@@ -75,7 +95,9 @@ def is_new(plugin, days=PLUGINS_FRESH_DAYS):
     Default is to check if the plugin was created within the last 30 days.
     """
     if plugin.created_on:
-        now = datetime.datetime.now(datetime.timezone.utc)  # Use timezone-aware datetime
+        now = datetime.datetime.now(
+            datetime.timezone.utc
+        )  # Use timezone-aware datetime
         created_on = plugin.created_on
 
         # Ensure created_on is timezone-aware
@@ -85,6 +107,7 @@ def is_new(plugin, days=PLUGINS_FRESH_DAYS):
         delta = now - created_on
         return delta.days <= days  # Returns True if within 'days', False otherwise
     return False
+
 
 # inspired by projecta <https://github.com/kartoza/prj.app>
 @register.simple_tag(takes_context=True)
@@ -99,17 +122,21 @@ def version_tag(context):
         context["version"] = "Unknown"
     return context["version"]
 
+
 @register.simple_tag
 def get_sustaining_members_section():
     """
     Get the Sustaining members HTML from the template file
     """
-    template_path = os.path.join(settings.SITE_ROOT, 'templates/flatpages/sustaining_members.html')
+    template_path = os.path.join(
+        settings.SITE_ROOT, "templates/flatpages/sustaining_members.html"
+    )
     try:
-        with open(template_path, 'r') as f:
+        with open(template_path, "r") as f:
             return f.read()
     except FileNotFoundError:
         return ""
+
 
 def _filter_menu(menu, user):
     """
@@ -117,12 +144,13 @@ def _filter_menu(menu, user):
     """
     filtered_menu = []
     for item in menu:
-        if item.get('requires_staff') and not user.is_staff:
+        if item.get("requires_staff") and not user.is_staff:
             continue
-        if item.get('requires_login') and not user.is_authenticated:
+        if item.get("requires_login") and not user.is_authenticated:
             continue
         filtered_menu.append(item)
     return filtered_menu
+
 
 @register.simple_tag()
 def get_navigation_menu(user):
@@ -132,6 +160,7 @@ def get_navigation_menu(user):
     menu = _filter_menu(settings.NAVIGATION_MENU, user)
     return menu
 
+
 @register.simple_tag()
 def get_news_menu():
     """
@@ -139,6 +168,7 @@ def get_news_menu():
     """
     menu = settings.NEWS_MENU
     return menu
+
 
 @register.simple_tag()
 def get_top_menu():
@@ -148,6 +178,7 @@ def get_top_menu():
     menu = settings.TOP_MENU
     return menu
 
+
 @register.simple_tag()
 def get_other_menu():
     """
@@ -155,6 +186,7 @@ def get_other_menu():
     """
     menu = settings.OTHER_MENU
     return menu
+
 
 @register.simple_tag()
 def get_review_menu():
@@ -164,12 +196,14 @@ def get_review_menu():
     menu = settings.REVIEW_MENU
     return menu
 
+
 @register.simple_tag()
 def get_site_url():
     """
     Get the site domain from the settings
     """
-    return settings.DEFAULT_PLUGINS_SITE.rstrip('/')
+    return settings.DEFAULT_PLUGINS_SITE.rstrip("/")
+
 
 @register.simple_tag()
 def get_navigation_config_url():
@@ -179,9 +213,13 @@ def get_navigation_config_url():
     """
 
     # Path to the original navigation.json
-    original_path = os.path.join(settings.SITE_ROOT, "static", "config", "navigation.json")
+    original_path = os.path.join(
+        settings.SITE_ROOT, "static", "config", "navigation.json"
+    )
     # Path to the new file with variables replaced
-    new_path = os.path.join(settings.SITE_ROOT, "static", "config", "navigation_rendered.json")
+    new_path = os.path.join(
+        settings.SITE_ROOT, "static", "config", "navigation_rendered.json"
+    )
 
     # Read the original file
     with open(original_path, "r") as f:
@@ -189,7 +227,9 @@ def get_navigation_config_url():
 
     # Replace the variable(s)
     new_qgis_major_version = settings.NEW_QGIS_MAJOR_VERSION
-    content = content.replace("{{ new_qgis_major_version }}", str(new_qgis_major_version))
+    content = content.replace(
+        "{{ new_qgis_major_version }}", str(new_qgis_major_version)
+    )
 
     # Optionally validate JSON
     try:
@@ -203,4 +243,6 @@ def get_navigation_config_url():
         f.write(content)
 
     # Return the URL to the new file
-    return os.path.join(settings.DEFAULT_PLUGINS_SITE, "static", "config", "navigation_rendered.json")
+    return os.path.join(
+        settings.DEFAULT_PLUGINS_SITE, "static", "config", "navigation_rendered.json"
+    )

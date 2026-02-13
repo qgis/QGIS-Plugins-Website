@@ -1,5 +1,6 @@
 {% extends 'plugins/plugin_base.html' %}{% load i18n %}
 {% load local_timezone %}
+{% load static %}
 {% block extrajs %}
 {{ block.super }}
 <script type="text/javascript">
@@ -66,7 +67,17 @@
     <div class="tabs is-toggle is-centered" id="versiontab">
         <ul>
             <li class="is-active" data-tab="1"><a href="#details-tab">{% trans "Details" %}</a></li>
-            <li data-tab="2"><a href="#manage-tab">{% trans "Manage" %}</a></li>
+            {% if user.is_staff or user in version.plugin.editors %}
+            <li data-tab="2"><a href="#security-tab">
+                <span>{% trans "Security Scan" %}</span>
+                {% if security_scan %}
+                <span class="tag ml-2 {{ scan_badge.class }}">
+                    {% if security_scan.overall_status == 'passed' %}✓{% elif security_scan.overall_status == 'critical' %}!{% else %}ℹ{% endif %}
+                </span>
+                {% endif %}
+            </a></li>
+            {% endif %}
+            <li data-tab="3"><a href="#manage-tab">{% trans "Manage" %}</a></li>
         </ul>
     </div>
 
@@ -147,6 +158,211 @@
                 </div>
             </div>
         </div>
+
+        {% if user.is_staff or user in version.plugin.editors %}
+        <div class="tab-pane" id="security-tab">
+
+            {% if security_scan %}
+
+                <!-- Important Notes -->
+                <div class="container rich">
+                    <div class="cont coloring-2 p-5">
+                        <h3>{% trans "Important Information" %}</h3>
+                        <p>
+                            <ul>
+                                <li>{% trans "These security checks are informational and do not block plugin upload." %}</li>
+                                <li>{% trans "Warnings and issues should be reviewed and addressed when possible to ensure plugin security and quality." %}</li>
+                                <li>{% trans "Critical issues may indicate security vulnerabilities that should be fixed immediately." %}</li>
+                                <li>{% trans "False positives may occur - review results in context of your plugin's functionality." %}</li>
+                                <li>
+                                    <a href="{% url 'docs_security_scanning' %}" target="_blank" class="has-text-weight-semibold">
+                                        <span class="icon-text">
+                                            <span class="icon"><i class="fas fa-book"></i></span>
+                                            <span>{% trans "Learn more about security scanning" %}</span>
+                                        </span>
+                                    </a>
+                                </li>
+                            </ul>
+
+                        </p>
+                    </div>
+                </div>
+
+                <h4 class="title is-5 mb-4">
+                    <span class="icon-text">
+                        <span class="icon"><i class="fas fa-shield-alt"></i></span>
+                        <span>{% trans "Security & Quality Scan Results" %}</span>
+                    </span>
+                </h4>
+                <!-- Scan Summary -->
+                <div class="notification {% if security_scan.overall_status == 'passed' %}is-success{% elif security_scan.overall_status == 'critical' %}is-danger{% elif security_scan.overall_status == 'warning' %}is-warning{% else %}is-info{% endif %} is-light mb-5">
+                    <div class="columns is-vcentered">
+                        <div class="column">
+                            <p class="is-size-5 has-text-weight-bold">
+                                {% if security_scan.overall_status == 'passed' %}
+                                    <span class="icon"><i class="fas fa-check-circle"></i></span>
+                                    {% trans "All security checks passed!" %}
+                                {% elif security_scan.overall_status == 'critical' %}
+                                    <span class="icon"><i class="fas fa-exclamation-circle"></i></span>
+                                    {% trans "Critical security issues found" %}
+                                {% elif security_scan.overall_status == 'warning' %}
+                                    <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
+                                    {% trans "Security warnings detected" %}
+                                {% else %}
+                                    <span class="icon"><i class="fas fa-info-circle"></i></span>
+                                    {% trans "Scan completed with informational items" %}
+                                {% endif %}
+                            </p>
+                            <p class="mt-2">{% trans "Scanned on" %}: {{ security_scan.scanned_on|local_timezone }}</p>
+                        </div>
+                        <div class="column is-narrow">
+                            <div class="is-size-3 has-text-weight-bold">
+                                {{ security_scan.pass_rate }}%
+                            </div>
+                            <p class="is-size-7 has-text-grey">{% trans "Pass Rate" %}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="columns is-multiline mb-5">
+                    <div class="column is-3-tablet">
+                        <div class="notification is-success has-text-centered">
+                            <p class="heading has-text-success-light has-text-weight-medium">{% trans "Passed" %}</p>
+                            <p class="title is-4">{{ security_scan.passed_checks }}</p>
+                        </div>
+                    </div>
+
+                    <div class="column is-3-tablet">
+                        <div class="notification is-info has-text-centered">
+                            <p class="heading has-text-info-light has-text-weight-medium">{% trans "Info Items" %}</p>
+                            <p class="title is-4">{{ security_scan.info_count }}</p>
+                        </div>
+                    </div>
+                    <div class="column is-3-tablet">
+                        <div class="notification is-warning has-text-centered">
+                            <p class="heading has-text-warning-light has-text-weight-medium">{% trans "Warnings" %}</p>
+                            <p class="title is-4">{{ security_scan.warning_count }}</p>
+                        </div>
+                    </div>
+                    <div class="column is-3-tablet">
+                        <div class="notification is-danger has-text-centered">
+                            <p class="heading has-text-danger-light has-text-weight-medium">{% trans "Critical" %}</p>
+                            <p class="title is-4">{{ security_scan.critical_count }}</p>
+                        </div>
+                    </div>
+                    <div class="column is-6-tablet">
+                        <div class="notification has-text-centered">
+                            <p class="heading has-text-weight-medium">{% trans "Files Scanned" %}</p>
+                            <p class="title is-5">{{ security_scan.files_scanned }}</p>
+                        </div>
+                    </div>
+                    <div class="column is-6-tablet">
+                        <div class="notification has-text-centered">
+                            <p class="heading has-text-weight-medium">{% trans "Total Issues" %}</p>
+                            <p class="title is-5">{{ security_scan.total_issues }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Check Results -->
+                <h5 class="title is-6 mb-3">{% trans "Detailed Check Results" %}</h5>
+
+                {% for check in security_scan.scan_report.checks %}
+                <div class="card mb-4">
+                    <header class="card-header {% if check.passed %}has-background-success-light{% elif check.severity == 'critical' %}has-background-danger-light{% elif check.severity == 'warning' %}has-background-warning-light{% else %}has-background-primary3-light{% endif %}">
+                        <p class="card-header-title">
+                            <span class="icon-text">
+                                <span class="icon">
+                                    {% if check.passed %}
+                                        <i class="fas fa-check-circle has-text-success"></i>
+                                    {% elif check.severity == 'critical' %}
+                                        <i class="fas fa-times-circle has-text-danger"></i>
+                                    {% elif check.severity == 'warning' %}
+                                        <i class="fas fa-exclamation-triangle has-text-warning-dark"></i>
+                                    {% else %}
+                                        <i class="fas fa-info-circle has-text-info"></i>
+                                    {% endif %}
+                                </span>
+                                <span>{{ check.name }}</span>
+                            </span>
+                        </p>
+                        <div class="card-header-icon">
+                            <span class="tag {% if check.passed %}is-success{% elif check.severity == 'critical' %}is-danger{% elif check.severity == 'warning' %}is-warning{% else %}is-info{% endif %}">
+                                {{ check.category|upper }}
+                            </span>
+                        </div>
+                    </header>
+                    <div class="card-content">
+                        <div class="content">
+                            <p>{{ check.description }}</p>
+
+                            <div class="columns is-mobile">
+                                <div class="column">
+                                    <span class="has-text-weight-semibold">{% trans "Files Checked" %}:</span> {{ check.files_checked }}
+                                </div>
+                                <div class="column">
+                                    <span class="has-text-weight-semibold">{% trans "Issues Found" %}:</span>
+                                    {% if check.issues_found > 0 %}
+                                        <span class="has-text-weight-bold {% if check.severity == 'critical' %}has-text-danger{% elif check.severity == 'warning' %}has-text-warning-dark{% endif %}">
+                                            {{ check.issues_found }}
+                                        </span>
+                                    {% else %}
+                                        <span class="has-text-success">0</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {% if check.details %}
+                                <details class="mt-3">
+                                    <summary class="is-clickable has-text-weight-semibold">
+                                        {% trans "View Details" %} ({{ check.details|length }} {% trans "items" %})
+                                    </summary>
+                                    <div class="mt-2" style="max-height: 300px; overflow-y: auto;">
+                                        {% for detail in check.details %}
+                                            <div class="notification is-light {% if check.severity == 'critical' %}is-danger{% elif check.severity == 'warning' %}is-warning{% else %}is-primary3{% endif %} mb-2 py-2 px-3">
+                                                {% if detail.file %}
+                                                    <p class="is-size-7">
+                                                        <span class="icon is-small"><i class="fas fa-file-code"></i></span>
+                                                        <strong>{{ detail.file }}</strong>
+                                                        {% if detail.line %}
+                                                            <span class="tag is-light ml-2">Line {{ detail.line }}</span>
+                                                        {% endif %}
+                                                    </p>
+                                                {% endif %}
+                                                <p class="is-size-7 mt-1">{{ detail.message }}</p>
+                                                {% if detail.code %}
+                                                    <pre class="is-size-7"><code>{{ detail.code }}</code></pre>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                        {% if check.issues_found > check.details|length %}
+                                            <p class="has-text-grey is-size-7 mt-2">
+                                                <em>{% trans "Showing first" %} {{ check.details|length }} {% trans "of" %} {{ check.issues_found }} {% trans "issues" %}</em>
+                                            </p>
+                                        {% endif %}
+                                    </div>
+                                </details>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+
+            {% else %}
+                <!-- No scan available -->
+                <div class="notification is-warning is-light">
+                    <p class="has-text-weight-semibold">
+                        <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
+                        {% trans "No security scan available for this version" %}
+                    </p>
+                    <p class="mt-2">{% trans "This version was uploaded before security scanning was implemented, or the scan failed. Please contact an administrator if you'd like to request a scan." %}</p>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
         <div class="tab-pane" id="manage-tab">
             <h4 class="title is-6 mb-2">{% trans "Version management"%}</h4>
             {% if user.is_staff or user in version.plugin.editors %}
@@ -214,17 +430,4 @@
 
 </div>
 
-{% endblock %}
-
-{% block extracss %}
-{{ block.super }}
-<style>
-    .tab-content .tab-pane.is-active {
-        display: block;
-    }
-
-    .tab-content .tab-pane {
-        display: none;
-    }
-</style>
 {% endblock %}

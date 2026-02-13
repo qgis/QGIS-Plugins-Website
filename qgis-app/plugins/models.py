@@ -32,12 +32,15 @@ class BasePluginManager(models.Manager):
     most recent approved plugin version.
     * weighted_rating uses the Bayesian Average formula
     to provide a more balanced rating that mitigates the effect of low vote counts.
+
+    Excludes soft-deleted plugins by default.
     """
 
     def get_queryset(self):
         return (
             super(BasePluginManager, self)
             .get_queryset()
+            .filter(is_deleted=False)
             .extra(
                 select={
                     "average_vote": "rating_score / (rating_votes + 0.001)",
@@ -327,6 +330,7 @@ class ServerPlugins(ApprovedPlugins):
 class FeedbackCompletedPlugins(models.Manager):
     """
     Show only unapproved plugins with resolved feedbacks
+    Excludes soft-deleted plugins.
     """
 
     def get_queryset(self):
@@ -349,6 +353,7 @@ class FeedbackCompletedPlugins(models.Manager):
         return (
             super(FeedbackCompletedPlugins, self)
             .get_queryset()
+            .filter(is_deleted=False)
             .annotate(latest_version_approved=Subquery(latest_version_subquery))
             .filter(latest_version_approved=False, deprecated=False)
             .annotate(
@@ -378,6 +383,7 @@ class FeedbackCompletedPlugins(models.Manager):
 class FeedbackReceivedPlugins(models.Manager):
     """
     Show only unapproved plugins with a pending feedback
+    Excludes soft-deleted plugins.
     """
 
     def get_queryset(self):
@@ -393,7 +399,11 @@ class FeedbackReceivedPlugins(models.Manager):
         return (
             super(FeedbackReceivedPlugins, self)
             .get_queryset()
-            .filter(pluginversion__approved=False, deprecated=False)
+            .filter(
+                pluginversion__approved=False,
+                deprecated=False,
+                is_deleted=False,
+            )
             .annotate(received_feedback_count=Subquery(feedback_count_subquery))
             .filter(received_feedback_count__gte=1)
             .extra(
@@ -418,13 +428,18 @@ class FeedbackReceivedPlugins(models.Manager):
 class FeedbackPendingPlugins(models.Manager):
     """
     Show only unapproved plugins with a feedback
+    Excludes soft-deleted plugins.
     """
 
     def get_queryset(self):
         return (
             super(FeedbackPendingPlugins, self)
             .get_queryset()
-            .filter(pluginversion__approved=False, deprecated=False)
+            .filter(
+                pluginversion__approved=False,
+                deprecated=False,
+                is_deleted=False,
+            )
             .annotate(
                 total_feedback_count=Count("pluginversion__feedback"),
             )
@@ -529,6 +544,22 @@ class Plugin(models.Model):
     # Flags
     featured = models.BooleanField(_("Featured"), default=False, db_index=True)
     deprecated = models.BooleanField(_("Deprecated"), default=False, db_index=True)
+
+    # Soft delete fields
+    is_deleted = models.BooleanField(
+        _("Marked for deletion"),
+        default=False,
+        db_index=True,
+        help_text=_(
+            "Plugin marked for deletion. Will be permanently deleted after one month."
+        ),
+    )
+    deleted_on = models.DateTimeField(
+        _("Deleted on"),
+        null=True,
+        blank=True,
+        help_text=_("Date when the plugin was marked for deletion"),
+    )
 
     # True if the plugin has a server interface
     server = models.BooleanField(
@@ -718,7 +749,7 @@ class Plugin(models.Model):
 
 class ApprovedPluginVersions(models.Manager):
     """
-    Shows only public plugin versions:
+    Shows only public plugin versions.
     """
 
     def get_queryset(self):
@@ -1060,14 +1091,45 @@ class PluginVersionFeedback(models.Model):
     )
 
     class Meta:
-        ordering = ["created_on"]
+        verbose_name = _("Plugin Version Feedback")
+        verbose_name_plural = _("Plugin Version Feedbacks")
 
     def save(self, *args, **kwargs):
         if self.is_completed is True:
-            self.completed_on = datetime.datetime.now()
+            self.completed_on = timezone.now()
         else:
             self.completed_on = None
         super(PluginVersionFeedback, self).save(*args, **kwargs)
+
+
+class PluginVersionFeedbackAttachment(models.Model):
+    """Image attachments for feedback."""
+
+    feedback = models.ForeignKey(
+        PluginVersionFeedback, on_delete=models.CASCADE, related_name="attachments"
+    )
+    image = models.ImageField(
+        verbose_name=_("Image"),
+        upload_to=PLUGINS_STORAGE_PATH,
+        help_text=_("Upload screenshots or images to support your feedback"),
+    )
+    caption = models.CharField(
+        verbose_name=_("Caption"),
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Optional caption for the image"),
+    )
+    created_on = models.DateTimeField(
+        verbose_name=_("Created on"), auto_now_add=True, editable=False
+    )
+
+    class Meta:
+        verbose_name = _("Feedback Attachment")
+        verbose_name_plural = _("Feedback Attachments")
+
+    def __str__(self):
+        return f"Attachment for {self.feedback}"
 
 
 def delete_version_package(sender, instance, **kw):
@@ -1085,7 +1147,17 @@ def delete_plugin_icon(sender, instance, **kw):
     Removes the plugin icon
     """
     try:
-        os.remove(instance.icon.path)
+        instance.icon.delete(False)
+    except:
+        pass
+
+
+def delete_feedback_attachment(sender, instance, **kw):
+    """
+    Removes the feedback attachment image
+    """
+    try:
+        instance.image.delete(False)
     except:
         pass
 
@@ -1110,5 +1182,66 @@ class PluginVersionDownload(models.Model):
         )
 
 
+class PluginVersionSecurityScan(models.Model):
+    """
+    Security and quality scan results for plugin versions
+    Stores non-blocking security, quality, and code analysis results
+    """
+
+    plugin_version = models.OneToOneField(
+        PluginVersion, on_delete=models.CASCADE, related_name="security_scan"
+    )
+    scanned_on = models.DateTimeField(
+        _("Scanned on"), auto_now_add=True, editable=False
+    )
+
+    # Summary statistics
+    total_checks = models.IntegerField(_("Total checks"), default=0)
+    passed_checks = models.IntegerField(_("Passed checks"), default=0)
+    warning_count = models.IntegerField(_("Warnings"), default=0)
+    critical_count = models.IntegerField(_("Critical issues"), default=0)
+    info_count = models.IntegerField(_("Info items"), default=0)
+    files_scanned = models.IntegerField(_("Files scanned"), default=0)
+    total_issues = models.IntegerField(_("Total issues"), default=0)
+
+    # Full scan report (JSON field)
+    scan_report = models.JSONField(
+        _("Scan report"),
+        default=dict,
+        blank=True,
+        help_text=_("Complete scan report with all check details"),
+    )
+
+    class Meta:
+        verbose_name = _("Plugin Version Security Scan")
+        verbose_name_plural = _("Plugin Version Security Scans")
+        ordering = ["-scanned_on"]
+
+    def __str__(self):
+        return f"Security scan for {self.plugin_version} ({self.scanned_on})"
+
+    @property
+    def overall_status(self):
+        """Returns overall scan status"""
+        if self.critical_count > 0:
+            return "critical"
+        elif self.warning_count > 0:
+            return "warning"
+        elif self.info_count > 0:
+            return "info"
+        else:
+            return "passed"
+
+    @property
+    def pass_rate(self):
+        """Calculate percentage of passed checks"""
+        if self.total_checks == 0:
+            return 0
+        return round((self.passed_checks / self.total_checks) * 100, 1)
+
+
 models.signals.post_delete.connect(delete_version_package, sender=PluginVersion)
 models.signals.post_delete.connect(delete_plugin_icon, sender=Plugin)
+models.signals.post_delete.connect(
+    delete_feedback_attachment, sender=PluginVersionFeedbackAttachment
+)
