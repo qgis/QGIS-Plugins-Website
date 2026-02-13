@@ -80,40 +80,36 @@
                             {% endif %}
                         {% endif %}
                     {% endfor %}
+                    {% if user.is_authenticated %}
+                        <div class="navbar-item has-dropdown is-hoverable p-0">
+                            <a href="#" class="navbar-link has-text-weight-semibold is-size-7">
+                                <i class="fas fa-user mr-3"></i>
+                                {{ user.get_full_name|default:user.username }}
+                            </a>
+                            <div class="navbar-dropdown">
+                                <a href='{% url "logout" %}' class="navbar-item has-text-weight-semibold is-size-7">
+                                    {% trans "Logout" %}
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                    <a class="navbar-item has-text-weight-semibold is-size-7" href="/accounts/login/">
+                        <span class="mr-2">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </span>
+                        <span>
+                            {% trans "Login" %}
+                        </span>
+                    </a>
+                    {% endif %}
 
                 </div>
                 <div class="navbar-end">
-                    <div>
-                        <div class="control has-icons-right search-control">
-                            <form action="{% url "haystack_search" %}" method="get" style="margin:0;">
-                                <input class="input is-small"  id="id_q" name="q" type="text" placeholder="Search">
-                                <span class="icon is-right"><i class="fa-solid fa-magnifying-glass"></i></span>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="navbar-item p-0 ml-1">
-                        {% if user.is_authenticated %}
-                            <div class="navbar-item has-dropdown is-hoverable p-0">
-                                <a href="#" class="navbar-link has-text-weight-semibold is-size-7">
-                                    <i class="fas fa-user mr-3"></i>
-                                    {{ user.get_full_name|default:user.username }}
-                                </a>
-                                <div class="navbar-dropdown">
-                                    <a href='{% url "logout" %}' class="navbar-item has-text-weight-semibold is-size-7">{% trans "Logout" %}</a>
-                                </div>
-                            </div>
-                        {% else %}
-                        <a class="button is-info is-small" href="{% url "login" %}">
-                            <span class="mr-2">
-                                <i class="fas fa-sign-in-alt"></i>
-                            </span>
-                            <span>
-                                {% trans "Login" %}
-                            </span>
-                        </a>
-                        {% endif %}
-                        {% block navigation_extra %}
-                        {% endblock %}
+                    <div class="control has-icons-right search-control">
+                        <form action="{% url "haystack_search" %}" method="get" style="margin:0;">
+                            <input class="input is-small"  id="id_q" name="q" type="text" placeholder="Search">
+                            <span class="icon is-right"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        </form>
                     </div>
                 </div>
             </div>
