@@ -651,6 +651,36 @@ def plugin_upload(request):
     return render(request, "plugins/plugin_upload.html", {"form": form})
 
 
+@login_required
+def plugin_create_empty(request):
+    """
+    Create a new plugin entry without any versions.
+    """
+    if request.method == "POST":
+        form = PluginCreateForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                plugin = form.save(created_by=request.user)
+                plugin_notify(plugin)
+                messages.success(
+                    request,
+                    _(
+                        "The plugin has been created without any versions. You can now generate a token and upload a version."
+                    ),
+                    fail_silently=True,
+                )
+                return HttpResponseRedirect(
+                    reverse("plugin_detail", args=(plugin.package_name,))
+                )
+            except (IntegrityError, ValidationError, DjangoUnicodeDecodeError) as e:
+                connection.close()
+                messages.error(request, str(e), fail_silently=True)
+    else:
+        form = PluginCreateForm()
+
+    return render(request, "plugins/plugin_create_empty.html", {"form": form})
+
+
 class PluginDetailView(DetailView):
     model = Plugin
     queryset = Plugin.objects.all()

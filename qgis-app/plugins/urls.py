@@ -25,6 +25,7 @@ urlpatterns = [
     ),
     url(r"^tags/(?P<tags>[^\/]+)/$", TagsPluginsList.as_view(), name="tags_plugins"),
     url(r"^add/$", plugin_upload, {}, name="plugin_upload"),
+    url(r"^add-empty/$", plugin_create_empty, {}, name="plugin_create_empty"),
     url(r"^user/(?P<username>\w+)/block/$", user_block, {}, name="user_block"),
     url(r"^user/(?P<username>\w+)/unblock/$", user_unblock, {}, name="user_unblock"),
     url(r"^user/(?P<username>\w+)/trust/$", user_trust, {}, name="user_trust"),

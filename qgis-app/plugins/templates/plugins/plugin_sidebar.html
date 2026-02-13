@@ -1,12 +1,20 @@
 {% load i18n plugins_tagcloud simplemenu_tags static plugin_utils %}
 <nav id="sidebar" class="sidebar">
   <ul class="content-wrapper">
-    <li>
-      <a class="button is-success is-medium" href="{% url "plugin_upload" %}">
-        <i class="fas fa-upload"></i>
-        {% trans "Upload a plugin" %}
+    <div class="buttons mb-0">
+      <a class="button is-success is-fullwidth" href="{% url "plugin_upload" %}">
+        <span class="icon">
+          <i class="fas fa-upload"></i>
+        </span>
+        <span>{% trans "Upload a plugin" %}</span>
       </a>
-    </li>
+      <a class="button is-success is-outlined is-fullwidth" href="{% url "plugin_create_empty" %}">
+        <span class="icon">
+          <i class="fas fa-plus"></i>
+        </span>
+        <span>{% trans "Create empty plugin" %}</span>
+      </a>
+    </div>
     <hr/>
 
     {% get_navigation_menu user as menu %}
