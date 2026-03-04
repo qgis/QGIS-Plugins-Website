@@ -560,7 +560,6 @@ def plugin_upload(request):
                     "approved": request.user.has_perm("plugins.can_approve")
                     or plugin.approved,
                     "experimental": form.cleaned_data.get("experimental", False),
-                    "supports_qt6": form.cleaned_data.get("supportsQt6", False),
                     "changelog": form.cleaned_data.get("changelog", ""),
                     "external_deps": form.cleaned_data.get("external_deps", ""),
                 }
@@ -2311,39 +2310,16 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
         version_filters.update(
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
-        # For QGIS 4.x, only include plugins that support Qt6
-        # and have min_qg_version >= 3.0. This has been set automatically
-        # if it was not defined by the plugin author in the plugin metadata.
-        # See: https://github.com/qgis/QGIS-Plugins-Website/issues/181
-        # and https://github.com/qgis/QGIS-Plugins-Website/issues/185
-        if qg_version.split(".")[0] == "004":
-            filters.update({"pluginversion__supports_qt6": True})
-            version_filters.update({"supports_qt6": True})
-            filters.update(
-                {
-                    "pluginversion__min_qg_version__gte": vjust(
-                        "3.0", fillchar="0", level=2, force_zero=True
-                    )
-                }
-            )
-            version_filters.update(
-                {
-                    "min_qg_version__gte": vjust(
-                        "3.0", fillchar="0", level=2, force_zero=True
-                    )
-                }
-            )
-        else:
-            filters.update(
-                {
-                    "pluginversion__max_qg_version__gte": _add_patch_version(
-                        qg_version, "0"
-                    )
-                }
-            )
-            version_filters.update(
-                {"max_qg_version__gte": _add_patch_version(qg_version, "0")}
-            )
+        filters.update(
+            {
+                "pluginversion__max_qg_version__gte": _add_patch_version(
+                    qg_version, "0"
+                )
+            }
+        )
+        version_filters.update(
+            {"max_qg_version__gte": _add_patch_version(qg_version, "0")}
+        )
 
     # Get all versions for the given plugin)
     if package_name:
@@ -2462,39 +2438,16 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
         version_filters.update(
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
-        # For QGIS 4.x, only include plugins that support Qt6
-        # and have min_qg_version >= 3.0. This has been set automatically
-        # if it was not defined by the plugin author in the plugin metadata.
-        # See: https://github.com/qgis/QGIS-Plugins-Website/issues/181
-        # and https://github.com/qgis/QGIS-Plugins-Website/issues/185
-        if qg_version.split(".")[0] == "004":
-            filters.update({"pluginversion__supports_qt6": True})
-            version_filters.update({"supports_qt6": True})
-            filters.update(
-                {
-                    "pluginversion__min_qg_version__gte": vjust(
-                        "3.0", fillchar="0", level=2, force_zero=True
-                    )
-                }
-            )
-            version_filters.update(
-                {
-                    "min_qg_version__gte": vjust(
-                        "3.0", fillchar="0", level=2, force_zero=True
-                    )
-                }
-            )
-        else:
-            filters.update(
-                {
-                    "pluginversion__max_qg_version__gte": _add_patch_version(
-                        qg_version, "0"
-                    )
-                }
-            )
-            version_filters.update(
-                {"max_qg_version__gte": _add_patch_version(qg_version, "0")}
-            )
+        filters.update(
+            {
+                "pluginversion__max_qg_version__gte": _add_patch_version(
+                    qg_version, "0"
+                )
+            }
+        )
+        version_filters.update(
+            {"max_qg_version__gte": _add_patch_version(qg_version, "0")}
+        )
 
     # Get all versions for the given plugin
     if package_name:
@@ -2533,26 +2486,7 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
             OR "auth_user"."is_superuser" = True))
         """
 
-        # Check if QGIS version is 4.x
-        is_qgis_4 = qg_version.split(".")[0] == "004"
-
-        if is_qgis_4:
-            # For QGIS 4.x, only include plugins that support Qt6 and have min_qg_version >= 3.0
-            sql = """
-            SELECT DISTINCT ON (pv.plugin_id) pv.*,
-            pv.created_by_id IN %(trusted_users_ids)s AS is_trusted
-                FROM %(pv_table)s pv
-                WHERE (
-                    pv.approved = True
-                    AND pv."min_qg_version" <= '%(qg_version_with_patch_99)s'
-                    AND pv."min_qg_version" >= '%(min_qg_version_3_0)s'
-                    AND pv.supports_qt6 = True
-                    AND pv.experimental = %(experimental)s
-                )
-                ORDER BY pv.plugin_id, pv.version DESC
-            """
-        else:
-            sql = """
+        sql = """
             SELECT DISTINCT ON (pv.plugin_id) pv.*,
             pv.created_by_id IN %(trusted_users_ids)s AS is_trusted
                 FROM %(pv_table)s pv
@@ -2573,11 +2507,6 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
             "experimental": "False",
             "trusted_users_ids": str(trusted_users_ids),
         }
-
-        if is_qgis_4:
-            sql_params["min_qg_version_3_0"] = vjust(
-                "3.0", fillchar="0", level=2, force_zero=True
-            )
 
         object_list_new = PluginVersion.objects.raw(sql % sql_params)
 

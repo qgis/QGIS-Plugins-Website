@@ -130,9 +130,6 @@ def plugin_upload(package, **kwargs):
             version_data["changelog"] = cleaned_data.get("changelog")
         if cleaned_data.get("qgisMaximumVersion"):
             version_data["max_qg_version"] = cleaned_data.get("qgisMaximumVersion")
-        if cleaned_data.get("supportsQt6"):
-            version_data["supports_qt6"] = cleaned_data.get("supportsQt6")
-
         new_version = PluginVersion(**version_data)
         new_version.clean()
         new_version.save()
