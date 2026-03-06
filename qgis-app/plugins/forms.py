@@ -189,8 +189,6 @@ class PluginVersionForm(ModelForm):
         self.instance.changelog = self.cleaned_data.get("changelog")
         if "experimental" in self.cleaned_data:
             self.instance.experimental = self.cleaned_data.get("experimental")
-        if "supportsQt6" in self.cleaned_data:
-            self.instance.supports_qt6 = self.cleaned_data.get("supportsQt6")
         return super(PluginVersionForm, self).clean()
 
 

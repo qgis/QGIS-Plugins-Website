@@ -47,13 +47,12 @@ PLUGIN_OPTIONAL_METADATA = getattr(
         "experimental",
         "external_deps",
         "server",
-        "supportsQt6",
     ),
 )
 PLUGIN_BOOLEAN_METADATA = getattr(
     settings,
     "PLUGIN_BOOLEAN_METADATA",
-    ("experimental", "deprecated", "server", "supportsQt6"),
+    ("experimental", "deprecated", "server"),
 )
 
 
