@@ -375,6 +375,10 @@ def validator(package, is_new: bool = False):
 
     metadata.append(("icon_file", icon_file))
 
+    # Check for deprecated supportsQt6 flag
+    if "supportsQt6" in dict(metadata):
+        metadata.append(("supportsQt6_deprecated", True))
+
     # Transforms booleans flags (experimental)
     for flag in PLUGIN_BOOLEAN_METADATA:
         if flag in dict(metadata):
@@ -459,7 +463,7 @@ def validator(package, is_new: bool = False):
     checked_metadata = []
     for k, v in metadata:
         try:
-            if not (k in PLUGIN_BOOLEAN_METADATA or k == "icon_file"):
+            if not (k in PLUGIN_BOOLEAN_METADATA or k in ("icon_file", "supportsQt6_deprecated")):
                 # v.decode('UTF-8')
                 checked_metadata.append((k, v.strip()))
             else:

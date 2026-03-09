@@ -110,6 +110,30 @@
 		  {% endif %}
 		</div>
 	</div>
+	{% if show_qgis4_migration_notice %}
+	<div class="notification is-warning is-light mb-4">
+		<span class="icon-text">
+			<span class="icon"><i class="fas fa-info-circle"></i></span>
+			<span><strong>{% trans "Is your plugin missing from this list?" %}</strong></span>
+		</span>
+		<p class="mt-2">
+			{% blocktrans trimmed %}
+			The <code>supportsQt6</code> metadata flag is <strong>deprecated</strong> and no longer used to
+			determine QGIS 4 compatibility. Plugins are now listed here based on their
+			<code>qgisMaximumVersion</code> field — plugins with <code>qgisMaximumVersion &ge; 4.0</code>
+			are considered compatible with QGIS 4.
+			{% endblocktrans %}
+		</p>
+		<p class="mt-1">
+			{% url 'docs_migrate_qgis4' as migrate_url %}
+			{% blocktrans trimmed with migrate_url=migrate_url %}
+			If your plugin is not listed, please update your <code>metadata.txt</code> and set
+			<code>qgisMaximumVersion = 4.99</code> (or higher).
+			See our <a href="{{ migrate_url }}"><strong>Migrate to QGIS 4</strong></a> guide for full instructions.
+			{% endblocktrans %}
+		</p>
+	</div>
+	{% endif %}
 	{# Filtered views menu #}
 	{% if object_list.count %}
 	<div class="mt-3 is-flex is-justify-content-space-between is-flex-wrap-wrap">

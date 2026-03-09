@@ -1,0 +1,142 @@
+{% extends 'flatpages/docs.html' %}
+{% load i18n %}
+
+{% block content %}
+<div class="responsive-content">
+  <h4>{% trans "Migrate Your Plugin to QGIS 4" %}</h4>
+
+  <div class="notification is-info is-light">
+    <span class="icon-text">
+      <span class="icon"><i class="fas fa-info-circle"></i></span>
+      <span><strong>{% trans "TL;DR" %}</strong></span>
+    </span>
+    <p class="mt-1">
+      {% blocktrans trimmed %}
+      To make your plugin appear in the
+      <a href="/plugins/new_qgis_ready/">QGIS 4 Ready Plugins</a> list, simply set
+      <code>qgisMaximumVersion=4.99</code> (or higher) in your <code>metadata.txt</code>
+      and remove the deprecated <code>supportsQt6</code> flag.
+      {% endblocktrans %}
+    </p>
+  </div>
+
+  <h5>{% trans "Background" %}</h5>
+  <p>
+    {% blocktrans trimmed %}
+    During the QGIS 4 pre-release period, a temporary metadata flag called
+    <code>supportsQt6</code> was introduced to let plugin authors signal that their plugin
+    was compatible with Qt 6 and QGIS 4. Plugin authors were encouraged to add
+    <code>supportsQt6=True</code> to their <code>metadata.txt</code>.
+    {% endblocktrans %}
+  </p>
+  <p>
+    {% blocktrans trimmed %}
+    Following the changes described in
+    <a href="https://github.com/qgis/QGIS/pull/65146" target="_blank" rel="noopener">qgis/QGIS#65146</a>
+    and <a href="https://github.com/qgis/QGIS/pull/65168" target="_blank" rel="noopener">qgis/QGIS#65168</a>,
+    the <code>supportsQt6</code> flag has been <strong>removed from QGIS core</strong> and is
+    <strong>no longer recognised</strong>. Declaring <code>supportsQt6=True</code> in your metadata has
+    no effect and plugins that relied solely on this flag to appear in the QGIS 4 plugin list have been
+    removed from that list.
+    {% endblocktrans %}
+  </p>
+
+  <h5>{% trans "The New Rule: qgisMaximumVersion" %}</h5>
+  <p>
+    {% blocktrans trimmed %}
+    QGIS 4 compatibility is now determined exclusively by the <code>qgisMaximumVersion</code> field
+    in <code class="is-size-7 has-text-weight-semibold">metadata.txt</code>. A plugin version is shown in the
+    <a href="/plugins/new_qgis_ready/">QGIS 4 Ready Plugins</a> list when
+    <code>qgisMaximumVersion &ge; 4.0</code>.
+    {% endblocktrans %}
+  </p>
+  <p>{% trans "Examples:" %}</p>
+  <div class="content">
+    <ul>
+      <li>
+        <code>qgisMinimumVersion=3.22</code>, <code>qgisMaximumVersion=4.99</code>
+        &rarr; {% trans "Listed for QGIS 3.22+ <strong>and</strong> QGIS 4.x" %}
+      </li>
+      <li>
+        <code>qgisMinimumVersion=4.0</code>, <code>qgisMaximumVersion=4.99</code>
+        &rarr; {% trans "Listed for QGIS 4.x only" %}
+      </li>
+      <li>
+        <code>qgisMinimumVersion=3.22</code>, <code>qgisMaximumVersion=3.99</code>
+        &rarr; {% trans "Not listed (QGIS 3 only)" %}
+      </li>
+    </ul>
+  </div>
+
+  <h5>{% trans "How to Update Your Plugin" %}</h5>
+  <div class="content">
+    <ol>
+      <li>
+        <strong>{% trans "Update metadata.txt" %}</strong>
+        <p>{% trans "Open your <code>metadata.txt</code> and make the following changes:" %}</p>
+        <pre><code>[general]
+# Set qgisMaximumVersion to cover QGIS 4.x
+qgisMaximumVersion=4.99
+
+# Remove or delete this line — it is no longer used:
+# supportsQt6=True</code></pre>
+      </li>
+      <li>
+        <strong>{% trans "Verify Qt 6 / PyQGIS 4 compatibility" %}</strong>
+        <p>
+          {% blocktrans trimmed %}
+          Before bumping <code>qgisMaximumVersion</code>, make sure your plugin actually works
+          with QGIS 4. Key things to check:
+          {% endblocktrans %}
+        </p>
+        <div class="content">
+          <ul>
+            <li>{% trans "Replace any deprecated Qt 5-only APIs with their Qt 6 equivalents." %}</li>
+            <li>{% trans "Replace <code>PyQt5</code> imports with <code>PyQt6</code> (or use the QGIS-provided compatibility shim)." %}</li>
+            <li>{% trans "Test your plugin with a QGIS 4 nightly or release build." %}</li>
+          </ul>
+        </div>
+      </li>
+      <li>
+        <strong>{% trans "Upload a new version" %}</strong>
+        <p>
+          {% blocktrans trimmed %}
+          Upload the updated plugin package on the
+          <a href="/plugins/">QGIS Plugins repository</a>.
+          Your plugin will appear in the
+          <a href="/plugins/new_qgis_ready/">QGIS 4 Ready Plugins</a> list once the upload
+          is approved.
+          {% endblocktrans %}
+        </p>
+      </li>
+    </ol>
+  </div>
+
+  <h5>{% trans "Further Reading" %}</h5>
+  <div class="content">
+    <ul>
+      <li>
+        <a href="https://github.com/qgis/QGIS/wiki/Plugin-migration-to-be-compatible-with-Qt5-and-Qt6"
+           target="_blank" rel="noopener">
+          {% trans "QGIS Wiki: Plugin migration to be compatible with Qt5 and Qt6" %}
+        </a>
+      </li>
+      <li>
+        <a href="https://github.com/qgis/QGIS/pull/65146" target="_blank" rel="noopener">
+          {% trans "GitHub PR #65146 – Remove supportsQt6 from QGIS core" %}
+        </a>
+      </li>
+      <li>
+        <a href="https://github.com/qgis/QGIS-Documentation/pull/10804" target="_blank" rel="noopener">
+          {% trans "QGIS Documentation PR #10804 – Remove outdated supportsQt6 references" %}
+        </a>
+      </li>
+      <li>
+        <a href="https://plugins.qgis.org/plugins/new_qgis_ready/">
+          {% trans "QGIS 4 Ready Plugins list" %}
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

@@ -8,7 +8,7 @@ from django.urls import include, path
 from django.urls import re_path as url
 from django.views.generic.base import RedirectView
 from django.views.static import serve
-from docs import docs_approval, docs_faq, docs_publish, docs_security_scanning
+from docs import docs_approval, docs_faq, docs_migrate_qgis4, docs_publish, docs_security_scanning
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 
@@ -83,6 +83,11 @@ urlpatterns += [
         r"^docs/security-scanning",
         docs_security_scanning,
         name="docs_security_scanning",
+    ),
+    url(
+        r"^docs/migrate-qgis4",
+        docs_migrate_qgis4,
+        name="docs_migrate_qgis4",
     ),
 ]
 

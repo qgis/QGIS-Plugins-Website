@@ -638,6 +638,23 @@ def plugin_upload(request):
                     )
                     del form.cleaned_data["multiple_parent_folders"]
 
+                if form.cleaned_data.get("supportsQt6_deprecated"):
+                    messages.warning(
+                        request,
+                        mark_safe(
+                            _(
+                                "The <code>supportsQt6</code> flag in your plugin metadata is deprecated "
+                                "and is no longer used. QGIS 4 compatibility is now determined solely by "
+                                "the <code>qgisMaximumVersion</code> field. Please set "
+                                "<code>qgisMaximumVersion</code> to <code>4.99</code> (or higher) and "
+                                "remove <code>supportsQt6</code> from your metadata. "
+                                'See the <a href="/docs/migrate-qgis4">Migrate to QGIS 4</a> guide for more details.'
+                            )
+                        ),
+                        fail_silently=True,
+                    )
+                    del form.cleaned_data["supportsQt6_deprecated"]
+
             except (IntegrityError, ValidationError, DjangoUnicodeDecodeError) as e:
                 connection.close()
                 messages.error(request, e, fail_silently=True)
@@ -1633,6 +1650,29 @@ def _version_create(request, plugin, version):
                         )
                     del form.cleaned_data["multiple_parent_folders"]
 
+                if form.cleaned_data.get("supportsQt6_deprecated"):
+                    qt6_warning_msg = mark_safe(
+                        _(
+                            "The <code>supportsQt6</code> flag in your plugin metadata is deprecated "
+                            "and is no longer used. QGIS 4 compatibility is now determined solely by "
+                            "the <code>qgisMaximumVersion</code> field. Please set "
+                            "<code>qgisMaximumVersion</code> to <code>4.99</code> (or higher) and "
+                            "remove <code>supportsQt6</code> from your metadata. "
+                            'See the <a href="/docs/migrate-qgis4">Migrate to QGIS 4</a> guide for more details.'
+                        )
+                    )
+                    response_data["warnings"] = response_data.get("warnings", [])
+                    response_data["warnings"].append(
+                        "The supportsQt6 flag is deprecated. See /docs/migrate-qgis4 for details."
+                    )
+                    if not is_api_request:
+                        messages.warning(
+                            request,
+                            qt6_warning_msg,
+                            fail_silently=True,
+                        )
+                    del form.cleaned_data["supportsQt6_deprecated"]
+
                 _main_plugin_update(request, new_object.plugin, form)
                 _check_optional_metadata(form, request)
 
@@ -1774,6 +1814,29 @@ def _version_update(request, plugin, version, is_trusted=False):
                             fail_silently=True,
                         )
                     del form.cleaned_data["multiple_parent_folders"]
+
+                if form.cleaned_data.get("supportsQt6_deprecated"):
+                    qt6_warning_msg = mark_safe(
+                        _(
+                            "The <code>supportsQt6</code> flag in your plugin metadata is deprecated "
+                            "and is no longer used. QGIS 4 compatibility is now determined solely by "
+                            "the <code>qgisMaximumVersion</code> field. Please set "
+                            "<code>qgisMaximumVersion</code> to <code>4.99</code> (or higher) and "
+                            "remove <code>supportsQt6</code> from your metadata. "
+                            'See the <a href="/docs/migrate-qgis4">Migrate to QGIS 4</a> guide for more details.'
+                        )
+                    )
+                    response_data["warnings"] = response_data.get("warnings", [])
+                    response_data["warnings"].append(
+                        "The supportsQt6 flag is deprecated. See /docs/migrate-qgis4 for details."
+                    )
+                    if not is_api_request:
+                        messages.warning(
+                            request,
+                            qt6_warning_msg,
+                            fail_silently=True,
+                        )
+                    del form.cleaned_data["supportsQt6_deprecated"]
 
                 # Return JSON for API requests
                 if is_api_request:
