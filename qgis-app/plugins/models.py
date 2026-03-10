@@ -33,14 +33,14 @@ class BasePluginManager(models.Manager):
     * weighted_rating uses the Bayesian Average formula
     to provide a more balanced rating that mitigates the effect of low vote counts.
 
-    Excludes soft-deleted plugins by default.
+    Includes soft-deleted plugins so they remain visible in listings until
+    permanently deleted.
     """
 
     def get_queryset(self):
         return (
             super(BasePluginManager, self)
             .get_queryset()
-            .filter(is_deleted=False)
             .extra(
                 select={
                     "average_vote": "rating_score / (rating_votes + 0.001)",
@@ -204,7 +204,7 @@ class UnapprovedPlugins(BasePluginManager):
         return (
             super(UnapprovedPlugins, self)
             .get_queryset()
-            .filter(pluginversion__approved=False, deprecated=False)
+            .filter(pluginversion__approved=False, deprecated=False, is_deleted=False)
             .extra(
                 select={
                     "average_vote": "rating_score / (rating_votes + 0.001)",
