@@ -121,7 +121,6 @@ class NewQgisMajorVersionReadyPlugins(BasePluginManager):
             .filter(
                 pluginversion__approved=True,
                 pluginversion__max_qg_version__gte=f"{settings.NEW_QGIS_MAJOR_VERSION}.0",
-                deprecated=False
             )
             .distinct()
             .order_by("-created_on")
