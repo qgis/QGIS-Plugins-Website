@@ -241,6 +241,7 @@ urlpatterns = [
                 "description": _(
                     f"List of approved plugins that are ready for QGIS {settings.NEW_QGIS_MAJOR_VERSION}."
                 ),
+                "show_qgis4_migration_notice": True,
             },
         ),
         name="new_qgis_ready_plugins",

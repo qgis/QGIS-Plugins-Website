@@ -18,6 +18,8 @@ class PluginRenameTestCase(TestCase):
         "fixtures/auth.json",
     ]
 
+    @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
+    @patch("plugins.validator._check_url_link", new=do_nothing)
     @override_settings(MEDIA_ROOT="api/tests")
     def setUp(self):
         self.client = Client()

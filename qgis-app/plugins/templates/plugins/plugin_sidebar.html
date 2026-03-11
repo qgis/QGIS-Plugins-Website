@@ -109,6 +109,12 @@
             Security Scanning
           </a>
         </li>
+        {% url 'docs_migrate_qgis4' as docs_migrate_qgis4_url %}
+        <li class="has-child {% if request.path == docs_migrate_qgis4_url %}is-active{% endif %}">
+          <a href="{{ docs_migrate_qgis4_url }}">
+            Migrate to QGIS 4
+          </a>
+        </li>
       </ul>
     </li>
     <li>

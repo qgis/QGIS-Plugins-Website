@@ -1,4 +1,5 @@
 import os
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -20,6 +21,8 @@ TESTFILE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "testfile
 class UploadWithTokenTestCase(TestCase):
     fixtures = ["fixtures/auth.json"]
 
+    @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
+    @patch("plugins.validator._check_url_link", new=do_nothing)
     @override_settings(MEDIA_ROOT="api/tests")
     def setUp(self):
         self.client = Client()
@@ -241,6 +244,8 @@ class APIResponseTestCase(TestCase):
 
     fixtures = ["fixtures/auth.json"]
 
+    @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
+    @patch("plugins.validator._check_url_link", new=do_nothing)
     @override_settings(MEDIA_ROOT="api/tests")
     def setUp(self):
         self.client = Client()
@@ -546,6 +551,8 @@ class EmptyPluginWithTokenTestCase(TestCase):
 
     fixtures = ["fixtures/auth.json"]
 
+    @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
+    @patch("plugins.validator._check_url_link", new=do_nothing)
     @override_settings(MEDIA_ROOT="api/tests")
     def setUp(self):
         self.client = Client()

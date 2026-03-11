@@ -44,3 +44,14 @@ def docs_security_scanning(request):
         "flatpages/docs_security_scanning.html",
         {},
     )
+
+
+def docs_migrate_qgis4(request):
+    """
+    Renders the Migrate to QGIS 4 documentation page
+    """
+    return render(
+        request,
+        "flatpages/docs_migrate_qgis4.html",
+        {},
+    )
