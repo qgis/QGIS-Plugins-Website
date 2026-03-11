@@ -11,6 +11,16 @@ class PluginIndex(indexes.SearchIndex, indexes.Indexable):
     description_auto = indexes.EdgeNgramField(model_attr="description")
     about_auto = indexes.EdgeNgramField(model_attr="about", default="")
     package_name_auto = indexes.EdgeNgramField(model_attr="package_name", default="")
+    author_auto = indexes.EdgeNgramField(model_attr="author", default="")
+    created_by_auto = indexes.EdgeNgramField()
+
+    def prepare_created_by_auto(self, obj):
+        parts = [
+            obj.created_by.username,
+            obj.created_by.first_name,
+            obj.created_by.last_name,
+        ]
+        return " ".join(filter(None, parts))
 
     def get_model(self):
         return Plugin
