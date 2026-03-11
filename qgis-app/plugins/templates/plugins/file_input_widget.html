@@ -1,0 +1,25 @@
+{% load i18n %}
+<div class="file-upload-zone" role="button" tabindex="0"
+     aria-label="{% trans 'Upload file' %}">
+  <input
+    class="file-input"
+    type="file"
+    id="{{ field.html_name }}"
+    name="{{ field.html_name }}"
+    aria-label="{{ field.label }}"
+    accept=".zip,.zip_,application/zip,application/x-zip-compressed"
+  />
+  <span class="file-upload-icon">
+    <i class="fas fa-cloud-upload-alt"></i>
+  </span>
+  <p class="file-upload-label">
+    {% trans "Drag & drop your plugin ZIP here, or" %}&nbsp;<span class="browse-link">{% trans "browse" %}</span>
+  </p>
+  <p class="file-upload-hint">{% trans "Accepted format: .zip" %}</p>
+  <div class="file-upload-selected">
+    <span class="file-upload-selected-icon">
+      <i class="fas fa-file-archive"></i>
+    </span>
+    <span class="file-upload-selected-name"></span>
+  </div>
+</div>

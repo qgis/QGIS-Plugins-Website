@@ -1,5 +1,6 @@
 require('../style/scss/style.scss');
 
+import './file_upload_widget.js';
 import 'datatables.net';
 import 'datatables.net-dt';
 
