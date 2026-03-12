@@ -1609,6 +1609,15 @@ def _version_create(request, plugin, version):
                 response_data["approved"] = False
                 response_data["scan_url"] = scan_url
 
+                if is_api_request and not is_trusted:
+                    response_data["approval_message"] = str(
+                        _(
+                            "Your plugin version is pending security validation. "
+                            "It will be available for approval once all checks pass. "
+                            "You will receive an email with the results."
+                        )
+                    )
+
                 if not is_api_request:
                     messages.info(
                         request,
