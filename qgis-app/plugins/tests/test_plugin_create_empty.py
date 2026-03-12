@@ -206,7 +206,7 @@ class PluginCreateEmptyTestCase(TestCase):
     @patch("plugins.views.plugin_notify", new=do_nothing)
     @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
     @patch("plugins.validator._check_url_link", new=do_nothing)
-    @patch("plugins.security_utils.run_security_scan", new=do_nothing)
+    @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay", new=do_nothing)
     def test_upload_version_after_creating_empty_plugin(self):
         """Test that a version can be uploaded after creating an empty plugin"""
         self.client.login(username="testuser", password="testpassword")

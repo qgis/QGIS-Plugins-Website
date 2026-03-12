@@ -12,7 +12,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from plugins.models import Plugin, PluginVersion, PluginVersionSecurityScan
 from plugins.security_scanner import PluginSecurityScanner, SecurityCheck
-from plugins.security_utils import get_scan_badge_info, run_security_scan
+from plugins.security_utils import get_scan_badge_info
 
 
 class SecurityScannerTestCase(TestCase):
