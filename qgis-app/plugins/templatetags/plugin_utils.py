@@ -218,7 +218,7 @@ def get_navigation_config_url():
     )
     # Path to the new file with variables replaced
     new_path = os.path.join(
-        settings.SITE_ROOT, "static", "config", "navigation_rendered.json"
+        settings.MEDIA_ROOT, "navigation_rendered.json"
     )
 
     # Read the original file
@@ -244,5 +244,5 @@ def get_navigation_config_url():
 
     # Return the URL to the new file
     return os.path.join(
-        settings.DEFAULT_PLUGINS_SITE, "static", "config", "navigation_rendered.json"
+        settings.DEFAULT_PLUGINS_SITE, "media", "navigation_rendered.json"
     )
