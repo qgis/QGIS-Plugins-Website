@@ -25,7 +25,13 @@ class SearchWithRequest(SearchView):
             sqs5 = SearchQuerySet().filter(
                 package_name_auto=self.request.GET.get("q", "")
             )
-            form_kwargs["searchqueryset"] = sqs1 | sqs2 | sqs3 | sqs4 | sqs5
+            sqs6 = SearchQuerySet().filter(
+                author_auto=self.request.GET.get("q", "")
+            )
+            sqs7 = SearchQuerySet().filter(
+                created_by_auto=self.request.GET.get("q", "")
+            )
+            form_kwargs["searchqueryset"] = sqs1 | sqs2 | sqs3 | sqs4 | sqs5 | sqs6 | sqs7
 
         return super(SearchWithRequest, self).build_form(form_kwargs)
 
