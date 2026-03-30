@@ -129,14 +129,12 @@ services:
       - plugins-data:/home/web/shared
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:ro
     working_dir: /celery_task
-    command: ["/usr/local/bin/celery", "-A", "plugins", "worker", "-l", "DEBUG", "-Q", "qt6"]
-    environment:
-      - RABBITMQ_HOST=rabbitmq
-      - CELERY_RESULT_BACKEND=rpc://
-      - CELERY_BROKER_URL=amqp://rabbitmq:5672
-      - PATH=/home/pyqgisdev/.local/bin:/home/pyqgisdev/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    command: ["celery", "-A", "plugins", "worker", "-l", "DEBUG", "-Q", "qt6"]
+    env_file:
+      - .env 
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     networks:
       internal:
 
@@ -176,14 +174,14 @@ services:
         condition: service_started
     working_dir: /home/web/django_project
     entrypoint: []
-    command: celery -A plugins worker -l DEBUG
+    command: celery -A plugins worker -l INFO
     networks:
       internal:
 
   web:
     # Note you cannot scale if you use container_name
     container_name: qgis-plugins-web
-    image: nginx:latest
+    image: nginx
     hostname: web
     entrypoint:
     - /etc/nginx/sites-available/docker-entrypoint.sh

@@ -14,7 +14,7 @@ logger = get_task_logger(__name__)
 
 @app.task(name="plugins.tasks.run_check_qt6.run_qgis_script")
 def run_qgis_script(plugin_version_pk: int, package_path: str):
-    logger.info(
+    logger.debug(
         f"=== run_qgis_script started pk={plugin_version_pk}, path={package_path} ==="
     )
 
@@ -33,18 +33,18 @@ def run_qgis_script(plugin_version_pk: int, package_path: str):
     try:
         with zipfile.ZipFile(package_path, "r") as zip_ref:
             zip_ref.extractall(tmp_dir)
-        logger.info(f"Zip extract in {tmp_dir}")
+        logger.debug(f"Zip extract in {tmp_dir}")
 
         command = ["/usr/local/bin/pyqt5_to_pyqt6.py", tmp_dir, "--dry_run"]
-        logger.info(f"Command : {' '.join(command)}")
+        logger.debug(f"Command : {' '.join(command)}")
 
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         logs = result.stdout.decode() + result.stderr.decode()
         passed = result.returncode == 0
 
-        logger.info(f"Return code : {result.returncode}")
-        logger.info(f"Logs :\n{logs}")
-        logger.info(f"Résultat : {'PASSED' if passed else 'FAILED'}")
+        logger.debug(f"Return code : {result.returncode}")
+        logger.debug(f"Logs :\n{logs}")
+        logger.debug(f"Résultat : {'PASSED' if passed else 'FAILED'}")
 
     except Exception as e:
         logs = str(e)
@@ -55,7 +55,7 @@ def run_qgis_script(plugin_version_pk: int, package_path: str):
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
     # Returns the result to the main Django worker
-    logger.info(f"Send the result to the main worker for pk={plugin_version_pk}")
+    logger.debug(f"Send the result to the main worker for pk={plugin_version_pk}")
     app.send_task(
         "plugins.tasks.save_qt6_result.save_qt6_result",
         args=[plugin_version_pk, passed, logs],
