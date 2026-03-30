@@ -262,7 +262,7 @@ class TestPluginFeedbackReceivedList(SetupMixin, TestCase):
             list(response.context['object_list']),
             []
         )
-        
+
     def test_plugin_with_older_approved_version_shows_in_feedback_received_list(self):
         """Plugin should appear if its latest version is unapproved, even if an older one is approved."""
         self.version_1.approved = True
