@@ -41,13 +41,13 @@
     {% endblocktrans %}
   </p>
 
-  <h5>{% trans "The New Rule: qgisMaximumVersion" %}</h5>
+  <h5>{% trans "The New Rule: qgisMinimumVersion" %}</h5>
   <p>
     {% blocktrans trimmed %}
-    QGIS 4 compatibility is now determined exclusively by the <code>qgisMaximumVersion</code> field
+    QGIS 4 compatibility is now determined exclusively by the <code>qgisMinimumVersion</code> field
     in <code class="is-size-7 has-text-weight-semibold">metadata.txt</code>. A plugin version is shown in the
     <a href="/plugins/new_qgis_ready/">QGIS 4 Ready Plugins</a> list when
-    <code>qgisMaximumVersion &ge; 4.0</code>.
+    <code>qgisMinimumVersion=4.0</code>.
     {% endblocktrans %}
   </p>
   <p>{% trans "Examples:" %}</p>
