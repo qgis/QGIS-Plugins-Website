@@ -26,5 +26,5 @@ class PluginIndex(indexes.SearchIndex, indexes.Indexable):
         return Plugin
 
     def index_queryset(self, using=None):
-        """Only search in approved plugins."""
+        """Search in approved plugins, including those marked for deletion."""
         return Plugin.approved_objects.all()

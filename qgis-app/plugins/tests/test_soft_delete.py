@@ -76,8 +76,12 @@ class TestPluginSoftDelete(SetupMixin, TestCase):
         self.assertTrue(plugin.is_deleted)
         self.assertIsNotNone(plugin.deleted_on)
 
-    def test_soft_deleted_plugin_excluded_from_approved_objects(self):
-        """Test that soft-deleted plugins don't appear in approved_objects."""
+    def test_soft_deleted_plugin_still_in_approved_objects(self):
+        """Test that soft-deleted plugins still appear in approved_objects.
+
+        Plugins marked for deletion should remain visible in the public listing
+        until they are permanently deleted (see issue #253).
+        """
         # First, approve and verify plugin appears
         self.version1.approved = True
         self.version1.save()
@@ -88,8 +92,8 @@ class TestPluginSoftDelete(SetupMixin, TestCase):
         self.plugin.deleted_on = timezone.now()
         self.plugin.save()
 
-        # Plugin should not appear in approved_objects
-        self.assertNotIn(self.plugin, Plugin.approved_objects.all())
+        # Plugin should still appear in approved_objects (visible in listings)
+        self.assertIn(self.plugin, Plugin.approved_objects.all())
 
     def test_soft_deleted_plugin_visible_in_my_plugins(self):
         """Test that soft-deleted plugins are visible to owners in My Plugins."""
@@ -161,6 +165,44 @@ class TestPluginSoftDelete(SetupMixin, TestCase):
 
         # Should get 404
         self.assertEqual(response.status_code, 404)
+
+    def test_soft_deleted_plugin_visible_in_approved_listing(self):
+        """Test that soft-deleted plugins still appear in the approved plugin listing.
+
+        Plugins marked for deletion remain accessible until permanently deleted
+        so users can still download them during the grace period (see issue #253).
+        """
+        # Approve the version so plugin appears in approved listing
+        self.version1.approved = True
+        self.version1.save()
+        self.assertIn(self.plugin, Plugin.approved_objects.all())
+
+        # Soft delete the plugin
+        self.plugin.is_deleted = True
+        self.plugin.deleted_on = timezone.now()
+        self.plugin.save()
+
+        # Plugin should still appear in approved_objects listing
+        self.assertIn(self.plugin, Plugin.approved_objects.all())
+
+        # Check it also appears in the view response
+        response = self.client.get(reverse("approved_plugins"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.plugin.name)
+
+    def test_soft_deleted_plugin_excluded_from_unapproved_listing(self):
+        """Test that soft-deleted plugins don't appear in the unapproval queue."""
+        # version2 is unapproved, so the plugin appears in unapproved_objects
+        self.assertIn(self.plugin, Plugin.unapproved_objects.all())
+
+        # Soft delete the plugin
+        self.plugin.is_deleted = True
+        self.plugin.deleted_on = timezone.now()
+        self.plugin.save()
+
+        # Plugin should NOT appear in unapproved_objects (no need to review
+        # plugins that are being deleted)
+        self.assertNotIn(self.plugin, Plugin.unapproved_objects.all())
 
 
 class TestDeleteMarkedPluginsTask(SetupMixin, TestCase):

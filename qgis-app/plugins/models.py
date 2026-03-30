@@ -33,14 +33,14 @@ class BasePluginManager(models.Manager):
     * weighted_rating uses the Bayesian Average formula
     to provide a more balanced rating that mitigates the effect of low vote counts.
 
-    Excludes soft-deleted plugins by default.
+    Includes soft-deleted plugins so they remain visible in listings until
+    permanently deleted.
     """
 
     def get_queryset(self):
         return (
             super(BasePluginManager, self)
             .get_queryset()
-            .filter(is_deleted=False)
             .extra(
                 select={
                     "average_vote": "rating_score / (rating_votes + 0.001)",
@@ -121,7 +121,6 @@ class NewQgisMajorVersionReadyPlugins(BasePluginManager):
             .filter(
                 pluginversion__approved=True,
                 pluginversion__max_qg_version__gte=f"{settings.NEW_QGIS_MAJOR_VERSION}.0",
-                deprecated=False
             )
             .distinct()
             .order_by("-created_on")
@@ -204,7 +203,7 @@ class UnapprovedPlugins(BasePluginManager):
         return (
             super(UnapprovedPlugins, self)
             .get_queryset()
-            .filter(pluginversion__approved=False, deprecated=False)
+            .filter(pluginversion__approved=False, deprecated=False, is_deleted=False)
             .extra(
                 select={
                     "average_vote": "rating_score / (rating_votes + 0.001)",
