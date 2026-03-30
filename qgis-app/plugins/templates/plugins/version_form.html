@@ -12,14 +12,33 @@
 
     <form action="" method="post" enctype="multipart/form-data" class="horizontal">
         {% csrf_token %}
-        {% include "plugins/form_snippet.html" %}
+        {% include "plugins/form_snippet.html" with show_upload_checklist=True %}
+
         <div class="form-actions has-text-right mt-3">
-            <button class="button is-success" type="submit">
+            <button id="upload-submit-btn" class="button is-success" type="submit" disabled>
                 <span class="icon">
-                    <i class="fas fa-save"></i> <!-- FontAwesome save icon -->
+                    <i class="fas fa-save"></i>
                 </span>
                 <span>{% trans "Save" %}</span>
             </button>
         </div>
     </form>
+
+    <script>
+        (function () {
+            var checkboxes = document.querySelectorAll('.upload-checklist-item');
+            var submitBtn = document.getElementById('upload-submit-btn');
+
+            function updateSubmitButton() {
+                var allChecked = Array.prototype.every.call(checkboxes, function (cb) {
+                    return cb.checked;
+                });
+                submitBtn.disabled = !allChecked;
+            }
+
+            checkboxes.forEach(function (cb) {
+                cb.addEventListener('change', updateSubmitButton);
+            });
+        })();
+    </script>
 {% endblock %}

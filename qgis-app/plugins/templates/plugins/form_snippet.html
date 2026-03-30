@@ -23,28 +23,12 @@
         {% endif %} 
     </div>
     {% elif field.field.widget|klass == 'ClearableFileInput' %}
-    <div class="file has-name">
-      <label class="file-label">
-        <input
-          class="file-input"
-          type="file"
-          id="{{ field.html_name }}"
-          name="{{ field.html_name }}"
-        />
-        <span class="file-cta">
-          <span class="file-icon">
-            <i class="fas fa-cloud-upload-alt"></i>
-          </span>
-          <span class="file-label"> {{ field.label }} </span>
-        </span>
-        <span class="file-name" id="filename"> Choose a file… </span>
-      </label>
-    </div>
+    {% include "plugins/file_input_widget.html" with field=field %}
     {% if field.errors %}
       {% for error in field.errors  %}
         <p class="help is-danger has-text-weight-medium">{{ error }}</p>
       {% endfor %}
-    {% endif %} 
+    {% endif %}
     {% elif field.field.widget|klass == 'Textarea' %}
       <div class="field">
         <label class="label">{{ field.label_tag }}</label>
@@ -132,19 +116,42 @@
     <div class="help has-text-grey">{{ field.help_text | safe }}</div>
   </div>
   {% endfor %}
+  {% if show_upload_checklist %}
+  <div class="mt-5">
+    <h4 class="title is-5">{% trans "Pre-upload Checklist" %}</h4>
+    <p class="mb-3">{% trans "Please confirm each item below before uploading. The button will become active once all items are checked." %}</p>
+    <div class="field">
+      <label class="checkbox">
+        <input type="checkbox" class="upload-checklist-item">
+        &nbsp;{% trans "My plugin ZIP file follows the correct QGIS plugin structure (e.g. a top-level folder containing <code>metadata.txt</code> and <code>__init__.py</code>)." %}
+      </label>
+    </div>
+    <div class="field">
+      <label class="checkbox">
+        <input type="checkbox" class="upload-checklist-item">
+        &nbsp;{% trans "The plugin repository is not empty and contains the same source code as the ZIP file, excluding compiled files (e.g. <code>__pycache__</code>)." %}
+      </label>
+    </div>
+    <div class="field">
+      <label class="checkbox">
+        <input type="checkbox" class="upload-checklist-item">
+        &nbsp;{% trans "My plugin includes a meaningful description written in English." %}
+      </label>
+    </div>
+    <div class="field">
+      <label class="checkbox">
+        <input type="checkbox" class="upload-checklist-item">
+        &nbsp;{% trans "All metadata links (homepage, tracker, repository) are valid and publicly accessible." %}
+      </label>
+    </div>
+    <div class="field">
+      <label class="checkbox">
+        <input type="checkbox" class="upload-checklist-item">
+        &nbsp;{% trans "I have tested this plugin version with QGIS and it works as expected." %}
+      </label>
+    </div>
+  </div>
+  {% endif %}
 </fieldset>
 
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const fileInput = document.querySelector(".file-input");
-    const fileName = document.querySelector("#filename");
 
-    fileInput.addEventListener("change", function () {
-      if (fileInput.files.length > 0) {
-        fileName.textContent = fileInput.files[0].name;
-      } else {
-        fileName.textContent = "Choose a file…";
-      }
-    });
-  });
-</script>

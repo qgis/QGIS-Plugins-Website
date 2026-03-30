@@ -1,0 +1,120 @@
+// File Upload Drop Zone widget
+
+.file-upload-zone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 180px;
+  padding: 2rem 1.5rem;
+  border: 2px dashed $grey-light;
+  border-radius: 10px;
+  background-color: $light1;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  text-align: center;
+
+  // Hide the real file input but keep it accessible
+  input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .file-upload-icon {
+    font-size: 2.5rem;
+    color: $grey-light;
+    transition: color 0.2s ease;
+    pointer-events: none;
+  }
+
+  .file-upload-label {
+    font-weight: 500;
+    color: $text-primary2;
+    pointer-events: none;
+
+    span.browse-link {
+      color: $success;
+      text-decoration: underline;
+    }
+  }
+
+  .file-upload-hint {
+    font-size: 0.8rem;
+    color: $dark1;
+    pointer-events: none;
+  }
+
+  .file-upload-selected {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: lighten($success, 52%);
+    border: 1px solid lighten($success, 30%);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    max-width: 100%;
+    pointer-events: none;
+    word-break: break-all;
+
+    .file-upload-selected-icon {
+      color: $success;
+      flex-shrink: 0;
+    }
+
+    .file-upload-selected-name {
+      color: $text-primary1;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  // Drag-over state
+  &.is-dragover {
+    border-color: $success;
+    background-color: lighten($success, 56%);
+
+    .file-upload-icon {
+      color: $success;
+    }
+  }
+
+  // File selected state
+  &.has-file {
+    border-color: $success;
+    border-style: solid;
+
+    .file-upload-label {
+      font-size: 0.875rem;
+      color: $dark1;
+    }
+
+    .file-upload-icon {
+      color: $success;
+    }
+
+    .file-upload-selected {
+      display: flex;
+    }
+  }
+
+  // Responsive – on small screens shrink padding
+  @media screen and (max-width: 600px) {
+    min-height: 140px;
+    padding: 1.25rem 1rem;
+
+    .file-upload-icon {
+      font-size: 2rem;
+    }
+  }
+}
