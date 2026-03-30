@@ -19,12 +19,16 @@ def trigger_qt6_check(sender, instance, created, **kwargs):
             # Skip if the path cannot be resolved (e.g. file outside MEDIA_ROOT)
             return
 
+        # Mark as pending before sending the task
+        PluginVersion.objects.filter(pk=instance.pk).update(
+            qt6_status=PluginVersion.Qt6Status.PENDING
+        )
+
         app.send_task(
             "plugins.tasks.run_check_qt6.run_qgis_script",
             args=[instance.pk, package_path],
             queue="qt6",
         )
-
 
 @shared_task
 def update_search_index(action, instance_pk, app_label, model_name):

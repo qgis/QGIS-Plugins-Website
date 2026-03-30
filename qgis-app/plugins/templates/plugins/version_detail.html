@@ -78,9 +78,16 @@
             </a></li>
             <li data-tab="3"><a href="#qt6-tab">
                 <span>{% trans "Qt6 Check" %}</span>
-                {% if version.qt6_checked_on %}
-                <span class="tag ml-2 {% if version.qt6_compatible %}is-success{% else %}is-danger{% endif %}">
-                    {% if version.qt6_compatible %}✓{% else %}✗{% endif %}
+                {% if version.qt6_status != 'not_run' %}
+                <span class="tag ml-2
+                    {% if version.qt6_status == 'compatible' %}is-success
+                    {% elif version.qt6_status == 'not_compatible' %}is-danger
+                    {% elif version.qt6_status == 'pending' %}is-warning
+                    {% endif %}">
+                    {% if version.qt6_status == 'compatible' %}✓
+                    {% elif version.qt6_status == 'not_compatible' %}✗
+                    {% elif version.qt6_status == 'pending' %}…
+                    {% endif %}
                 </span>
                 {% endif %}
             </a></li>
@@ -372,10 +379,26 @@
 
         <!-- ONGLET 3 : Qt6 Check -->
         <div class="tab-pane" id="qt6-tab">
-            {% if version.qt6_checked_on %}
-                <div class="notification {% if version.qt6_compatible %}is-success{% else %}is-danger{% endif %} is-light mb-4">
+            {% if version.qt6_status == 'not_run' %}
+                <div class="notification is-warning is-light">
+                    <p class="has-text-weight-semibold">
+                        <span class="icon"><i class="fas fa-clock"></i></span>
+                        {% trans "Qt6 check has not been run for this version" %}
+                    </p>
+                </div>
+
+            {% elif version.qt6_status == 'pending' %}
+                <div class="notification is-info is-light">
+                    <p class="has-text-weight-semibold">
+                        <span class="icon"><i class="fas fa-spinner fa-spin"></i></span>
+                        {% trans "Qt6 check is currently running..." %}
+                    </p>
+                </div>
+
+            {% else %}
+                <div class="notification {% if version.qt6_status == 'compatible' %}is-success{% else %}is-danger{% endif %} is-light mb-4">
                     <p class="has-text-weight-bold">
-                        {% if version.qt6_compatible %}
+                        {% if version.qt6_status == 'compatible' %}
                             <span class="icon"><i class="fas fa-check-circle"></i></span>
                             {% trans "This version is Qt6 compatible" %}
                         {% else %}
@@ -387,9 +410,7 @@
                 </div>
 
                 {% if qt6_issues %}
-                <h5 class="title is-6 mb-3">
-                    {% trans "Issues found" %}: {{ qt6_issues|length }}
-                </h5>
+                <h5 class="title is-6 mb-3">{% trans "Issues found" %}: {{ qt6_issues|length }}</h5>
                 <div style="overflow-x: auto;">
                     <table class="table is-fullwidth is-striped is-hoverable is-size-7">
                         <thead>
@@ -417,13 +438,6 @@
                         {% trans "No issues found, this plugin is fully Qt6 compatible!" %}
                     </div>
                 {% endif %}
-            {% else %}
-                <div class="notification is-warning is-light">
-                    <p class="has-text-weight-semibold">
-                        <span class="icon"><i class="fas fa-clock"></i></span>
-                        {% trans "Qt6 check not yet available for this version" %}
-                    </p>
-                </div>
             {% endif %}
         </div>
         {% endif %}

@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 import time
+import re
 
 from django.conf import settings
 from django.contrib import messages
@@ -567,7 +568,7 @@ def plugin_upload(request):
                 new_version = PluginVersion(**version_data)
                 new_version.save()
                 msg = _(
-                    "The Plugin has been successfully created. A Qt6 compliance check will be launched. You'll receive the results by email."
+                    "The Plugin has been successfully created. A Qt6 compliance check will be launched. The result is displayed on the plugin's version page."
                 )
                 messages.success(request, msg, fail_silently=True)
 
@@ -2317,47 +2318,20 @@ def version_detail(request, package_name, version):
     # Parse Qt6 logs
     qt6_issues = []
     if version.qt6_logs:
-        in_traceback = False
+        pattern = re.compile(r"^(/[^:]+):(\d+):(\d+)\s+-\s+(.+)$")
         for line in version.qt6_logs.splitlines():
-            # Ignore headers and blank lines
-            if line.startswith("===") or not line.strip():
+            match = pattern.match(line)
+            if not match:
                 continue
-            # Detect the start of a traceback
-            if line.startswith("Traceback"):
-                in_traceback = True
-                continue
-            # Skip all lines of the traceback
-            if in_traceback:
-                continue
-            try:
-                if " - " in line:
-                    location, message = line.split(" - ", 1)
-                    parts = location.rsplit(":", 2)
-                    if len(parts) == 3:
-                        filepath, lineno, col = parts
-                    else:
-                        filepath = parts[0]
-                        lineno = col = ""
-                elif ": " in line:
-                    filepath, message = line.split(": ", 1)
-                    lineno = col = ""
-                else:
-                    continue
-                path_parts = filepath.split("/")
-                if len(path_parts) > 4:
-                    relative_path = "/".join(path_parts[4:])
-                else:
-                    relative_path = filepath
-                qt6_issues.append(
-                    {
-                        "file": relative_path,
-                        "line": lineno.strip(),
-                        "col": col.strip(),
-                        "message": message.strip(),
-                    }
-                )
-            except Exception:
-                continue
+            filepath, lineno, col, message = match.groups()
+            path_parts = filepath.split("/")
+            relative_path = "/".join(path_parts[4:]) if len(path_parts) > 4 else filepath
+            qt6_issues.append({
+                "file": relative_path,
+                "line": lineno,
+                "col": col,
+                "message": message.strip(),
+            })
 
     return render(
         request,

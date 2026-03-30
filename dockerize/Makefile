@@ -100,7 +100,7 @@ rm-only: kill
 	@echo "------------------------------------------------------------------"
 	@echo "Removing production instance!!! "
 	@echo "------------------------------------------------------------------"
-	@docker compose -p $(PROJECT_ID) rm -v 
+	@docker compose -p $(PROJECT_ID) rm
 
 dbrestore:
 	@echo
