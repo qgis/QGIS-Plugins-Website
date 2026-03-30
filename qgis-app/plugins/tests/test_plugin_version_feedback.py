@@ -262,6 +262,47 @@ class TestPluginFeedbackReceivedList(SetupMixin, TestCase):
             list(response.context['object_list']),
             []
         )
+        
+    def test_plugin_with_older_approved_version_shows_in_feedback_received_list(self):
+        """Plugin should appear if its latest version is unapproved, even if an older one is approved."""
+        self.version_1.approved = True
+        self.version_1.save()
+
+        newer_version = PluginVersion.objects.create(
+            plugin=self.plugin_1,
+            created_by=self.creator,
+            min_qg_version="0.0.0",
+            max_qg_version="99.99.99",
+            version="0.2",
+            approved=False,
+            external_deps="test"
+        )
+        PluginVersionFeedback.objects.create(
+            version=newer_version,
+            reviewer=self.staff,
+            task="feedback on newer version"
+        )
+
+        self.client.force_login(user=self.staff)
+        response = self.client.get(self.url)
+        self.assertIn(self.plugin_1, response.context['object_list'])
+
+    def test_plugin_with_latest_version_approved_does_not_show_in_feedback_received_list(self):
+        """Plugin should not appear if its latest version is approved, even if an older one is unapproved."""
+        PluginVersion.objects.create(
+            plugin=self.plugin_1,
+            created_by=self.creator,
+            min_qg_version="0.0.0",
+            max_qg_version="99.99.99",
+            version="0.2",
+            approved=True,
+            external_deps="test"
+        )
+
+        self.client.force_login(user=self.staff)
+        response = self.client.get(self.url)
+        self.assertNotIn(self.plugin_1, response.context['object_list'])
+
 
 
 class TestPluginFeedbackPendingList(SetupMixin, TestCase):
@@ -304,6 +345,43 @@ class TestPluginFeedbackPendingList(SetupMixin, TestCase):
             list(response.context['object_list']),
             []
         )
+    def test_plugin_with_older_approved_version_shows_in_feedback_pending_list(self):
+        """Plugin should appear if its latest version is unapproved and has no feedback,
+        even if an older version is approved."""
+        self.version_2.approved = True
+        self.version_2.save()
+
+        PluginVersion.objects.create(
+            plugin=self.plugin_2,
+            created_by=self.creator,
+            min_qg_version="0.0.0",
+            max_qg_version="99.99.99",
+            version="2.1",
+            approved=False,
+            external_deps="test"
+        )
+
+        self.client.force_login(user=self.staff)
+        response = self.client.get(self.url)
+        self.assertIn(self.plugin_2, response.context['object_list'])
+
+
+    def test_plugin_with_latest_version_approved_does_not_show_in_feedback_pending_list(self):
+        """Plugin should not appear if its latest version is approved,
+        even if an older one is unapproved."""
+        PluginVersion.objects.create(
+            plugin=self.plugin_2,
+            created_by=self.creator,
+            min_qg_version="0.0.0",
+            max_qg_version="99.99.99",
+            version="2.1",
+            approved=True,
+            external_deps="test"
+        )
+
+        self.client.force_login(user=self.staff)
+        response = self.client.get(self.url)
+        self.assertNotIn(self.plugin_2, response.context['object_list'])
 
 
 class TestCreateVersionFeedback(SetupMixin, TestCase):
