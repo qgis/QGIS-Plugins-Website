@@ -14,7 +14,7 @@
       {% blocktrans trimmed %}
       To make your plugin appear in the
       <a href="/plugins/new_qgis_ready/">QGIS 4 Ready Plugins</a> list, simply set
-      <code>qgisMaximumVersion=4.99</code> (or higher) in your <code>metadata.txt</code>
+      <code>qgisMinimumVersion=4.0</code> (for exclusive QGIS 4 compatibility) in your <code>metadata.txt</code>
       and remove the deprecated <code>supportsQt6</code> flag.
       {% endblocktrans %}
     </p>
@@ -75,8 +75,8 @@
         <strong>{% trans "Update metadata.txt" %}</strong>
         <p>{% trans "Open your <code>metadata.txt</code> and make the following changes:" %}</p>
         <pre><code>[general]
-# Set qgisMaximumVersion to cover QGIS 4.x
-qgisMaximumVersion=4.99
+# Set qgisMinimumVersion to cover QGIS 4.x
+qgisMinimumVersion=4.0
 
 # Remove or delete this line — it is no longer used:
 # supportsQt6=True</code></pre>
@@ -85,7 +85,7 @@ qgisMaximumVersion=4.99
         <strong>{% trans "Verify Qt 6 / PyQGIS 4 compatibility" %}</strong>
         <p>
           {% blocktrans trimmed %}
-          Before bumping <code>qgisMaximumVersion</code>, make sure your plugin actually works
+          Before bumping <code>qgisMinimumVersion</code>, make sure your plugin actually works
           with QGIS 4. Key things to check:
           {% endblocktrans %}
         </p>
