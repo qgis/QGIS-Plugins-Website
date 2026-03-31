@@ -14,13 +14,68 @@
       {% blocktrans trimmed %}
       To make your plugin appear in the
       <a href="/plugins/new_qgis_ready/">QGIS 4 Ready Plugins</a> list, simply set
-      <code>qgisMaximumVersion=4.99</code> (or higher) in your <code>metadata.txt</code>
-      and remove the deprecated <code>supportsQt6</code> flag.
+      <code>qgisMaximumVersion=4.99</code> (or higher) in your <code>metadata.txt</code>.
       {% endblocktrans %}
     </p>
   </div>
 
-  <h5>{% trans "Background" %}</h5>
+  <h5>{% trans "Updating Plugin Code for QGIS 4" %}</h5>
+  <p>
+    {% blocktrans trimmed %}
+    QGIS 4 uses Qt 6 which requires code changes in plugins. See the
+    <a href="https://github.com/qgis/QGIS/wiki/"
+       target="_blank" rel="noopener">
+      {% trans "QGIS wiki" %}
+    </a>
+    page
+    <a href="https://github.com/qgis/QGIS/wiki/Plugin-migration-to-be-compatible-with-Qt5-and-Qt6"
+       target="_blank" rel="noopener">
+      {% trans "Plugin migration to be compatible with Qt5 and Qt6" %}
+    </a>
+    for details, tips and tools.
+    {% endblocktrans %}
+  </p>
+  <p>
+    {% blocktrans trimmed %}
+    The rest of <em>this</em> page is not about Python code changes, but describes
+    how to get your plugin listed as QGIS 4 compatible in the plugin repository.
+    {% endblocktrans %}
+  </p>
+
+  <h5>{% trans "Compatibility by Version Range" %}</h5>
+  <p>
+    {% blocktrans trimmed %}
+    QGIS version compatibility is determined simply from the range given by the 
+    <code>qgisMinimumVersion</code> and the <code>qgisMaximumVersion</code> (optional) fields
+    in <code class="is-size-7 has-text-weight-semibold">metadata.txt</code>.
+    If <code>qgisMaximumVersion</code> is not set, then compability is assumed up to end of the
+    <em>major version</em> line set by <code>qgisMinimumVersion</code>.
+    A plugin version is shown in the <a href="/plugins/new_qgis_ready/">QGIS 4 Ready Plugins</a>
+    list if the <code>qgisMinimumVersion</code> is <code>&ge;4.0</code> or the 
+    <code>qgisMaximumVersion</code> field is <code>&ge;4.0</code>.
+    To mark a QGIS 3 compatible plugin to be QGIS 4 as well, keep the existing 
+    <code>qgisMinimumVersion=3.xx</code> and add <code>qgisMaximumVersion=4.99</code>.
+    {% endblocktrans %}
+  </p>
+  <p>{% trans "Examples:" %}</p>
+  <div class="content">
+    <ul>
+      <li>
+        <code>qgisMinimumVersion=3.22</code>, <code>qgisMaximumVersion=4.99</code>
+        &rarr; {% trans "Listed for QGIS 3.22+ <strong>and</strong> QGIS 4.x" %}
+      </li>
+      <li>
+        <code>qgisMinimumVersion=4.0</code>, <code>qgisMaximumVersion=4.99</code>
+        &rarr; {% trans "Listed for QGIS 4.x only" %}
+      </li>
+      <li>
+        <code>qgisMinimumVersion=3.22</code>, <code>qgisMaximumVersion=3.99</code>
+        &rarr; {% trans "Not listed for QGIS 4 (QGIS 3 only)" %}
+      </li>
+    </ul>
+  </div>
+  
+  <h5>{% trans "Deprecated Temporary <code>supportsQt6=True</code> Flag" %}</h5>
   <p>
     {% blocktrans trimmed %}
     During the QGIS 4 pre-release period, a temporary metadata flag called
@@ -41,33 +96,6 @@
     {% endblocktrans %}
   </p>
 
-  <h5>{% trans "The New Rule: qgisMaximumVersion" %}</h5>
-  <p>
-    {% blocktrans trimmed %}
-    QGIS 4 compatibility is now determined exclusively by the <code>qgisMaximumVersion</code> field
-    in <code class="is-size-7 has-text-weight-semibold">metadata.txt</code>. A plugin version is shown in the
-    <a href="/plugins/new_qgis_ready/">QGIS 4 Ready Plugins</a> list when
-    <code>qgisMaximumVersion &ge; 4.0</code>.
-    {% endblocktrans %}
-  </p>
-  <p>{% trans "Examples:" %}</p>
-  <div class="content">
-    <ul>
-      <li>
-        <code>qgisMinimumVersion=3.22</code>, <code>qgisMaximumVersion=4.99</code>
-        &rarr; {% trans "Listed for QGIS 3.22+ <strong>and</strong> QGIS 4.x" %}
-      </li>
-      <li>
-        <code>qgisMinimumVersion=4.0</code>, <code>qgisMaximumVersion=4.99</code>
-        &rarr; {% trans "Listed for QGIS 4.x only" %}
-      </li>
-      <li>
-        <code>qgisMinimumVersion=3.22</code>, <code>qgisMaximumVersion=3.99</code>
-        &rarr; {% trans "Not listed (QGIS 3 only)" %}
-      </li>
-    </ul>
-  </div>
-
   <h5>{% trans "How to Update Your Plugin" %}</h5>
   <div class="content">
     <ol>
@@ -85,17 +113,31 @@ qgisMaximumVersion=4.99
         <strong>{% trans "Verify Qt 6 / PyQGIS 4 compatibility" %}</strong>
         <p>
           {% blocktrans trimmed %}
-          Before bumping <code>qgisMaximumVersion</code>, make sure your plugin actually works
+          Before bumping your plugin's compatibility to QGIS 4, make sure it actually works
           with QGIS 4. Key things to check:
           {% endblocktrans %}
         </p>
         <div class="content">
           <ul>
             <li>{% trans "Replace any deprecated Qt 5-only APIs with their Qt 6 equivalents." %}</li>
-            <li>{% trans "Replace <code>PyQt5</code> imports with <code>PyQt6</code> (or use the QGIS-provided compatibility shim)." %}</li>
+            <li>{% trans "Replace <code>PyQt5</code> imports with <code>PyQt6</code> (or better yet, use the QGIS-provided <code>qgis.PyQt</code> compatibility shim)." %}</li>
             <li>{% trans "Test your plugin with a QGIS 4 nightly or release build." %}</li>
           </ul>
         </div>
+        <p>
+          {% blocktrans trimmed %}
+          You can find helpful tips and helper tools on the
+          <a href="https://github.com/qgis/QGIS/wiki/"
+             target="_blank" rel="noopener">
+            {% trans "QGIS wiki" %}
+          </a>
+          page 
+          <a href="https://github.com/qgis/QGIS/wiki/Plugin-migration-to-be-compatible-with-Qt5-and-Qt6"
+             target="_blank" rel="noopener">
+            {% trans "Plugin migration to be compatible with Qt5 and Qt6" %}
+          </a>
+          {% endblocktrans %}
+        </p>
       </li>
       <li>
         <strong>{% trans "Upload a new version" %}</strong>
