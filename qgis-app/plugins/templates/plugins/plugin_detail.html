@@ -264,7 +264,52 @@
                 </div>
                 <p class="plugin-details-description">{{ object.description|linebreaksbr }}</p>
                 <div id="rating"> (<span id="votes">{% firstof votes '0' %}</span>) {% trans "votes" %}&nbsp;<span id="loading" style="display:none">Loading...</span><span id="vote-message" style="display:none"></span></div>
-
+                {% if user.is_staff or user in object.editors %}
+                    <div>
+                        {% with release=object.stable|default:object.experimental %}
+                            {% if release %}
+                                {% with security_scan=release.security_scan %}
+                                    {% if security_scan.overall_status == 'passed' %}
+                                        <a href="{{ release.get_absolute_url }}#security-tab" class="button is-small is-rounded is-success">
+                                            <span class="icon is-small">
+                                                <i class="fas fa-shield-halved"></i>
+                                            </span>
+                                            <span>{% trans "Security scan passed (latest)" %}</span>
+                                        </a>
+                                    {% elif security_scan.overall_status == 'critical' %}
+                                        <a href="{{ release.get_absolute_url }}#security-tab" class="button is-small is-rounded is-danger">
+                                            <span class="icon is-small">
+                                                <i class="fas fa-triangle-exclamation"></i>
+                                            </span>
+                                            <span>{% trans "Security issue detected (latest)" %}</span>
+                                        </a>
+                                    {% elif security_scan.overall_status == 'warning' %}
+                                        <a href="{{ release.get_absolute_url }}#security-tab" class="button is-small is-rounded is-warning">
+                                            <span class="icon is-small">
+                                                <i class="fas fa-circle-exclamation"></i>
+                                            </span>
+                                            <span>{% trans "Potential security issue (latest)" %}</span>
+                                        </a>
+                                    {% elif security_scan.overall_status == 'info' %}
+                                        <a href="{{ release.get_absolute_url }}#security-tab" class="button is-small is-rounded is-info">
+                                            <span class="icon is-small">
+                                                <i class="fas fa-info"></i>
+                                            </span>
+                                            <span>{% trans "Scanned with informational items (latest)" %}</span>
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ release.get_absolute_url }}#security-tab" class="button is-small is-rounded is-light">
+                                            <span class="icon is-small">
+                                                <i class="fas fa-circle-question"></i>
+                                            </span>
+                                            <span>{% trans "Security status unknown (latest)" %}</span>
+                                        </a>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                {% endif %}
                 <a class="button mt-3" href="{% if object.stable %}{{ object.stable.get_download_url }}{% else %}{{ object.experimental.get_download_url }}{% endif %}">
                     <i class="fas fa-download" style="vertical-align: middle;"></i>&nbsp;{% trans "Download latest" %}
                 </a>
@@ -606,7 +651,57 @@
                                         </td>
                                         <td class="has-text-centered" data-order="{{ version.created_on.isoformat }}">{{ version.created_on|local_timezone }}</td>
                                         {% if user.is_staff or user in version.plugin.approvers or user in version.plugin.editors %}
-                                        <td class="has-text-centered" style="min-width: 200px;">
+                                        <td class="has-text-centered" style="min-width: 229px;">
+                                            {% if user.is_staff or user in object.editors %}
+                                                {% with security_scan=version.security_scan %}
+                                                    {% if security_scan.overall_status == 'passed' %}
+                                                        <a 
+                                                            href="{{ version.get_absolute_url }}#security-tab"
+                                                            title="{% trans "Security scan passed (latest)" %}"
+                                                            class="button is-small is-success">
+                                                            <span class="icon is-small">
+                                                                <i class="fas fa-shield-halved"></i>
+                                                            </span>
+                                                        </a>
+                                                    {% elif security_scan.overall_status == 'critical' %}
+                                                        <a 
+                                                            href="{{ version.get_absolute_url }}#security-tab"
+                                                            title="{% trans "Critical security issues found (latest)" %}"
+                                                            class="button is-small is-danger">
+                                                            <span class="icon is-small">
+                                                                <i class="fas fa-triangle-exclamation"></i>
+                                                            </span>
+                                                        </a>
+                                                    {% elif security_scan.overall_status == 'warning' %}
+                                                        <a 
+                                                            href="{{ version.get_absolute_url }}#security-tab"
+                                                            title="{% trans "Potential security issues found (latest)" %}"
+                                                            class="button is-small is-warning">
+                                                            <span class="icon is-small">
+                                                                <i class="fas fa-circle-exclamation"></i>
+                                                            </span>
+                                                        </a>
+                                                    {% elif security_scan.overall_status == 'info' %}
+                                                        <a 
+                                                            href="{{ version.get_absolute_url }}#security-tab"
+                                                            title="{% trans "Scanned with informational items (latest)" %}"
+                                                            class="button is-small is-info">
+                                                            <span class="icon is-small">
+                                                                <i class="fas fa-circle-info"></i>
+                                                            </span>
+                                                        </a>
+                                                    {% else %}
+                                                        <a 
+                                                            href="{{ version.get_absolute_url }}#security-tab"
+                                                            title="{% trans "Security status unknown (latest)" %}"
+                                                            class="button is-small is-outlined">
+                                                            <span class="icon is-small">
+                                                                <i class="fas fa-circle-question"></i>
+                                                            </span>
+                                                        </a>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% endif %}
                                             {% if user.is_staff or user in version.plugin.approvers %}
                                                 {% if not version.approved %}
                                                     <form id="approve-version-{{ version.pk }}" method="post" action="{% url 'version_approve' object.package_name version.version %}" style="display:inline;">
