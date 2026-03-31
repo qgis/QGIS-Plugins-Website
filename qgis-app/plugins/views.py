@@ -1191,7 +1191,7 @@ class MyPluginsList(PluginsList):
     def get_queryset(self):
         """Override to include soft-deleted plugins for the user's own plugins."""
         # Use objects.all() to bypass the BasePluginManager filter that excludes soft-deleted items
-        qs = Plugin.objects.all()
+        qs = Plugin.base_objects.all()
         # Apply the user filter
         qs = self.get_filtered_queryset(qs)
 
