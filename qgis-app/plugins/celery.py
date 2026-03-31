@@ -1,11 +1,11 @@
 from __future__ import absolute_import
 
+import logging
 import os
 
 from celery import Celery
-import logging
 
-logger = logging.getLogger('plugins')
+logger = logging.getLogger("plugins")
 
 
 # set the default Django settings module for the 'celery' program.

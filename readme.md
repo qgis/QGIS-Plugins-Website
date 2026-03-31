@@ -5,7 +5,7 @@
 
 > ## 👋 Welcome to plugins.qgis.org!
 >
-> **This repository hosts the source code for the official QGIS Plugins Repository Website:**  
+> **This repository hosts the source code for the official QGIS Plugins Repository Website:**
 > 🌍 [https://plugins.qgis.org](https://plugins.qgis.org)
 >
 > Here you'll find everything you need to **build, develop, and contribute** to the QGIS Plugins Website.
@@ -14,7 +14,7 @@
 >
 > **This repository is _only_ for the main QGIS Plugins Repository Website ([plugins.qgis.org](https://plugins.qgis.org)).**
 >
-> If you are looking for the source code or want to contribute to other QGIS websites, please visit their respective repositories below.  
+> If you are looking for the source code or want to contribute to other QGIS websites, please visit their respective repositories below.
 > Each website has its own codebase and contribution process:
 >
 > - [qgis.org](https://qgis.org) ([GitHub: QGIS-Website](https://github.com/qgis/QGIS-Website)) – QGIS Main Wesite
@@ -133,7 +133,7 @@ docker-compose.
 
 ## 🗄️ Data Model
 
-Below is the Entity-Relationship Diagram (ERD) illustrating the core data model for the QGIS Plugins Website.  
+Below is the Entity-Relationship Diagram (ERD) illustrating the core data model for the QGIS Plugins Website.
 For a detailed view, click on the image below or see the full-size diagram in [erd.svg](./img/erd.svg):
 
 [![ERD](./img/erd.svg)](./img/erd.svg)
@@ -174,7 +174,7 @@ We welcome contributions! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for
 
 ## 🙋 Have Questions?
 
-Have questions or feedback? Feel free to open an issue or submit a Pull Request!  
+Have questions or feedback? Feel free to open an issue or submit a Pull Request!
 
 ![-----------------------------------------------------](./img/green-gradient.png)
 ## 🧑‍💻👩‍💻 Contributors

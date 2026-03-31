@@ -4,6 +4,7 @@
 from django.contrib import auth
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+
 def HttpAuthMiddleware(get_response):
     """
     Simple HTTP-Basic auth for testing webservices
@@ -11,7 +12,7 @@ def HttpAuthMiddleware(get_response):
 
     def middleware(request):
         auth_basic = request.META.get("HTTP_AUTHORIZATION")
-        if auth_basic and not str(auth_basic).startswith('Bearer'):
+        if auth_basic and not str(auth_basic).startswith("Bearer"):
             import base64
 
             username, dummy, password = base64.decodebytes(

@@ -463,7 +463,10 @@ def validator(package, is_new: bool = False):
     checked_metadata = []
     for k, v in metadata:
         try:
-            if not (k in PLUGIN_BOOLEAN_METADATA or k in ("icon_file", "supportsQt6_deprecated")):
+            if not (
+                k in PLUGIN_BOOLEAN_METADATA
+                or k in ("icon_file", "supportsQt6_deprecated")
+            ):
                 # v.decode('UTF-8')
                 checked_metadata.append((k, v.strip()))
             else:

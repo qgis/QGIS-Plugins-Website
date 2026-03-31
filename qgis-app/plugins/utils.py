@@ -1,5 +1,6 @@
-import requests
 import re
+
+import requests
 from django.http import HttpRequest
 
 
@@ -16,11 +17,11 @@ def extract_version(tag):
     Returns:
        str: The major and minor version as x.y, or None if no match.
     """
-    match = re.search(r'(\d+\.\d+\.\d+)', tag)
+    match = re.search(r"(\d+\.\d+\.\d+)", tag)
     if match:
         version = match.group(1)
-        version_parts = version.split('.')
-        return '.'.join(version_parts[:-1])
+        version_parts = version.split(".")
+        return ".".join(version_parts[:-1])
     else:
         return None
 
@@ -36,23 +37,23 @@ def get_qgis_versions():
     Raises:
         Exception: If the request to the GitHub API fails.
     """
-    url = 'https://api.github.com/repos/qgis/QGIS/releases'
+    url = "https://api.github.com/repos/qgis/QGIS/releases"
     response = requests.get(url)
     if response.status_code != 200:
-        raise Exception('Request failed')
+        raise Exception("Request failed")
     releases = response.json()
     all_versions = []
     for release in releases:
-        tag_name = release['tag_name'].replace('_', '.')
+        tag_name = release["tag_name"].replace("_", ".")
         version = extract_version(tag_name)
         if version not in all_versions:
             all_versions.append(version)
-    url = 'https://qgis.org/version.json'
+    url = "https://qgis.org/version.json"
     response = requests.get(url)
     if response.status_code != 200:
-        raise Exception('Request failed')
+        raise Exception("Request failed")
     releases = response.json()
-    version = releases['dev']['version']
+    version = releases["dev"]["version"]
     if version not in all_versions:
         all_versions.insert(0, version)
     return all_versions
@@ -64,6 +65,7 @@ def parse_remote_addr(request: HttpRequest) -> str:
     if x_forwarded_for:
         return x_forwarded_for.split(",")[0]
     return request.META.get("REMOTE_ADDR", "")
+
 
 def get_version_from_label(param):
     """
@@ -80,19 +82,19 @@ def get_version_from_label(param):
         ValueError: If the parameter value is invalid.
         Exception: If the request to the QGIS version service fails or the version is not found.
     """
-    url = 'https://version.qgis.org/version.json'
+    url = "https://version.qgis.org/version.json"
 
     response = requests.get(url)
     if response.status_code != 200:
-        raise Exception('Request failed')
+        raise Exception("Request failed")
 
     content = response.json()
     param = param.lower()
 
-    if param == 'stable':
-        param = 'ltr'
+    if param == "stable":
+        param = "ltr"
 
     if param in content:
         version_info = content[param]
-        return version_info['version']
+        return version_info["version"]
     return None

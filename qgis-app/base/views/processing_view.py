@@ -1,5 +1,6 @@
 import logging
 from os.path import exists
+
 from base.forms.processing_forms import ResourceBaseReviewForm
 from base.license import zipped_with_license
 from django.conf import settings
@@ -11,11 +12,12 @@ from django.contrib.postgres.search import SearchVector
 from django.contrib.sites.models import Site
 from django.core.mail import send_mail
 from django.db import models
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
+from django.utils.encoding import escape_uri_path
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.cache import never_cache
@@ -28,8 +30,6 @@ from django.views.generic import (
     View,
 )
 from django.views.generic.base import ContextMixin
-from django.utils.encoding import escape_uri_path
-from django.http import Http404
 
 GROUP_NAME = "Style Managers"
 
@@ -174,8 +174,11 @@ class ResourceSearchMixin(object):
     def get_queryset_search(self, qs):
         # Allowed fields for ordering
         allowed_order_by_fields = [
-            "name", "type", "download_count"
-            "creator", "upload_date", "modified_date"
+            "name",
+            "type",
+            "download_count" "creator",
+            "upload_date",
+            "modified_date",
         ]
         q = self.request.GET.get("q")
         if q:
@@ -197,7 +200,7 @@ class ResourceSearchMixin(object):
             elif order_by == "type":
                 qs = qs.order_by("style_type__name")
             else:
-                if order_by.lstrip('-') in allowed_order_by_fields:
+                if order_by.lstrip("-") in allowed_order_by_fields:
                     qs = qs.order_by(order_by)
         return qs
 
@@ -493,7 +496,7 @@ class ResourceBaseDownload(ResourceBaseContextMixin, View):
                 return TemplateResponse(request, self.template_name, context)
         else:
             object.increase_download_counter()
-            object.save(update_fields=['download_count'])
+            object.save(update_fields=["download_count"])
 
         # zip the resource and license.txt
         zipfile = zipped_with_license(object.file.file.name, object.name)
@@ -502,7 +505,9 @@ class ResourceBaseDownload(ResourceBaseContextMixin, View):
             zipfile.getvalue(), content_type="application/x-zip-compressed"
         )
         zip_name = slugify(object.name, allow_unicode=True)
-        response["Content-Disposition"] = f"attachment; filename*=utf-8''{escape_uri_path(zip_name)}.zip"
+        response["Content-Disposition"] = (
+            f"attachment; filename*=utf-8''{escape_uri_path(zip_name)}.zip"
+        )
         return response
 
 

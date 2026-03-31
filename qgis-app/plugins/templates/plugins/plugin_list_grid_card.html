@@ -4,16 +4,16 @@
 {% if object.package_name %}
 <div class="
 column
-is-medium     
+is-medium
 is-half-tablet
 is-half-desktop
 is-one-quarter-widescreen
 is-one-third-fullhd">
-    <div 
+    <div
         class="
-            card 
-            is-flex 
-            is-flex-direction-column 
+            card
+            is-flex
+            is-flex-direction-column
             is-justify-content-space-between
         "
         >
@@ -69,7 +69,7 @@ is-one-third-fullhd">
                         </a>
                     </p>
                     {% if object.author %}
-                        <p class="subtitle is-7 author">{% trans "by" %} 
+                        <p class="subtitle is-7 author">{% trans "by" %}
                             <a title="{% trans "See all plugins by"%} {{ object.author }}" href="{% url "author_plugins" object.author %}">
                                 {{ object.author }}
                             </a>

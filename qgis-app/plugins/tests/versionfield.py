@@ -2,12 +2,12 @@
 # -*- coding:utf-8 -*-
 
 """
-    Tests for version comparison field
+Tests for version comparison field
 
-    DESCRIPTION
+DESCRIPTION
 
-    @copyright: 2014 by Alessandro Pasotti - ItOpen (http://www.itopen.it) <apasotti@gmail.com>
-    @license: GNU GPL, see COPYING for details.
+@copyright: 2014 by Alessandro Pasotti - ItOpen (http://www.itopen.it) <apasotti@gmail.com>
+@license: GNU GPL, see COPYING for details.
 
 
 

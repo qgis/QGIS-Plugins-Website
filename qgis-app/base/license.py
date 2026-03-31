@@ -21,7 +21,7 @@ def zipped_with_license(file: str, zip_subdir: str) -> io.BytesIO:
 
 
 def zip_a_file_if_not_zipfile(filename: str) -> io.BytesIO:
-    """ Zip a file without license """
+    """Zip a file without license"""
 
     if zipfile.is_zipfile(filename):
         with open(filename, "rb") as file:

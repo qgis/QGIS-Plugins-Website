@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('plugins', '0004_merge_20231122_0223'),
+        ("plugins", "0004_merge_20231122_0223"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='pluginversiondownload',
-            name='country_code',
-            field=models.CharField(default='N/D', max_length=3),
+            model_name="pluginversiondownload",
+            name="country_code",
+            field=models.CharField(default="N/D", max_length=3),
         ),
         migrations.AddField(
-            model_name='pluginversiondownload',
-            name='country_name',
-            field=models.CharField(default='N/D', max_length=100),
+            model_name="pluginversiondownload",
+            name="country_name",
+            field=models.CharField(default="N/D", max_length=100),
         ),
     ]

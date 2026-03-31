@@ -1,13 +1,14 @@
 # -*- coding:utf-8 -*-
 # myapp/middleware.py
 
-from django.template import TemplateDoesNotExist
-from django.shortcuts import render
+import logging
+
+import sentry_sdk
 from django.core.exceptions import RequestDataTooBig
 from django.http import JsonResponse
+from django.shortcuts import render
+from django.template import TemplateDoesNotExist
 from django.utils.deprecation import MiddlewareMixin
-import logging
-import sentry_sdk
 
 """
     QGIS-DJANGO - MIDDLEWARE
@@ -18,6 +19,7 @@ import sentry_sdk
 """
 
 logger = logging.getLogger(__name__)
+
 
 def XForwardedForMiddleware(get_response):
     # One-time configuration and initialization.
@@ -40,12 +42,15 @@ def XForwardedForMiddleware(get_response):
 
     return middleware
 
+
 class HandleTemplateDoesNotExistMiddleware(MiddlewareMixin):
     """Handle missing templates"""
+
     def process_exception(self, request, exception):
         if isinstance(exception, TemplateDoesNotExist):
-            return render(request, '404.html', status=404)
+            return render(request, "404.html", status=404)
         return None
+
 
 class HandleOSErrorMiddleware:
     def __init__(self, get_response):
@@ -59,6 +64,8 @@ class HandleOSErrorMiddleware:
             sentry_sdk.capture_exception(e)
             raise e
         return response
+
+
 class HandleRequestDataTooBigMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -68,4 +75,7 @@ class HandleRequestDataTooBigMiddleware:
             response = self.get_response(request)
             return response
         except RequestDataTooBig:
-            return JsonResponse({'error': 'Request data is too large. Please upload smaller files.'}, status=413)
+            return JsonResponse(
+                {"error": "Request data is too large. Please upload smaller files."},
+                status=413,
+            )

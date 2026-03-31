@@ -2374,11 +2374,7 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         filters.update(
-            {
-                "pluginversion__max_qg_version__gte": _add_patch_version(
-                    qg_version, "0"
-                )
-            }
+            {"pluginversion__max_qg_version__gte": _add_patch_version(qg_version, "0")}
         )
         version_filters.update(
             {"max_qg_version__gte": _add_patch_version(qg_version, "0")}
@@ -2502,11 +2498,7 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         filters.update(
-            {
-                "pluginversion__max_qg_version__gte": _add_patch_version(
-                    qg_version, "0"
-                )
-            }
+            {"pluginversion__max_qg_version__gte": _add_patch_version(qg_version, "0")}
         )
         version_filters.update(
             {"max_qg_version__gte": _add_patch_version(qg_version, "0")}

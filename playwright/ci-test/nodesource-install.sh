@@ -6,7 +6,7 @@ echo "sudo password will be required"
 USES_APT=$(which apt | grep -w "apt" | wc -l)
 USES_RPM=$(which rpm | grep -w "rpm" | wc -l)
 
-if [ $USES_APT -eq 1 ]; then 
+if [ $USES_APT -eq 1 ]; then
 	curl -SLO https://deb.nodesource.com/nsolid_setup_deb.sh
 	sudo chmod 500 nsolid_setup_deb.sh
 	sudo ./nsolid_setup_deb.sh 20

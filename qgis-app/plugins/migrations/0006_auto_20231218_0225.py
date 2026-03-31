@@ -6,23 +6,31 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('plugins', '0005_pluginoutstandingtoken'),
+        ("plugins", "0005_pluginoutstandingtoken"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='pluginoutstandingtoken',
-            name='description',
-            field=models.CharField(blank=True, help_text="Describe this token so that it's easier to remember where you're using it.", max_length=512, null=True, verbose_name='Description'),
+            model_name="pluginoutstandingtoken",
+            name="description",
+            field=models.CharField(
+                blank=True,
+                help_text="Describe this token so that it's easier to remember where you're using it.",
+                max_length=512,
+                null=True,
+                verbose_name="Description",
+            ),
         ),
         migrations.AddField(
-            model_name='pluginoutstandingtoken',
-            name='is_newly_created',
+            model_name="pluginoutstandingtoken",
+            name="is_newly_created",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='pluginoutstandingtoken',
-            name='last_used_on',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='Last used on'),
+            model_name="pluginoutstandingtoken",
+            name="last_used_on",
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="Last used on"
+            ),
         ),
     ]

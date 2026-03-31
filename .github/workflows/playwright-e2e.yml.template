@@ -4,7 +4,7 @@ on:
   push:
     branches: [ master ]
   pull_request:
-    branches: [ master ]  
+    branches: [ master ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -27,10 +27,10 @@ jobs:
 
       - name: Run the containers
         run: docker compose up -d db devweb
-      
+
 
       - name: Wait for the containers to start
-        run: sleep 15 
+        run: sleep 15
 
       - name: Start Django server
         run: |
@@ -48,7 +48,7 @@ jobs:
               echo "Waiting for Django server to be up..."
               sleep 5
             done
-      
+
       - name: Test django endpoint
         run: |
           curl -v http://0.0.0.0:62202
@@ -56,7 +56,7 @@ jobs:
             echo "Curl command failed"
             exit 1
           fi
-  
+
       - name: Install playwright dependencies
         working-directory: playwright/ci-test
         run: |
@@ -72,4 +72,3 @@ jobs:
           name: playwright-report
           path: playwright/ci-test/playwright-report/
           retention-days: 30
-        
