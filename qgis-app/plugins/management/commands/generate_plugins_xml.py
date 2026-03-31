@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from plugins.tasks.generate_plugins_xml import generate_plugins_xml
-from django.conf import settings
+
 
 class Command(BaseCommand):
 

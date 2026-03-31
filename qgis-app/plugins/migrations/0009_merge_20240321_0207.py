@@ -6,9 +6,8 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('plugins', '0004_merge_20231123_0018'),
-        ('plugins', '0008_merge_20240206_0448'),
+        ("plugins", "0004_merge_20231123_0018"),
+        ("plugins", "0008_merge_20240206_0448"),
     ]
 
-    operations = [
-    ]
+    operations = []

@@ -9,7 +9,7 @@ test.use({
 test('landing page', async ({ page }) => {
   await page.goto(url);
 
-  
+
   await expect(page.locator('h1')).toContainText('QGIS plugins web portal');
 
   await expect(page.locator('body')).toContainText('QGIS plugins add additional functionality to the QGIS application.');

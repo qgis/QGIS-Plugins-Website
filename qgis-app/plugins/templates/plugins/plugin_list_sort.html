@@ -30,10 +30,10 @@
         if (value) {
             // Get current URL parameters
             let params = new URLSearchParams(window.location.search);
-            
+
             // Update the relevant parameter (sort/order) based on the selection
             params.set(key, value);
-    
+
             // Preserve the other sorting option (sort/order)
             if (key === 'sort' && !params.has('order')) {
                 if (value === 'name' || value === 'author') {
@@ -44,7 +44,7 @@
             } else if (key === 'order' && !params.has('sort')) {
                 params.set('sort', 'name');  // Default to sorting by name if no sort field is selected
             }
-    
+
             // Redirect to the updated URL
             window.location.search = params.toString();
         }

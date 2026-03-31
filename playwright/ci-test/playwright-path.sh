@@ -22,12 +22,12 @@ HAS_PLAYWRIGHT=$(which playwright 2> /dev/null | grep -v "which: no" | wc -l)
 PLAYWRIGHT="playwright"
 if [ $HAS_PLAYWRIGHT -eq 0 ]; then
 	PLAYWRIGHT="npx playwright"
-  
+
     	# check if OS is a deb based distro and uses apt
     	USES_APT=$(which apt 2> /dev/null | grep -w "apt" | wc -l)
 		# check if OS is an rpm-based distro
   		USES_RPM=$(which rpm | grep -w "rpm" | wc -l)
-    
+
     	if [ $USES_APT -eq 1 ]; then
 			# check if nodejs is installed
 			HAS_NODEJS=$(which node | grep -w "node" | wc -l)

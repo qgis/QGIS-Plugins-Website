@@ -9,8 +9,8 @@ ensure a smooth contribution process.
 
 
 ## 🏃Before you start
- 
-This project requires [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) to run the development and production environments.  
+
+This project requires [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) to run the development and production environments.
 Please ensure both are installed on your system before proceeding.
 
 ![Docker logo](https://www.docker.com/wp-content/uploads/2022/03/Moby-logo.png)
@@ -44,9 +44,9 @@ $ cp .env.template .env
 
 - Edit .env file and set your environment variables
 - Enable debug mode by setting `DEBUG=True`.
-- Uncomment RABBITMQ_IMAGE if you want to use a different image version. 
-Default is `rabbitmq:3.7-alpine`. This is useful if you encounter any issues 
-with the default image (can be also use to change the image without editing the code). 
+- Uncomment RABBITMQ_IMAGE if you want to use a different image version.
+Default is `rabbitmq:3.7-alpine`. This is useful if you encounter any issues
+with the default image (can be also use to change the image without editing the code).
 Please also see [this discussion](https://github.com/qgis/QGIS-Plugins-Website/issues/80).
 
 **IMPORTANT NOTE**: For new Django variables, please use the `settings_local.py` as the `.env` file is not supported by the new production infrastructure.
@@ -140,7 +140,7 @@ For development in a containerized environment using VSCode:
 - Attach to the `qgis-plugins-devweb` container to work on the website.
 
 - For pre-commit and git hooks:
-  
+
   1. Install dependencies inside the `maindev` container:
 
     ```bash

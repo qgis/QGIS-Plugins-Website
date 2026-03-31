@@ -6,12 +6,14 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('plugins', '0010_merge_20240517_0729'),
+        ("plugins", "0010_merge_20240517_0729"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='pluginversiondownload',
-            unique_together={('plugin_version', 'download_date', 'country_code', 'country_name')},
+            name="pluginversiondownload",
+            unique_together={
+                ("plugin_version", "download_date", "country_code", "country_name")
+            },
         ),
     ]

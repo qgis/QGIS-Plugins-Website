@@ -50,7 +50,7 @@ def do_autopaginate(parser, token):
             orphans = int(split[3])
         except ValueError:
             raise template.TemplateSyntaxError(
-                u"Got %s, but expected integer." % split[3]
+                "Got %s, but expected integer." % split[3]
             )
         return AutoPaginateNode(
             split[1], paginate_by=split[2], orphans=orphans, context_var=context_var
@@ -113,14 +113,14 @@ class AutoPaginateNode(template.Node):
                 )
             context[key] = []
             context["invalid_page"] = True
-            return u""
+            return ""
         if self.context_var is not None:
             context[self.context_var] = page_obj.object_list
         else:
             context[key] = page_obj.object_list
         context["paginator"] = paginator
         context["page_obj"] = page_obj
-        return u""
+        return ""
 
 
 def smart_paginate(context, window=DEFAULT_WINDOW, hashtag=""):

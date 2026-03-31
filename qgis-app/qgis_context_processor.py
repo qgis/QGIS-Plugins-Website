@@ -2,8 +2,10 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.exceptions import ImproperlyConfigured
 
+
 def is_ajax(request):
-    return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+    return request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
+
 
 def additions(request):
     """Insert some additional information into the template context

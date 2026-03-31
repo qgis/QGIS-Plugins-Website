@@ -19,11 +19,11 @@ test('authentication-setup', async ({ page }) => {
   await page.getByRole('link', { name: ' Login' }).click();
 
   await page.waitForURL('**/accounts/login/');
-  
+
   await expect(page.locator('h3')).toContainText('Login using your OSGEO id.');
-  
+
   await expect(page.locator('body')).toContainText('Please note that you do not need a login to download a plugin.');
-  
+
   await expect(page.locator('body')).toContainText('You can create a new OSGEO id on OSGEO web portal.');
 
   await expect(page.getByRole('link', { name: 'OSGEO web portal.' })).toBeVisible();

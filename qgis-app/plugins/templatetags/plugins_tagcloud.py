@@ -90,8 +90,10 @@ def get_plugins_tagcloud(context, asvar):
 def include_plugins_tagcloud(forvar=None):
     pass
 
+
 def include_plugins_tagcloud_modal(forvar=None):
     pass
+
 
 def include_plugins_taglist(forvar=None):
     pass

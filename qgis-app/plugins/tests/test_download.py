@@ -1,20 +1,17 @@
-from django.test import Client, TestCase, RequestFactory
 from django.contrib.auth.models import User
-from django.utils import timezone
 from django.core.files.uploadedfile import SimpleUploadedFile
-
+from django.test import Client, RequestFactory, TestCase
+from django.urls import reverse
+from django.utils import timezone
 from plugins.models import Plugin, PluginVersion, PluginVersionDownload
 from plugins.views import version_download
-from django.urls import reverse
+
 
 class TestVersionDownloadView(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
 
-        self.user = User.objects.create_user(
-            username='testuser',
-            password='12345'
-        )
+        self.user = User.objects.create_user(username="testuser", password="12345")
 
         self.plugin = Plugin.objects.create(
             package_name="test-package",
@@ -27,59 +24,61 @@ class TestVersionDownloadView(TestCase):
             downloads=0,
             created_by=self.user,
             package=SimpleUploadedFile("test.zip", b"file_content"),
-            min_qg_version='3.1.1',
-            max_qg_version='3.3.0'
+            min_qg_version="3.1.1",
+            max_qg_version="3.3.0",
         )
 
     def test_version_download(self):
-        request = self.factory.get('/')
+        request = self.factory.get("/")
 
-        response = version_download(request, self.plugin.package_name, self.version.version)
+        response = version_download(
+            request, self.plugin.package_name, self.version.version
+        )
 
         self.version.refresh_from_db()
         self.plugin.refresh_from_db()
         download_record = PluginVersionDownload.objects.get(
-            plugin_version=self.version, 
-            download_date=timezone.now().date()
+            plugin_version=self.version, download_date=timezone.now().date()
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Type'], 'application/zip')
-        self.assertEqual(response.content, b'file_content')
+        self.assertEqual(response["Content-Type"], "application/zip")
+        self.assertEqual(response.content, b"file_content")
 
         self.assertEqual(self.version.downloads, 1)
         self.assertEqual(self.plugin.downloads, 1)
         self.assertEqual(download_record.download_count, 1)
 
     def test_version_download_per_country(self):
-        download_url = reverse('version_download', args=[self.plugin.package_name, self.version.version])
-        c = Client(REMOTE_ADDR='180.247.213.170')
+        download_url = reverse(
+            "version_download", args=[self.plugin.package_name, self.version.version]
+        )
+        c = Client(REMOTE_ADDR="180.247.213.170")
         response = c.get(download_url)
 
         self.version.refresh_from_db()
         self.plugin.refresh_from_db()
         download_record = PluginVersionDownload.objects.get(
-            plugin_version=self.version, 
-            download_date=timezone.now().date()
+            plugin_version=self.version, download_date=timezone.now().date()
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(download_record.country_code == 'ID')
-        self.assertTrue(download_record.country_name == 'Indonesia')
-
+        self.assertTrue(download_record.country_code == "ID")
+        self.assertTrue(download_record.country_name == "Indonesia")
 
     def test_download_per_country_with_invalid_ip(self):
-        download_url = reverse('version_download', args=[self.plugin.package_name, self.version.version])
-        c = Client(REMOTE_ADDR='123.456.789.100')
+        download_url = reverse(
+            "version_download", args=[self.plugin.package_name, self.version.version]
+        )
+        c = Client(REMOTE_ADDR="123.456.789.100")
         response = c.get(download_url)
 
         self.version.refresh_from_db()
         self.plugin.refresh_from_db()
         download_record = PluginVersionDownload.objects.get(
-            plugin_version=self.version, 
-            download_date=timezone.now().date()
+            plugin_version=self.version, download_date=timezone.now().date()
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(download_record.country_code == 'N/D')
-        self.assertTrue(download_record.country_name == 'N/D')
+        self.assertTrue(download_record.country_code == "N/D")
+        self.assertTrue(download_record.country_name == "N/D")

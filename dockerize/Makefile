@@ -141,7 +141,7 @@ uwsgi-shell:
 	@echo "------------------------------------------------------------------"
 	@echo "Shelling into the uwsgi container(s)"
 	@echo "------------------------------------------------------------------"
-	@docker compose -p $(PROJECT_ID) exec uwsgi bash 
+	@docker compose -p $(PROJECT_ID) exec uwsgi bash
 
 uwsgi-reload:
 	@echo
@@ -169,7 +169,7 @@ web-shell:
 	@echo "------------------------------------------------------------------"
 	@echo "Shelling into the NGINX/WEB container(s)"
 	@echo "------------------------------------------------------------------"
-	@docker compose -p $(PROJECT_ID) exec web bash 
+	@docker compose -p $(PROJECT_ID) exec web bash
 
 web-logs:
 	@echo

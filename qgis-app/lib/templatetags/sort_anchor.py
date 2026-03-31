@@ -1,4 +1,5 @@
 """Modified by elpaso to work with django-sortable-listview"""
+
 from django import template
 from django.conf import settings
 from django.template import Library

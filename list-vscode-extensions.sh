@@ -11,4 +11,3 @@ find "$EXT_DIR" -maxdepth 1 -mindepth 1 -type d | while read -r dir; do
         echo "--install-extension ${publisher}.${name}@${version} \\"
     fi
 done
-

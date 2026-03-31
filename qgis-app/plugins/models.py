@@ -109,7 +109,7 @@ class NewQgisMajorVersionReadyPlugins(BasePluginManager):
     """
     Shows only public plugins: i.e. those with "approved" flag set
     and with one version that is compatible with the new QGIS major version.
-    This is determined by checking if the max_qg_version is greater 
+    This is determined by checking if the max_qg_version is greater
     than or equal to the new QGIS major version.
     This manager filters out deprecated plugins as well.
     """

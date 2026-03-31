@@ -15,7 +15,7 @@ echo "Recording auth token to auth.json"
 # show prompt
 echo "Continue? y/n"
 read ANSWER
-case $ANSWER in 
+case $ANSWER in
   [yY] ) echo "Writing auth.json" ;;
   [nN] ) echo "Cancelled."; exit ;;
 esac

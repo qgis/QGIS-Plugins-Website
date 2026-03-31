@@ -24,7 +24,7 @@ if [ -w "tests/${1}.spec.ts" ]; then
    # show prompt
    echo "File tests/${1}.spec.ts exists. Overwrite? y/n"
    read ANSWER
-   case $ANSWER in 
+   case $ANSWER in
        [yY] ) echo "Writing recorded test to tests/${1}.spec.ts" ;;
        [nN] ) echo "Cancelled."; exit ;;
    esac
