@@ -20,7 +20,7 @@
 - [ ] AI tool(s) (Copilot, Claude, or something similar) supported my development of this PR. See our [policy about AI tool use](https://github.com/qgis/QGIS-Enhancement-Proposals/blob/master/qep-408-ai-tool-policy.md). Use of AI tools *must* be indicated. Failure to be honest might result in banning.
 
 <!--
-**BEFORE HITTING SUBMIT** -- Please BUILD AND TEST your changes thoroughly. This is YOUR responsibility! Do NOT rely on the project maintainers to do this for you!
+**BEFORE HITTING SUBMIT** -- Please SPIN UP THE DOCKERIZED PROJECT AND TEST your changes thoroughly. This is YOUR responsibility! Do NOT rely on the project maintainers to do this for you!
 
 IMPORTANT NOTES FOR FIRST TIME CONTRIBUTORS
 ===========================================
