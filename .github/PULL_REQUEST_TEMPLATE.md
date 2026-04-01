@@ -45,7 +45,7 @@ Feel free to ask in a comment if you have troubles with any of them.
 
 - New unit tests have been added for relevant changes
 
-- you have read the QGIS Developer Guide (https://docs.qgis.org/testing/en/docs/developers_guide/index.html) and your PR complies with its QGIS Coding Standards
+- you have read and acknowledged [the contributing guidelines](https://github.com/qgis/QGIS-Plugins-Website?tab=contributing-ov-file) and your PR complies with
 -->
 
 ## Reviewer's checklist
