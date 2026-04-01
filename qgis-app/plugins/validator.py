@@ -303,8 +303,8 @@ def validator(package, is_new: bool = False):
         if "\\" in name:
             raise ValidationError(
                 _(
-                    "Your archive does not conform to the ZIP specification, " \
-                    "it cannot contain backslashes in file names (found '{}'). " \
+                    "Your archive does not conform to the ZIP specification, "
+                    "it cannot contain backslashes in file names (found '{}'). "
                     "Please try again with a valid ZIP file (or use a different archiving tool).".format(
                         name
                     )

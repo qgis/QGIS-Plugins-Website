@@ -333,3 +333,30 @@ class TestMultipleParentFoldersValidator(TestCase):
         )
         multiple_parent_folders = self._get_value_by_attribute('multiple_parent_folders', result)
         self.assertIsNone(multiple_parent_folders)
+
+
+class TestPathWithBackslashValidator(TestCase):
+    def setUp(self) -> None:
+        path_with_backslash = os.path.join(TESTFILE_DIR, "path_with_backslash.zip_")
+        self.path_with_backslash = open(path_with_backslash, "rb")
+
+    def tearDown(self):
+        self.path_with_backslash.close()
+
+    def test_path_with_backslash(self):
+        """
+        The path_with_backslash.zip contains file with
+        path with backslash.
+        """
+        self.assertRaises(
+            ValidationError,
+            validator,
+            InMemoryUploadedFile(
+                self.path_with_backslash,
+                field_name="tempfile",
+                name="testfile.zip",
+                content_type="application/zip",
+                size=39889,
+                charset="utf8",
+            ),
+        )
