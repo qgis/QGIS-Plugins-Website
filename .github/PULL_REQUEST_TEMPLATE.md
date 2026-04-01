@@ -33,7 +33,6 @@ Include both: *what* you changed and *why* you changed it.
 If this is a pull request that adds new functionality which needs documentation, give an especially detailed explanation.
 In this case, start with a short abstract and then write some text that can be copied 1:1 to the documentation in the best case.
 
-Also mention if you think this PR needs to be backported. And list relevant or fixed issues.
 
 ----
 
