@@ -1,5 +1,5 @@
-from plugins.tasks.generate_plugins_xml import *  # noqa
-from plugins.tasks.update_qgis_versions import *  # noqa
-from plugins.tasks.rebuild_search_index import *  # noqa
-from plugins.tasks.get_sustaining_members import *  # noqa
-from plugins.tasks.run_security_scan import *  # noqa
+from plugins.tasks.generate_plugins_xml import generate_plugins_xml
+from plugins.tasks.update_qgis_versions import update_qgis_versions
+from plugins.tasks.rebuild_search_index import rebuild_search_index
+from plugins.tasks.get_sustaining_members import get_sustaining_members
+from plugins.tasks.run_security_scan import run_security_scan_task
