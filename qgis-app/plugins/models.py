@@ -385,6 +385,12 @@ class FeedbackReceivedPlugins(models.Manager):
     """
 
     def get_queryset(self):
+        latest_version = (
+            PluginVersion.objects.filter(plugin=OuterRef("pk"))
+            .order_by("-created_on")
+            .values("approved")[:1]
+        )
+
         feedback_count_subquery = (
             PluginVersionFeedback.objects.filter(
                 version=OuterRef("pluginversion"), is_completed=False
@@ -398,12 +404,17 @@ class FeedbackReceivedPlugins(models.Manager):
             super(FeedbackReceivedPlugins, self)
             .get_queryset()
             .filter(
-                pluginversion__approved=False,
                 deprecated=False,
                 is_deleted=False,
             )
-            .annotate(received_feedback_count=Subquery(feedback_count_subquery))
-            .filter(received_feedback_count__gte=1)
+            .annotate(
+                latest_version_approved=Subquery(latest_version),
+                received_feedback_count=Subquery(feedback_count_subquery),
+            )
+            .filter(
+                latest_version_approved=False,
+                received_feedback_count__gte=1,
+            )
             .extra(
                 select={
                     "average_vote": "rating_score / (rating_votes + 0.001)",
@@ -430,18 +441,25 @@ class FeedbackPendingPlugins(models.Manager):
     """
 
     def get_queryset(self):
+        latest_version = PluginVersion.objects.filter(
+            plugin=OuterRef("pk")
+        ).order_by("-created_on").values("approved")[:1]
+
         return (
             super(FeedbackPendingPlugins, self)
             .get_queryset()
             .filter(
-                pluginversion__approved=False,
                 deprecated=False,
                 is_deleted=False,
             )
             .annotate(
+                latest_version_approved=Subquery(latest_version),
                 total_feedback_count=Count("pluginversion__feedback"),
             )
-            .filter(total_feedback_count=0)
+            .filter(
+                latest_version_approved=False,
+                total_feedback_count=0,
+            )
             .extra(
                 select={
                     "average_vote": "rating_score / (rating_votes + 0.001)",
