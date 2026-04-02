@@ -15,14 +15,15 @@ Upload flow:
 5. Email sent to maintainer(s) with results
 """
 
-from celery import shared_task
-from celery.utils.log import get_task_logger
-
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.contrib.sites.models import Site
 from django.utils.translation import gettext_lazy as _
+
+from celery import shared_task
+from celery.utils.log import get_task_logger
+
 from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_VALIDATED,
@@ -156,89 +157,55 @@ def _send_validation_results_email(plugin_version, security_scan):
     docs_url = f"https://{domain}/docs/security-scanning"
 
     if security_scan is None:
-        subject = _("Plugin Validation Results: %(name)s v%(version)s") % {
-            "name": plugin.name,
-            "version": plugin_version.version,
-        }
-        message = _(
-            "Plugin validation for %(name)s v%(version)s completed.\n\n"
-            "The security scan could not be completed due to a tool error, "
-            "but your plugin has been made available for approval.\n\n"
-            "Plugin details: %(url)s\n"
-        ) % {
-            "name": plugin.name,
-            "version": plugin_version.version,
-            "url": version_url,
-        }
+        subject = f"Plugin Validation Results: {plugin.name} v{plugin_version.version}"
+        message = f"""Plugin validation for {plugin.name} v{plugin_version.version} completed.
+
+The security scan could not be completed due to a tool error, but your plugin has been made available for approval.
+
+Plugin details: {version_url}
+"""
     elif plugin_version.validation_status == "validated":
         auto_approved = plugin_version.approved
-        subject = _("Plugin Validation Results: %(name)s v%(version)s - All Checks Passed") % {
-            "name": plugin.name,
-            "version": plugin_version.version,
-        }
+        subject = f"Plugin Validation Results: {plugin.name} v{plugin_version.version} - All Checks Passed"
         if auto_approved:
-            status_msg = _(
-                "Your plugin has been automatically approved and is now available for download."
-            )
+            status_msg = "Your plugin has been automatically approved and is now available for download."
         else:
-            status_msg = _(
-                "Your plugin is ready for review by an approver."
-            )
-        message = _(
-            "Good news! All security and quality checks passed for your plugin.\n\n"
-            "Plugin: %(name)s\n"
-            "Version: %(version)s\n"
-            "Status: %(status)s\n\n"
-            "Summary:\n"
-            "  - Checks passed: %(passed)s / %(total)s\n"
-            "  - Files scanned: %(files)s\n\n"
-            "View detailed results: %(security_url)s\n"
-        ) % {
-            "name": plugin.name,
-            "version": plugin_version.version,
-            "status": status_msg,
-            "passed": security_scan.passed_checks,
-            "total": security_scan.total_checks,
-            "files": security_scan.files_scanned,
-            "security_url": security_url,
-        }
+            status_msg = "Your plugin is ready for review by an approver."
+        message = f"""Good news! All security and quality checks passed for your plugin.
+
+Plugin: {plugin.name}
+Version: {plugin_version.version}
+Status: {status_msg}
+
+Summary:
+  - Checks passed: {security_scan.passed_checks} / {security_scan.total_checks}
+  - Files scanned: {security_scan.files_scanned}
+
+View detailed results: {security_url}
+"""
     else:
         # blocked
-        subject = _("Plugin Validation Results: %(name)s v%(version)s - Critical Issues Found") % {
-            "name": plugin.name,
-            "version": plugin_version.version,
-        }
-        # Build critical issues details
+        subject = f"Plugin Validation Results: {plugin.name} v{plugin_version.version} - Critical Issues Found"
         critical_details = _build_critical_issues_text(security_scan)
-        message = _(
-            "Critical security issues were found in your plugin and it has been BLOCKED.\n\n"
-            "Plugin: %(name)s\n"
-            "Version: %(version)s\n"
-            "Status: BLOCKED - Not available for approval or download until issues are resolved\n\n"
-            "Critical issues found:\n"
-            "%(critical_details)s\n"
-            "To resolve this:\n"
-            "1. Fix the critical issues listed above\n"
-            "2. Upload a new version of your plugin\n"
-            "3. The new version will be automatically re-scanned\n\n"
-            "View detailed scan results: %(security_url)s\n"
-            "Security best practices: %(docs_url)s\n"
-        ) % {
-            "name": plugin.name,
-            "version": plugin_version.version,
-            "critical_details": critical_details,
-            "security_url": security_url,
-            "docs_url": docs_url,
-        }
+        message = f"""Critical security issues were found in your plugin and it has been BLOCKED.
+
+Plugin: {plugin.name}
+Version: {plugin_version.version}
+Status: BLOCKED - Not available for approval or download until issues are resolved
+
+Critical issues found:
+{critical_details}
+To resolve this:
+1. Fix the critical issues listed above
+2. Upload a new version of your plugin
+3. The new version will be automatically re-scanned
+
+View detailed scan results: {security_url}
+Security best practices: {docs_url}
+"""
 
     try:
-        send_mail(
-            str(subject),
-            str(message),
-            mail_from,
-            recipients,
-            fail_silently=True,
-        )
+        send_mail(subject, message, mail_from, recipients, fail_silently=True)
         logger.info(
             f"Validation results email sent for {plugin.package_name} v{plugin_version.version} "
             f"to {recipients}"
@@ -261,7 +228,7 @@ def _build_critical_issues_text(security_scan):
                     lines.append(f"  - {file_info}:{line_info}: {msg}")
                 else:
                     lines.append(f"  - {file_info}: {msg}")
-    return "\n".join(lines) if lines else _("No details available.")
+    return "\n".join(lines) if lines else "No details available."
 
 
 def _notify_staff_for_review(plugin_version):
@@ -271,7 +238,6 @@ def _notify_staff_for_review(plugin_version):
     """
     if getattr(settings, "DEBUG", False):
         return
-
 
     plugin = plugin_version.plugin
     domain = Site.objects.get_current().domain
@@ -298,25 +264,12 @@ def _notify_staff_for_review(plugin_version):
 
     try:
         send_mail(
-            str(
-                _("A new plugin version is ready for review: %(plugin)s v%(version)s")
-                % {"plugin": plugin.name, "version": plugin_version.version}
-            ),
-            str(
-                _(
-                    "Plugin %(name)s version %(version)s has passed all security checks "
-                    "and is ready for approval.\n\n"
-                    "Uploaded by: %(user)s\n"
-                    "Link: http://%(domain)s%(url)s\n"
-                )
-                % {
-                    "name": plugin.name,
-                    "version": plugin_version.version,
-                    "user": plugin_version.created_by,
-                    "domain": domain,
-                    "url": plugin_version.get_absolute_url(),
-                }
-            ),
+            f"A new plugin version is ready for review: {plugin.name} v{plugin_version.version}",
+            f"""Plugin {plugin.name} version {plugin_version.version} has passed all security checks and is ready for approval.
+
+Uploaded by: {plugin_version.created_by}
+Link: http://{domain}{plugin_version.get_absolute_url()}
+""",
             mail_from,
             recipients,
             fail_silently=True,
