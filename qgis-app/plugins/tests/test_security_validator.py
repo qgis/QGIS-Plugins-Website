@@ -146,7 +146,7 @@ class RunSecurityScanTaskTest(TestCase):
         return scan
 
     @override_settings(DEBUG=True)
-    @patch("plugins.security_utils.run_security_scan")
+    @patch("plugins.tasks.run_security_scan.run_security_scan")
     def test_task_sets_validated_when_no_critical_issues(self, mock_scan):
         """Task sets validation_status='validated' when critical_count == 0."""
         scan = self._make_security_scan(critical_count=0)
@@ -158,7 +158,7 @@ class RunSecurityScanTaskTest(TestCase):
         self.assertEqual(self.version.validation_status, VALIDATION_STATUS_VALIDATED)
 
     @override_settings(DEBUG=True)
-    @patch("plugins.security_utils.run_security_scan")
+    @patch("plugins.tasks.run_security_scan.run_security_scan")
     def test_task_sets_blocked_when_critical_issues(self, mock_scan):
         """Task sets validation_status='blocked' when critical_count > 0."""
         scan = self._make_security_scan(critical_count=2)
@@ -170,7 +170,7 @@ class RunSecurityScanTaskTest(TestCase):
         self.assertEqual(self.version.validation_status, VALIDATION_STATUS_BLOCKED)
 
     @override_settings(DEBUG=True)
-    @patch("plugins.security_utils.run_security_scan")
+    @patch("plugins.tasks.run_security_scan.run_security_scan")
     def test_task_blocked_version_not_approved(self, mock_scan):
         """Blocked versions must not be auto-approved."""
         scan = self._make_security_scan(critical_count=1)
@@ -182,7 +182,7 @@ class RunSecurityScanTaskTest(TestCase):
         self.assertFalse(self.version.approved)
 
     @override_settings(DEBUG=True)
-    @patch("plugins.security_utils.run_security_scan")
+    @patch("plugins.tasks.run_security_scan.run_security_scan")
     def test_manual_scan_does_not_change_status(self, mock_scan):
         """Manual re-scans must NOT change validation_status."""
         self.version.validation_status = VALIDATION_STATUS_VALIDATED
@@ -199,7 +199,7 @@ class RunSecurityScanTaskTest(TestCase):
         self.assertEqual(self.version.validation_status, VALIDATION_STATUS_VALIDATED)
 
     @override_settings(DEBUG=True)
-    @patch("plugins.security_utils.run_security_scan")
+    @patch("plugins.tasks.run_security_scan.run_security_scan")
     def test_task_handles_nonexistent_version(self, mock_scan):
         """Task must not raise when the PluginVersion no longer exists."""
         # Should complete without error
@@ -207,7 +207,7 @@ class RunSecurityScanTaskTest(TestCase):
         mock_scan.assert_not_called()
 
     @override_settings(DEBUG=True)
-    @patch("plugins.security_utils.run_security_scan")
+    @patch("plugins.tasks.run_security_scan.run_security_scan")
     def test_task_scan_tool_failure_treated_as_validated(self, mock_scan):
         """When the scan tool fails (returns None), version is still validated."""
         mock_scan.return_value = None
