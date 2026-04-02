@@ -15,13 +15,21 @@ Upload flow:
 5. Email sent to maintainer(s) with results
 """
 
-import logging
-
 from celery import shared_task
 from celery.utils.log import get_task_logger
+
 from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.mail import send_mail
 from django.contrib.sites.models import Site
 from django.utils.translation import gettext_lazy as _
+from plugins.models import (
+    VALIDATION_STATUS_BLOCKED,
+    VALIDATION_STATUS_VALIDATED,
+    PluginVersion,
+)
+from plugins.security_utils import run_security_scan
+
 
 logger = get_task_logger(__name__)
 
@@ -37,13 +45,6 @@ def run_security_scan_task(self, plugin_version_pk, is_manual=False):
                    Manual scans are informational only and do not change
                    the plugin's approval or validation status.
     """
-    from plugins.models import (
-        VALIDATION_STATUS_BLOCKED,
-        VALIDATION_STATUS_VALIDATED,
-        PluginVersion,
-    )
-    from plugins.security_utils import run_security_scan
-
     try:
         plugin_version = PluginVersion.objects.select_related(
             "plugin", "created_by"
@@ -139,8 +140,6 @@ def _send_validation_results_email(plugin_version, security_scan):
     if getattr(settings, "DEBUG", False):
         logger.debug("Validation results email not sent (DEBUG=True)")
         return
-
-    from django.core.mail import send_mail
 
     plugin = plugin_version.plugin
     recipients = [u.email for u in plugin.editors if u.email]
@@ -273,7 +272,6 @@ def _notify_staff_for_review(plugin_version):
     if getattr(settings, "DEBUG", False):
         return
 
-    from django.core.mail import send_mail
 
     plugin = plugin_version.plugin
     domain = Site.objects.get_current().domain
@@ -282,7 +280,6 @@ def _notify_staff_for_review(plugin_version):
     notification_group = getattr(
         settings, "NOTIFICATION_RECIPIENTS_GROUP_NAME", "Plugin Notification Recipients"
     )
-    from django.contrib.auth.models import User
 
     recipients = [
         u.email
