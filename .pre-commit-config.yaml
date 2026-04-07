@@ -1,11 +1,8 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
-
 exclude: 'static/'
 repos:
   # Fix end of files
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -15,7 +12,7 @@ repos:
 
   # Remove unused imports/variables
   - repo: https://github.com/myint/autoflake
-    rev: v2.3.1
+    rev: v2.3.3
     hooks:
       - id: autoflake
         args:
@@ -24,13 +21,21 @@ repos:
 
   # Sort imports
   - repo: https://github.com/pycqa/isort
-    rev: "6.0.1"
+    rev: "8.0.1"
     hooks:
       - id: isort
-        args: ["--profile", "black"]
+        args:
+          - --profile
+          - black
 
   # Black formatting
   - repo: https://github.com/psf/black
-    rev: 25.1.0
+    rev: 26.3.1
     hooks:
       - id: black
+
+ci:
+  autoupdate_schedule: quarterly
+  skip: []
+  submodules: false
+
