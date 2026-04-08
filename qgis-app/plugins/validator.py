@@ -298,6 +298,29 @@ def validator(package, is_new: bool = False):
     except:
         pass
 
+    # Check if the zip namelist contains backslashes or drive letters, which is not allowed.
+    for name in namelist:
+        if "\\" in name:
+            raise ValidationError(
+                _(
+                    "Your archive does not conform to the ZIP specification, "
+                    "it cannot contain backslashes in file names (found '{}'). "
+                    "Please try again with a valid ZIP file (or use a different archiving tool).".format(
+                        name
+                    )
+                )
+            )
+        if re.match(r"^[A-Za-z]:", name):
+            raise ValidationError(
+                _(
+                    "Your archive does not conform to the ZIP specification, "
+                    "it cannot contain drive letters in file names (found '{}'). "
+                    "Please try again with a valid ZIP file (or use a different archiving tool).".format(
+                        name
+                    )
+                )
+            )
+
     # Checks that package_name  exists
     try:
         package_name = namelist[0][: namelist[0].index("/")]
