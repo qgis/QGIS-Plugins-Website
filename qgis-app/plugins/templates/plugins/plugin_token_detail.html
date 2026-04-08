@@ -29,7 +29,7 @@
             readonly
           >{{ access_token }}</textarea>
           <div class="tooltip mt-3">
-            <button class="button is-success" onclick="copyToClipBoard('{{ access_token }}')" style="width: unset !important;">
+            <button class="button is-success" onclick="copyToClipBoard('{{ access_token }}')">
               <span class="icon"><i class="fas fa-copy"></i></span>
             </button>
             <span class="tooltiptext" id="copyTooltip">{% trans "Copy token to clipboard" %}</span>
@@ -55,64 +55,13 @@
   </a>
 </div>
 {% endblock %}
-{% block extracss %}
-{{ block.super }}
-<style>
-
-  .tooltip {
-    position: relative;
-    display: inline-block;
-    opacity: 1 !important;
-  }
-
-  .tooltip .tooltiptext {
-    visibility: hidden;
-    width: 140px;
-    background-color: #555;
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    padding: 5px;
-    position: absolute;
-    z-index: 1;
-    bottom: 150%;
-    left: 50%;
-    margin-left: -75px;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  .tooltip .tooltiptext::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: #555 transparent transparent transparent;
-  }
-
-  .tooltip:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
-  }
-</style>
-{% endblock %}
 
 {% block extrajs %}
+{{ block.super }}
 <script type="text/javascript">
-  {
-    {
-      block.super
-    }
-  }
-
   function copyToClipBoard(token) {
     navigator.clipboard.writeText(token);
-
-    var tooltip = document.getElementById("copyTooltip");
-    tooltip.innerHTML = "Token copied!";
+    document.getElementById("copyTooltip").innerHTML = "Token copied!";
   }
 </script>
 {% endblock %}

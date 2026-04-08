@@ -171,47 +171,6 @@
 <link rel="stylesheet" href="{% static "style/dataTables.bulma.css" %}">
 {{ block.super }}
 <style>
-    .tooltip {
-      position: relative;
-      display: inline-block;
-      opacity: 1 !important;
-      margin-left: 10px;
-    }
-
-    .tooltip .tooltiptext {
-      visibility: hidden;
-      width: 200px;
-      background-color: #363636;
-      color: #fff;
-      text-align: center;
-      border-radius: 6px;
-      padding: 8px;
-      position: absolute;
-      z-index: 1000;
-      bottom: 125%;
-      left: 50%;
-      margin-left: -100px;
-      opacity: 0;
-      transition: opacity 0.3s;
-      font-size: 0.875rem;
-      line-height: 1.4;
-    }
-
-    .tooltip .tooltiptext::after {
-      content: "";
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      margin-left: -5px;
-      border-width: 5px;
-      border-style: solid;
-      border-color: #363636 transparent transparent transparent;
-    }
-
-    .tooltip:hover .tooltiptext {
-      visibility: visible;
-      opacity: 1;
-    }
     .tab-content .tab-pane.is-active {
         display: block;
     }
