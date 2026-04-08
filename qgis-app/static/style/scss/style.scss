@@ -4,6 +4,7 @@
 @import "sustaining_members.scss";
 @import "security_scan.scss";
 @import "file_upload_widget.scss";
+@import "tooltip.scss";
 
 
 html {
@@ -243,7 +244,7 @@ p {
     max-width: unset;
   }
   .login-container {
-    width: 600px !important;
+    width: 650px !important;
   }
 }
 

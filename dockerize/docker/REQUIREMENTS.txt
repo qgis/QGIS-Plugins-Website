@@ -34,6 +34,7 @@ git+https://github.com/Xpirix/django-simplemenu.git@modernize
 git+https://github.com/metamatik/django-templatetag-sugar.git
 importlib_metadata<5
 markdown~=3.5
+oauthlib~=3.2
 Pillow~=10.1
 psycopg2-binary~=2.9
 pyjwt~=2.8

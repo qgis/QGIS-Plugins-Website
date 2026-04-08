@@ -85,6 +85,12 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.github",
+    "allauth.socialaccount.providers.gitlab",
+    "allauth.socialaccount.providers.openstreetmap",
+    "allauth.socialaccount.providers.microsoft",
+    "allauth.socialaccount.providers.apple",
+    "allauth.socialaccount.providers.linkedin_oauth2",
+    "allauth.socialaccount.providers.telegram",
 ]
 
 DATABASES = {
@@ -125,6 +131,19 @@ SOCIALACCOUNT_PROVIDERS = {
     "github": {
         "SCOPE": ["user:email"],
     },
+    "gitlab": {
+        "SCOPE": ["read_user"],
+    },
+    "openstreetmap": {},
+    "microsoft": {
+        "tenant": "common",
+        "SCOPE": ["User.Read"],
+    },
+    "apple": {},
+    "linkedin_oauth2": {
+        "SCOPE": ["openid", "profile", "email"],
+    },
+    "telegram": {},
 }
 
 SOCIALACCOUNT_AUTO_SIGNUP = False
