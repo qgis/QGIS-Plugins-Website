@@ -155,15 +155,28 @@ You need an Apple Developer account (<https://developer.apple.com>).
    - Provider: `Apple`
    - Client ID: the **Services ID** identifier (e.g. `org.qgis.plugins.web`)
    - Secret key: your **Team ID** (found top-right in the developer portal, 10 chars)
-   - Key: the **Key ID** shown on the key detail page (10-char identifier, not the `.p8` content)
-   - Settings: paste the following JSON, replacing the value with the full content of your `.p8` file with newlines as `\n`:
-     ```json
-     {
-       "certificate_key": "-----BEGIN PRIVATE KEY-----\nMIGH...\n-----END PRIVATE KEY-----"
-     }
-     ```
+   - Key: paste the full content of the downloaded `.p8` file
 
-   django-allauth uses the Team ID + Key ID + `.p8` content to generate a JWT client secret dynamically. All credentials are stored in the database via Admin — no changes to `settings_local.py` are required for Apple.
+   django-allauth uses the Team ID + Key ID + `.p8` content to generate a JWT client secret dynamically. You also need to set **Key ID** in `qgis-app/settings_local.py` (copy from `settings_local.py.templ`):
+
+   ```python
+   SOCIALACCOUNT_PROVIDERS = {
+       "apple": {
+           "APP": {
+               "client_id": "org.qgis.plugins.web",
+               "secret": "TEAM_ID",
+               "key": "KEY_ID",
+               "settings": {
+                   "certificate_key": """-----BEGIN PRIVATE KEY-----
+   ...your .p8 content here...
+   -----END PRIVATE KEY-----"""
+               }
+           }
+       },
+   }
+   ```
+
+   The other fields (Client ID = Services ID, Secret key = Team ID) can also be stored in the DB via Admin as a fallback, but the `certificate_key` must be in settings.
 
 ---
 
