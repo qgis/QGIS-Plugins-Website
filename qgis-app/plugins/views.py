@@ -1191,9 +1191,26 @@ class MyPluginsList(PluginsList):
     def get_queryset(self):
         """Override to include soft-deleted plugins for the user's own plugins."""
         # Use objects.all() to bypass the BasePluginManager filter that excludes soft-deleted items
-        qs = Plugin.base_objects.all()
+        qs = Plugin.objects.all()
         # Apply the user filter
         qs = self.get_filtered_queryset(qs)
+
+        qs = qs.extra(
+            select={
+                "average_vote": "rating_score / (rating_votes + 0.001)",
+                "latest_version_date": (
+                    "SELECT created_on FROM plugins_pluginversion WHERE "
+                    "plugins_pluginversion.plugin_id = plugins_plugin.id "
+                    "AND approved = TRUE "
+                    "ORDER BY created_on DESC LIMIT 1"
+                ),
+                "weighted_rating": (
+                    "((rating_votes::FLOAT / (rating_votes + 5)) * "
+                    "(rating_score::FLOAT / (rating_votes + 0.001))) + "
+                    "((5::FLOAT / (rating_votes + 5)) * 3)"
+                ),
+            }
+        )
 
         # Handle sorting (copied from parent class)
         sort_by = self.request.GET.get("sort", None)
