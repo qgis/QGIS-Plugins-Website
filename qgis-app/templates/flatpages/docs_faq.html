@@ -25,5 +25,26 @@
     <a href="https://github.com/qgis/QGIS-Django/pull/271#issuecomment-1794858448">here</a>.
   </p>
 
+  <h2>Why is the wrong plugin version shown as "latest" in QGIS?</h2>
+
+  <h3>Version numbering convention</h3>
+  <p>
+    The <code>plugins.xml</code> feed — which is used by the QGIS Plugin Manager to determine the latest available version —
+    selects the latest version by <strong>string comparison of the version name</strong>, not by the upload date.
+  </p>
+  <p>
+    This means that version strings must follow a strict numeric convention (e.g. <code>1.2.3</code>) so that
+    comparisons work as expected. If a version tag contains letters or non-numeric segments
+    (e.g. <code>2.3.e9f6b2a</code>), the string ordering may not match the intended release order.
+    For example, <code>2.3.e9f6b2a</code> would be sorted <em>higher</em> than <code>2.3.1.2bbe09c</code>
+    because <code>e</code> &gt; <code>1</code> in string comparison, causing the wrong version to appear as the
+    latest in the Plugin Manager.
+  </p>
+  <p>
+    Plugin authors are therefore strongly encouraged to use standard semantic versioning
+    (e.g. <code>MAJOR.MINOR.PATCH</code>) for their plugin versions to ensure the correct
+    version is identified as the latest.
+  </p>
+
 </div>
 {% endblock %}
