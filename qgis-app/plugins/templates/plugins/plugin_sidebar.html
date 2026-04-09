@@ -85,10 +85,16 @@
         <span onclick="toggleSubMenu('docs')" class="drop-arrow"><img src="{% static "images/arrow.svg" %}"/></span>
       </div>
       <ul class="collapsed" id="docs">
+        {% url 'docs_guidelines' as docs_guidelines_url %}
+        <li class="has-child {% if request.path == docs_guidelines_url %}is-active{% endif %}">
+          <a href="{{ docs_guidelines_url }}">
+            Plugin Guidelines
+          </a>
+        </li>
         {% url 'docs_publish' as docs_publish_url %}
         <li class="has-child {% if request.path == docs_publish_url %}is-active{% endif %}">
           <a href="{{ docs_publish_url }}">
-            Publish a plugin
+            How to Publish
           </a>
         </li>
         {% url 'docs_approval' as docs_approval_url %}
