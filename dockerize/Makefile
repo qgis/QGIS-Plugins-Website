@@ -35,7 +35,7 @@ web: db
 	@echo "------------------------------------------------------------------"
 	@echo "Running in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker compose -p $(PROJECT_ID) up -d --scale uwsgi=2 web worker beat dbbackups
+	@docker compose -p $(PROJECT_ID) up -d --scale uwsgi=2 web worker beat dbbackups qgis-qt6
 
 certbot: web
 	@echo
