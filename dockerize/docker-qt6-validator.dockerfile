@@ -1,4 +1,5 @@
-FROM ghcr.io/qgis/pyqgis4-checker:main-ubuntu
+ARG BUILDPLATFORM=linux/amd64
+FROM --platform=$BUILDPLATFORM ghcr.io/qgis/pyqgis4-checker:main-ubuntu
 
 WORKDIR /celery_task
 
