@@ -966,6 +966,24 @@ class PluginVersion(models.Model):
     stable_objects = StablePluginVersions()
     experimental_objects = ExperimentalPluginVersions()
 
+    # Check qt6
+    class Qt6Status(models.TextChoices):
+        NOT_RUN = "not_run", _("Not run")
+        PENDING = "pending", _("Pending")
+        COMPATIBLE = "compatible", _("Compatible")
+        NOT_COMPATIBLE = "not_compatible", _("Not compatible")
+
+    qt6_status = models.CharField(
+        _("Qt6 status"),
+        max_length=20,
+        choices=Qt6Status.choices,
+        default=Qt6Status.NOT_RUN,
+        db_index=True,
+    )
+    qt6_logs = models.TextField(blank=True)
+    qt6_checked_on = models.DateTimeField(null=True, blank=True)
+
+
     @property
     def file_name(self):
         return os.path.basename(self.package.file.name)

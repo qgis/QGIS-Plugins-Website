@@ -158,6 +158,7 @@ CELERY_BEAT_SCHEDULE = {
         "kwargs": {"days": 30},  # Delete items marked for 30+ days
     },
 }
+CELERY_IMPORTS = ("plugins.tasks",)
 # Set plugin token access and refresh validity to a very long duration
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=365 * 1000),
