@@ -120,7 +120,7 @@ def plugin_upload(package, **kwargs):
                 package.len,
                 "UTF-8",
             ),
-            "approved": request.user.has_perm("plugins.can_approve") or plugin.approved,
+            "approved": request.user.has_perm("plugins.can_approve"),
         }
 
         # Optional version metadata

@@ -238,6 +238,95 @@ class UploadWithTokenTestCase(TestCase):
             ).exists()
         )
 
+    def test_new_version_not_auto_approved_for_untrusted_user_on_approved_plugin(self):
+        """
+        Security: uploading a new version via token must NOT be auto-approved
+        because the plugin already has an approved version. Only the user's
+        can_approve permission should grant approval.
+        """
+        # Approve the existing version to simulate an approved plugin
+        version = PluginVersion.objects.get(plugin__name="Test Plugin", version="0.0.1")
+        version.approved = True
+        version.save()
+
+        # Generate a token for the untrusted user
+        self.client.post(self.url_token_create, {})
+        outstanding_token = OutstandingToken.objects.last().token
+        refresh = RefreshToken(outstanding_token)
+        refresh["plugin_id"] = self.plugin.pk
+        refresh["refresh_jti"] = refresh["jti"]
+        access_token = str(refresh.access_token)
+
+        self.client.logout()
+
+        valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin_0.0.2.zip_")
+        with open(valid_plugin, "rb") as file:
+            uploaded_file = SimpleUploadedFile(
+                "valid_plugin_0.0.2.zip_", file.read(), content_type="application/zip_"
+            )
+
+        c = Client(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        response = c.post(self.url_add_version, {"package": uploaded_file})
+
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertTrue(data.get("success"))
+
+        new_version = PluginVersion.objects.get(plugin__name="Test Plugin", version="0.0.2")
+        self.assertFalse(
+            new_version.approved,
+            "New version must NOT be auto-approved just because the plugin is approved; "
+            "only user trust (can_approve) should grant approval.",
+        )
+        self.assertFalse(data.get("approved"))
+        self.assertIn("approval_message", data)
+
+    def test_new_version_auto_approved_for_trusted_token_user(self):
+        """
+        A token whose owner holds can_approve should result in an approved version,
+        regardless of whether request.user is AnonymousUser (token path).
+        """
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+        from plugins.models import Plugin as PluginModel
+
+        # Grant can_approve to the token user
+        ct = ContentType.objects.get_for_model(PluginModel)
+        perm = Permission.objects.get(codename="can_approve", content_type=ct)
+        self.user.user_permissions.add(perm)
+        # Refresh to bust the permission cache
+        self.user = self.user.__class__.objects.get(pk=self.user.pk)
+
+        # Generate a token for the now-trusted user
+        self.client.post(self.url_token_create, {})
+        outstanding_token = OutstandingToken.objects.last().token
+        refresh = RefreshToken(outstanding_token)
+        refresh["plugin_id"] = self.plugin.pk
+        refresh["refresh_jti"] = refresh["jti"]
+        access_token = str(refresh.access_token)
+
+        self.client.logout()
+
+        valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin_0.0.2.zip_")
+        with open(valid_plugin, "rb") as file:
+            uploaded_file = SimpleUploadedFile(
+                "valid_plugin_0.0.2.zip_", file.read(), content_type="application/zip_"
+            )
+
+        c = Client(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        response = c.post(self.url_add_version, {"package": uploaded_file})
+
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertTrue(data.get("success"))
+
+        new_version = PluginVersion.objects.get(plugin__name="Test Plugin", version="0.0.2")
+        self.assertTrue(
+            new_version.approved,
+            "Version uploaded via token by a trusted user (can_approve) should be approved.",
+        )
+        self.assertTrue(data.get("approved"))
+
 
 class APIResponseTestCase(TestCase):
     """Test cases for API response improvements"""

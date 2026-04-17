@@ -557,8 +557,7 @@ def plugin_upload(request):
                     "version": form.cleaned_data.get("version"),
                     "created_by": request.user,
                     "package": form.cleaned_data.get("package"),
-                    "approved": request.user.has_perm("plugins.can_approve")
-                    or plugin.approved,
+                    "approved": request.user.has_perm("plugins.can_approve"),
                     "experimental": form.cleaned_data.get("experimental", False),
                     "changelog": form.cleaned_data.get("changelog", ""),
                     "external_deps": form.cleaned_data.get("external_deps", ""),
@@ -1563,7 +1562,14 @@ def _version_create(request, plugin, version):
     contained in the package metadata
     """
     is_api_request = getattr(version, "is_from_token", False)
-    is_trusted = request.user.has_perm("plugins.can_approve") or plugin.approved
+    if is_api_request:
+        # For token-based uploads, resolve the token owner and check their permissions.
+        # request.user is AnonymousUser in this path since authentication is via JWT token,
+        # not Django session.
+        token_user = request.plugin_token.token.user
+        is_trusted = token_user.has_perm("plugins.can_approve")
+    else:
+        is_trusted = request.user.has_perm("plugins.can_approve")
     if request.method == "POST":
 
         form = PluginVersionForm(
