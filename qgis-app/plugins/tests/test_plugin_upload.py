@@ -3,7 +3,8 @@ from unittest.mock import patch
 
 from django.urls import reverse
 from django.test import Client, TestCase, override_settings
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from plugins.models import Plugin, PluginVersion
 from plugins.forms import PackageUploadForm
@@ -135,11 +136,7 @@ class PluginUploadTestCase(TestCase):
         A user with can_approve permission should have their uploaded version
         approved automatically via the plugin_upload view.
         """
-        from django.contrib.auth.models import Permission
-        from django.contrib.contenttypes.models import ContentType
-        from plugins.models import Plugin as PluginModel
-
-        ct = ContentType.objects.get_for_model(PluginModel)
+        ct = ContentType.objects.get_for_model(Plugin)
         perm = Permission.objects.get(codename="can_approve", content_type=ct)
         self.user.user_permissions.add(perm)
         # Refresh to bust Django's permission cache

@@ -1,14 +1,15 @@
 import os
 from unittest.mock import patch
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from plugins.forms import PackageUploadForm
-from plugins.models import Plugin, PluginVersion
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from plugins.models import Plugin, PluginVersion
 
 
 def do_nothing(*args, **kwargs):
@@ -286,12 +287,8 @@ class UploadWithTokenTestCase(TestCase):
         A token whose owner holds can_approve should result in an approved version,
         regardless of whether request.user is AnonymousUser (token path).
         """
-        from django.contrib.auth.models import Permission
-        from django.contrib.contenttypes.models import ContentType
-        from plugins.models import Plugin as PluginModel
-
         # Grant can_approve to the token user
-        ct = ContentType.objects.get_for_model(PluginModel)
+        ct = ContentType.objects.get_for_model(Plugin)
         perm = Permission.objects.get(codename="can_approve", content_type=ct)
         self.user.user_permissions.add(perm)
         # Refresh to bust the permission cache

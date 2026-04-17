@@ -5,12 +5,13 @@ Tests for creating empty plugins (without versions)
 import os
 from unittest.mock import patch
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from plugins.forms import PluginCreateForm
-from plugins.models import Plugin, PluginVersion
+from plugins.models import Plugin
 
 
 def do_nothing(*args, **kwargs):
@@ -345,11 +346,8 @@ class PluginCreateEmptyTestCase(TestCase):
         A user with can_approve permission should have their uploaded version
         approved automatically via the version_create view.
         """
-        from django.contrib.auth.models import Permission
-        from django.contrib.contenttypes.models import ContentType
-        from plugins.models import Plugin as PluginModel
 
-        ct = ContentType.objects.get_for_model(PluginModel)
+        ct = ContentType.objects.get_for_model(Plugin)
         perm = Permission.objects.get(codename="can_approve", content_type=ct)
         self.user.user_permissions.add(perm)
         # Refresh to bust Django's permission cache
