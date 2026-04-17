@@ -62,9 +62,9 @@ if settings.SERVE_STATIC_MEDIA:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
-# auth
+# auth - use allauth for login/logout/social auth (includes django.contrib.auth views)
 urlpatterns += [
-    path("accounts/", include("django.contrib.auth.urls")),
+    path("accounts/", include("allauth.urls")),
 ]
 
 # tinymce

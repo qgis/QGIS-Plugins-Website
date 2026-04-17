@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% load i18n static socialaccount %}
+
+{% block pagetitle %}
+{% get_providers as socialaccount_providers %}
+<section class="hero is-dark has-bg-img" style="background: url({% static 'images/hegobg1.webp' %});
+background-position: 50%;
+background-size: cover;">
+  <div class="hero-body" style="min-height: 100dvh; display: flex; align-items: center;">
+    <div class="columns is-vcentered is-centered" style="width: 100%;">
+      <div class="column is-5-tablet is-4-desktop p-0">
+        <div class="login-container p-6 has-text-centered">
+          <h3 class="title">{% trans "Log In" %}</h3>
+          <hr class="login-hr" />
+          <p class="subtitle has-text-danger has-text-weight-bold">
+            {% trans "Please note that you do not need a login to download a plugin." %}
+          </p>
+          {% if socialaccount_providers %}
+          <p class="subtitle">
+              {% trans "Sign in with a third party account." %}
+          </p>
+          <div class="buttons are-medium is-centered mb-4">
+            {% for provider in socialaccount_providers %}
+              {% if provider.id == "github" %}
+              <div class="tooltip">
+                <a href="{% provider_login_url provider.id process='login' %}"
+                   class="button" style="background:#24292e;color:#fff;border-color:grey;"
+                   aria-label="{% trans 'Sign in with GitHub' %}">
+                  <span class="icon"><i class="fab fa-github"></i></span>
+                </a>
+                <span class="tooltiptext">{% trans "Sign in with GitHub" %}</span>
+              </div>
+              {% elif provider.id == "google" %}
+              <div class="tooltip">
+                <a href="{% provider_login_url provider.id process='login' %}"
+                   class="button" style="background:#fff;color:#4285f4;border-color:#dadce0;"
+                   aria-label="{% trans 'Sign in with Google' %}">
+                  <span class="icon"><i class="fab fa-google"></i></span>
+                </a>
+                <span class="tooltiptext">{% trans "Sign in with Google" %}</span>
+              </div>
+              {% elif provider.id == "gitlab" %}
+              <div class="tooltip">
+                <a href="{% provider_login_url provider.id process='login' %}"
+                   class="button" style="background:#FC6D26;color:#fff;border-color:#FC6D26;"
+                   aria-label="{% trans 'Sign in with GitLab' %}">
+                  <span class="icon"><i class="fab fa-gitlab"></i></span>
+                </a>
+                <span class="tooltiptext">{% trans "Sign in with GitLab" %}</span>
+              </div>
+              {% elif provider.id == "openstreetmap" %}
+              <div class="tooltip">
+                <a href="{% provider_login_url provider.id process='login' %}"
+                   class="button" style="background:#7EBC6F;color:#fff;border-color:#7EBC6F;"
+                   aria-label="{% trans 'Sign in with OpenStreetMap' %}">
+                  <span class="icon"><i class="fas fa-map"></i></span>
+                </a>
+                <span class="tooltiptext">{% trans "Sign in with OpenStreetMap" %}</span>
+              </div>
+              {% elif provider.id == "microsoft" %}
+              <div class="tooltip">
+                <a href="{% provider_login_url provider.id process='login' %}"
+                   class="button" style="background:#0078D4;color:#fff;border-color:#0078D4;"
+                   aria-label="{% trans 'Sign in with Microsoft' %}">
+                  <span class="icon"><i class="fab fa-microsoft"></i></span>
+                </a>
+                <span class="tooltiptext">{% trans "Sign in with Microsoft" %}</span>
+              </div>
+              {% elif provider.id == "apple" %}
+              <div class="tooltip">
+                <a href="{% provider_login_url provider.id process='login' %}"
+                   class="button" style="background:#000;color:#fff;border-color:grey;"
+                   aria-label="{% trans 'Sign in with Apple' %}">
+                  <span class="icon"><i class="fab fa-apple"></i></span>
+                </a>
+                <span class="tooltiptext">{% trans "Sign in with Apple" %}</span>
+              </div>
+              {% elif provider.id == "linkedin_oauth2" %}
+              <div class="tooltip">
+                <a href="{% provider_login_url provider.id process='login' %}"
+                   class="button" style="background:#0A66C2;color:#fff;border-color:#0A66C2;"
+                   aria-label="{% trans 'Sign in with LinkedIn' %}">
+                  <span class="icon"><i class="fab fa-linkedin"></i></span>
+                </a>
+                <span class="tooltiptext">{% trans "Sign in with LinkedIn" %}</span>
+              </div>
+              {% elif provider.id == "telegram" %}
+              <div class="tooltip">
+                <a href="{% provider_login_url provider.id process='login' %}"
+                   class="button" style="background:#26A5E4;color:#fff;border-color:#26A5E4;"
+                   aria-label="{% trans 'Sign in with Telegram' %}">
+                  <span class="icon"><i class="fab fa-telegram"></i></span>
+                </a>
+                <span class="tooltiptext">{% trans "Sign in with Telegram" %}</span>
+              </div>
+              {% else %}
+              <div class="tooltip">
+                <a href="{% provider_login_url provider.id process='login' %}"
+                   class="button"
+                   aria-label="{% trans 'Sign in with' %} {{ provider.name }}">
+                  <span class="icon"><i class="fas fa-sign-in-alt"></i></span>
+                </a>
+                <span class="tooltiptext">{% trans "Sign in with" %} {{ provider.name }}</span>
+              </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+          <div class="login-divider">
+            <span>{% trans "or sign in with OSGeo ID" %}</span>
+          </div>
+          {% else %}
+            <p class="subtitle">
+              {% trans 'Log in with your credentials below.' %}
+            </p>
+          {% endif %}
+
+          <form method="POST" action="{% url 'account_login' %}">
+            {% csrf_token %}
+            {% if next %}
+            <input type="hidden" name="next" value="{{ next }}" />
+            {% endif %}
+
+            <div class="field">
+              <div class="control has-icons-left">
+                <input
+                  class="input{% if form.login.errors %} is-danger{% endif %}"
+                  type="text"
+                  placeholder="{% trans 'Username' %}"
+                  autofocus
+                  id="id_login"
+                  name="login"
+                  value="{{ form.login.value|default:'' }}"
+                />
+                <span class="icon is-small is-left">
+                  <i class="fas fa-user"></i>
+                </span>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="control has-icons-left">
+                <input
+                  class="input{% if form.password.errors %} is-danger{% endif %}"
+                  type="password"
+                  placeholder="{% trans 'Password' %}"
+                  id="id_password"
+                  name="password"
+                />
+                <span class="icon is-small is-left">
+                  <i class="fas fa-lock"></i>
+                </span>
+              </div>
+            </div>
+
+            {% if form.errors or form.non_field_errors %}
+            <div class="notification is-danger is-light mb-3">
+              {% for error in form.non_field_errors %}
+                {{ error }}<br/>
+              {% endfor %}
+              {% for field in form %}
+                {% for error in field.errors %}
+                  {{ error }}<br/>
+                {% endfor %}
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="field">
+              <div class="control">
+                <button
+                  class="button is-success is-fullwidth"
+                  type="submit"
+                  id="submit-button"
+                >
+                  <span class="icon">
+                    <i class="fas fa-sign-in-alt"></i>
+                  </span>
+                  <span>{% trans "Sign In" %}</span>
+                </button>
+              </div>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extrajs %}
+{{ block.super }}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    function updateButtonState() {
+      var loginEmpty = document.getElementById("id_login").value === "";
+      var passwordEmpty = document.getElementById("id_password").value === "";
+      document.getElementById("submit-button").disabled = loginEmpty || passwordEmpty;
+    }
+    updateButtonState();
+    document.getElementById("id_login").addEventListener("input", updateButtonState);
+    document.getElementById("id_password").addEventListener("input", updateButtonState);
+  });
+</script>
+{% endblock %}

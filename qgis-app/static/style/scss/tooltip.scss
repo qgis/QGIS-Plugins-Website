@@ -1,0 +1,48 @@
+// -------------------------------------------------------
+// Tooltip component
+// Used across plugin_detail, plugin_token_detail, login
+// -------------------------------------------------------
+.tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  opacity: 1 !important;
+
+  .tooltiptext {
+    visibility: hidden;
+    width: max-content;
+    max-width: 220px;
+    background-color: #363636;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    position: absolute;
+    z-index: 1000;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    white-space: normal;
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #363636 transparent transparent transparent;
+    }
+  }
+
+  &:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+  }
+}
