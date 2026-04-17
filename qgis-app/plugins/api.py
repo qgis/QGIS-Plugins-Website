@@ -16,6 +16,7 @@ from django.utils.translation import gettext_lazy as _
 from plugins.models import *
 from plugins.validator import validator
 from plugins.views import plugin_notify, send_upload_confirmation_email
+from plugins.tasks.run_security_scan import run_security_scan_task
 from rpc4django import rpcmethod
 from taggit.models import Tag
 
@@ -141,7 +142,6 @@ def plugin_upload(package, **kwargs):
         send_upload_confirmation_email(new_version)
 
         # Queue async security scan task
-        from plugins.tasks.run_security_scan import run_security_scan_task
         run_security_scan_task.delay(new_version.pk)
     except IntegrityError as e:
         # Avoids error: current transaction is aborted, commands ignored until

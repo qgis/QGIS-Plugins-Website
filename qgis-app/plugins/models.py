@@ -985,6 +985,7 @@ class PluginVersion(models.Model):
         (not blocked by security checks).
         """
         return self.validation_status not in [
+            VALIDATION_STATUS_PENDING,
             VALIDATION_STATUS_VALIDATING,
             VALIDATION_STATUS_BLOCKED,
         ]

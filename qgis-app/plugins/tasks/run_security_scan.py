@@ -71,7 +71,7 @@ def run_security_scan_task(self, plugin_version_pk, is_manual=False):
         )
         if not is_manual:
             plugin_version.validation_status = VALIDATION_STATUS_VALIDATED
-            _maybe_auto_approve(plugin_version)
+            _auto_approve_if_trusted(plugin_version)
             plugin_version.save()
             _send_validation_results_email(plugin_version, security_scan=None)
             if not plugin_version.approved:
@@ -97,7 +97,7 @@ def run_security_scan_task(self, plugin_version_pk, is_manual=False):
         )
     else:
         plugin_version.validation_status = VALIDATION_STATUS_VALIDATED
-        _maybe_auto_approve(plugin_version)
+        _auto_approve_if_trusted(plugin_version)
         logger.info(
             f"Plugin {plugin.package_name} v{plugin_version.version} validated successfully"
         )
@@ -115,7 +115,7 @@ def run_security_scan_task(self, plugin_version_pk, is_manual=False):
         _notify_staff_for_review(plugin_version)
 
 
-def _maybe_auto_approve(plugin_version):
+def _auto_approve_if_trusted(plugin_version):
     """
     Auto-approve the version if the uploader is trusted or the plugin
     already has at least one approved version.
@@ -205,7 +205,7 @@ Security best practices: {docs_url}
 """
 
     try:
-        send_mail(subject, message, mail_from, recipients, fail_silently=True)
+        send_mail(subject, message, mail_from, recipients)
         logger.info(
             f"Validation results email sent for {plugin.package_name} v{plugin_version.version} "
             f"to {recipients}"
@@ -271,8 +271,7 @@ Uploaded by: {plugin_version.created_by}
 Link: http://{domain}{plugin_version.get_absolute_url()}
 """,
             mail_from,
-            recipients,
-            fail_silently=True,
+            recipients
         )
     except Exception as e:
         logger.error(f"Failed to send staff review notification: {e}")

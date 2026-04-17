@@ -30,7 +30,7 @@ from plugins.models import (
     VALIDATION_STATUS_VALIDATING,
 )
 from plugins.tasks.run_security_scan import (
-    _maybe_auto_approve,
+    _auto_approve_if_trusted,
     _send_validation_results_email,
     run_security_scan_task,
 )
@@ -223,7 +223,7 @@ class RunSecurityScanTaskTest(TestCase):
 # ---------------------------------------------------------------------------
 
 class MaybeAutoApproveTest(TestCase):
-    """Tests for the _maybe_auto_approve helper."""
+    """Tests for the _auto_approve_if_trusted helper."""
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -239,7 +239,7 @@ class MaybeAutoApproveTest(TestCase):
         self.user = User.objects.get(pk=self.user.pk)
         self.version.created_by = self.user
 
-        _maybe_auto_approve(self.version)
+        _auto_approve_if_trusted(self.version)
 
         self.assertTrue(self.version.approved)
 
@@ -260,13 +260,13 @@ class MaybeAutoApproveTest(TestCase):
         # Plugin.approved returns True when any version is approved
         self.assertTrue(self.plugin.approved)
 
-        _maybe_auto_approve(self.version)
+        _auto_approve_if_trusted(self.version)
 
         self.assertTrue(self.version.approved)
 
     def test_no_auto_approve_for_untrusted_user(self):
         """Regular users without 'can_approve' are NOT auto-approved."""
-        _maybe_auto_approve(self.version)
+        _auto_approve_if_trusted(self.version)
         self.assertFalse(self.version.approved)
 
 
