@@ -34,6 +34,7 @@ class PluginUploadTestCase(TestCase):
 
     @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
     @patch("plugins.validator._check_url_link", new=do_nothing)
+    @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay", new=do_nothing)
     def test_plugin_upload_form(self):
         # Log in the test user
         self.client.login(username='testuser', password='testpassword')

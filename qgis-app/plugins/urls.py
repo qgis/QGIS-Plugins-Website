@@ -426,6 +426,12 @@ urlpatterns += [
         name="version_unapprove",
     ),
     url(
+        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/version/(?P<version>[^\/]+)/rescan/$",
+        version_rescan,
+        {},
+        name="version_rescan",
+    ),
+    url(
         r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/version/(?P<version>[^\/]+)/feedback/$",
         version_feedback,
         {},

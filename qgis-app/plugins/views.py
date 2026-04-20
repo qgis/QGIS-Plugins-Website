@@ -37,6 +37,8 @@ from django.views.generic.list import ListView
 from plugins.decorators import has_valid_token
 from plugins.forms import *
 from plugins.models import (
+    VALIDATION_STATUS_BLOCKED,
+    VALIDATION_STATUS_VALIDATING,
     Plugin,
     PluginOutstandingToken,
     PluginVersion,
@@ -46,7 +48,7 @@ from plugins.models import (
     PluginVersionSecurityScan,
     vjust,
 )
-from plugins.security_utils import get_scan_badge_info, run_security_scan
+from plugins.security_utils import get_scan_badge_info
 from plugins.utils import parse_remote_addr
 from plugins.validator import PLUGIN_REQUIRED_METADATA
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -63,9 +65,53 @@ except ImportError:
 # Decorator
 staff_required = user_passes_test(lambda u: u.is_staff)
 from plugins.tasks.generate_plugins_xml import generate_plugins_xml
+from plugins.tasks.run_security_scan import run_security_scan_task
 
 # Plugin Notification Recipients Group Name
 NOTIFICATION_RECIPIENTS_GROUP_NAME = settings.NOTIFICATION_RECIPIENTS_GROUP_NAME
+
+
+def send_upload_confirmation_email(plugin_version):
+    """
+    Send Stage 1 email: immediate upload confirmation to the plugin maintainer(s).
+
+    Informs the uploader that the plugin has been received and security checks
+    have been queued. The plugin is NOT yet available for approval or download.
+    """
+    plugin = plugin_version.plugin
+    recipients = [u.email for u in plugin.editors if u.email]
+    if not recipients:
+        return
+
+    domain = Site.objects.get_current().domain
+    mail_from = settings.DEFAULT_FROM_EMAIL
+    version_url = f"https://{domain}{plugin_version.get_absolute_url()}"
+    docs_url = f"https://{domain}/docs/security-scanning"
+
+    subject = _("Plugin Upload Confirmation: %(name)s v%(version)s") % {
+        "name": plugin.name,
+        "version": plugin_version.version,
+    }
+    message = _(
+        "Your plugin has been successfully uploaded and security checks have been queued.\n\n"
+        "Plugin: %(name)s\n"
+        "Version: %(version)s\n"
+        "Upload time: %(time)s\n"
+        "Validation status: Validating\n\n"
+        "IMPORTANT: Your plugin is NOT yet available for approval or download.\n"
+        "Security and quality checks are running and will complete shortly.\n"
+        "You will receive another email with the results.\n\n"
+        "Track progress: %(url)s\n"
+        "Security scanning docs: %(docs_url)s\n"
+    ) % {
+        "name": plugin.name,
+        "version": plugin_version.version,
+        "time": plugin_version.created_on,
+        "url": version_url,
+        "docs_url": docs_url,
+    }
+
+    send_mail_wrapper(str(subject), str(message), mail_from, recipients, fail_silently=True)
 
 
 def send_mail_wrapper(subject, message, mail_from, recipients, fail_silently=True):
@@ -557,8 +603,10 @@ def plugin_upload(request):
                     "version": form.cleaned_data.get("version"),
                     "created_by": request.user,
                     "package": form.cleaned_data.get("package"),
-                    "approved": request.user.has_perm("plugins.can_approve")
-                    or plugin.approved,
+                    # Always start unapproved; security checks will auto-approve
+                    # trusted users after validation completes.
+                    "approved": False,
+                    "validation_status": VALIDATION_STATUS_VALIDATING,
                     "experimental": form.cleaned_data.get("experimental", False),
                     "changelog": form.cleaned_data.get("changelog", ""),
                     "external_deps": form.cleaned_data.get("external_deps", ""),
@@ -566,52 +614,29 @@ def plugin_upload(request):
 
                 new_version = PluginVersion(**version_data)
                 new_version.save()
-                msg = _("The Plugin has been successfully created.")
+                msg = _("The Plugin has been successfully uploaded. Security and quality checks are now running asynchronously.")
                 messages.success(request, msg, fail_silently=True)
 
-                # Run security scan on the uploaded package
-                security_scan = run_security_scan(new_version)
-                if security_scan:
-                    # Add security scan results to messages with link to details
-                    scan_url = f"{new_version.get_absolute_url()}#security-tab"
-                    badge_info = get_scan_badge_info(security_scan)
-                    if security_scan.overall_status == "passed":
-                        messages.success(
-                            request,
-                            mark_safe(
-                                _(
-                                    f"✓ Security scan completed: {badge_info['text']}. <a href='{scan_url}'>View detailed report</a>"
-                                )
-                            ),
-                            fail_silently=True,
-                        )
-                    elif security_scan.overall_status == "critical":
-                        warnings.append(
-                            mark_safe(
-                                _(
-                                    f"⚠ Security scan found {security_scan.critical_count} critical issues. <a href='{scan_url}'><strong>View details and address these issues</strong></a>"
-                                )
-                            )
-                        )
-                    elif security_scan.overall_status == "warning":
-                        warnings.append(
-                            mark_safe(
-                                _(
-                                    f"ℹ Security scan found {security_scan.warning_count} warnings. <a href='{scan_url}'>Review details</a>"
-                                )
-                            )
-                        )
+                # Send Stage 1: Upload confirmation email
+                send_upload_confirmation_email(new_version)
+
+                # Queue async security scan task
+                run_security_scan_task.delay(new_version.pk)
 
                 # Update plugins cached xml
                 generate_plugins_xml.delay()
 
-                if not new_version.approved:
-                    msg = _(
-                        "Your plugin is awaiting approval from a staff member and will be approved as soon as possible."
+                # The version is awaiting security validation, no immediate approval
+                scan_url = f"{new_version.get_absolute_url()}#security-tab"
+                warnings.append(
+                    mark_safe(
+                        _(
+                            "Your plugin is being validated. Security and quality checks are "
+                            "running in the background. You will receive an email with the results. "
+                            f"<a href='{scan_url}'>Check validation status</a>"
+                        )
                     )
-                    warnings.append(msg)
-                    if not is_new:
-                        version_notify(new_version)
+                )
                 if not form.cleaned_data.get("metadata_source") == "metadata.txt":
                     msg = _(
                         "Your plugin does not contain a metadata.txt file, metadata have been read from the __init__.py file. This is deprecated and its support will eventually cease."
@@ -1583,71 +1608,45 @@ def _version_create(request, plugin, version):
                     "version_id": new_object.pk,
                 }
 
-                # Run security scan on the uploaded package
-                security_scan = run_security_scan(new_object)
-                if security_scan:
-                    # Add security scan results
-                    scan_url = f"{new_object.get_absolute_url()}#security-tab"
-                    badge_info = get_scan_badge_info(security_scan)
-                    response_data["security_scan"] = {
-                        "status": security_scan.overall_status,
-                        "critical_count": security_scan.critical_count,
-                        "warning_count": security_scan.warning_count,
-                        "info_count": security_scan.info_count,
-                        "scan_url": scan_url,
-                    }
+                # Always start unapproved with validating status;
+                # the async scan task will auto-approve trusted users after
+                # validation completes.
+                new_object.approved = False
+                new_object.validation_status = VALIDATION_STATUS_VALIDATING
+                new_object.save()
 
-                    if not is_api_request:
-                        if security_scan.overall_status == "passed":
-                            messages.success(
-                                request,
-                                mark_safe(
-                                    _(
-                                        f"✓ Security scan completed: {badge_info['text']}. <a href='{scan_url}'>View detailed report</a>"
-                                    )
-                                ),
-                                fail_silently=True,
-                            )
-                        elif security_scan.overall_status == "critical":
-                            messages.warning(
-                                request,
-                                mark_safe(
-                                    _(
-                                        f"⚠ Security scan found {security_scan.critical_count} critical issues. <a href='{scan_url}'><strong>View details and address these issues</strong></a>"
-                                    )
-                                ),
-                                fail_silently=True,
-                            )
-                        elif security_scan.overall_status == "warning":
-                            messages.info(
-                                request,
-                                mark_safe(
-                                    _(
-                                        f"ℹ Security scan found {security_scan.warning_count} warnings. <a href='{scan_url}'>Review details</a>"
-                                    )
-                                ),
-                                fail_silently=True,
-                            )
+                # Send Stage 1: Upload confirmation email
+                send_upload_confirmation_email(new_object)
 
-                # The approved flag is also controlled in the form, but we
-                # are checking it here in any case for additional security
-                if not is_trusted:
-                    new_object.approved = False
-                    new_object.save()
-                    approval_msg = _(
-                        "You do not have approval permissions, plugin version has been set unapproved."
-                    )
-                    response_data["approved"] = False
-                    response_data["approval_message"] = str(approval_msg)
-                    if not is_api_request:
-                        messages.warning(
-                            request,
-                            approval_msg,
-                            fail_silently=True,
+                # Queue async security scan task
+                run_security_scan_task.delay(new_object.pk)
+
+                scan_url = f"{new_object.get_absolute_url()}#security-tab"
+                response_data["validation_status"] = VALIDATION_STATUS_VALIDATING
+                response_data["approved"] = False
+                response_data["scan_url"] = scan_url
+
+                if is_api_request and not is_trusted:
+                    response_data["approval_message"] = str(
+                        _(
+                            "Your plugin version is pending security validation. "
+                            "It will be available for approval once all checks pass. "
+                            "You will receive an email with the results."
                         )
-                    version_notify(new_object)
-                else:
-                    response_data["approved"] = new_object.approved
+                    )
+
+                if not is_api_request:
+                    messages.info(
+                        request,
+                        mark_safe(
+                            _(
+                                "Security and quality checks are running in the background. "
+                                "You will receive an email with the results. "
+                                f"<a href='{scan_url}'>Check validation status</a>"
+                            )
+                        ),
+                        fail_silently=True,
+                    )
 
                 if form.cleaned_data.get("icon_file"):
                     form.cleaned_data["icon"] = form.cleaned_data.get("icon_file")
@@ -1988,6 +1987,21 @@ def version_approve(request, package_name, version):
         msg = _("You do not have approval rights for this plugin.")
         messages.error(request, msg, fail_silently=True)
         return HttpResponseRedirect(version.get_absolute_url())
+    # Block approval for versions that failed or are still undergoing security checks
+    if not version.is_available:
+        if version.validation_status == VALIDATION_STATUS_BLOCKED:
+            msg = _(
+                "This plugin version cannot be approved because it has been blocked "
+                "due to critical security issues. The author must upload a new version "
+                "with the issues resolved."
+            )
+        else:
+            msg = _(
+                "This plugin version cannot be approved yet because security validation "
+                "is still in progress. Please wait for the validation to complete."
+            )
+        messages.error(request, msg, fail_silently=True)
+        return HttpResponseRedirect(version.get_absolute_url())
     version.approved = True
     version.save()
     msg = (
@@ -2252,6 +2266,35 @@ def version_download(request, package_name, version):
     plugin = get_object_or_404(Plugin, package_name=package_name)
     version = get_object_or_404(PluginVersion, plugin=plugin, version=version)
 
+    # Block download if the version is being validated or has been blocked
+    # due to critical security issues. Only applies to unapproved versions —
+    # approved versions are always available.
+    if not version.approved and not version.is_available:
+        if version.validation_status == VALIDATION_STATUS_VALIDATING:
+            return render(
+                request,
+                "plugins/version_permission_deny.html",
+                {
+                    "reason": _(
+                        "This plugin version is currently undergoing security validation. "
+                        "Please wait for the validation to complete."
+                    )
+                },
+                status=403,
+            )
+        elif version.validation_status == VALIDATION_STATUS_BLOCKED:
+            return render(
+                request,
+                "plugins/version_permission_deny.html",
+                {
+                    "reason": _(
+                        "This plugin version has been blocked due to critical security issues. "
+                        "The author must upload a new version with the issues resolved."
+                    )
+                },
+                status=403,
+            )
+
     # Atomic increment using F() expressions - prevents race conditions
     PluginVersion.objects.filter(pk=version.pk).update(downloads=F("downloads") + 1)
 
@@ -2320,6 +2363,46 @@ def version_detail(request, package_name, version):
             "security_scan": security_scan,
             "scan_badge": scan_badge,
         },
+    )
+
+
+@login_required
+@require_POST
+def version_rescan(request, package_name, version):
+    """
+    Trigger a manual (informational) security re-scan for an existing plugin version.
+
+    This is for previously uploaded versions only. The scan results are
+    informational and do NOT change the plugin's current approval or
+    validation status.
+
+    Requires the user to be the plugin owner/staff.
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    version_obj = get_object_or_404(PluginVersion, plugin=plugin, version=version)
+
+    if not check_plugin_access(request.user, plugin):
+        msg = _("You do not have permission to trigger a security scan for this plugin.")
+        messages.error(request, msg, fail_silently=True)
+        return HttpResponseRedirect(version_obj.get_absolute_url())
+
+    # Queue the scan as a manual (informational) scan
+    run_security_scan_task.delay(version_obj.pk, is_manual=True)
+
+    messages.success(
+        request,
+        mark_safe(
+            _(
+                "A security re-scan has been queued for <strong>%(plugin)s v%(version)s</strong>. "
+                "Results are informational only and will not change the plugin's current status. "
+                "Refresh the Security Scan tab in a few minutes to see the results."
+            )
+            % {"plugin": plugin.name, "version": version_obj.version}
+        ),
+        fail_silently=True,
+    )
+    return HttpResponseRedirect(
+        version_obj.get_absolute_url() + "#security-tab"
     )
 
 

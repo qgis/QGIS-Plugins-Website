@@ -15,7 +15,8 @@ from django.db import IntegrityError, connection
 from django.utils.translation import gettext_lazy as _
 from plugins.models import *
 from plugins.validator import validator
-from plugins.views import plugin_notify
+from plugins.views import plugin_notify, send_upload_confirmation_email
+from plugins.tasks.run_security_scan import run_security_scan_task
 from rpc4django import rpcmethod
 from taggit.models import Tag
 
@@ -120,7 +121,10 @@ def plugin_upload(package, **kwargs):
                 package.len,
                 "UTF-8",
             ),
-            "approved": request.user.has_perm("plugins.can_approve") or plugin.approved,
+            # Always start unapproved; async security checks will auto-approve
+            # trusted users after validation completes.
+            "approved": False,
+            "validation_status": VALIDATION_STATUS_VALIDATING,
         }
 
         # Optional version metadata
@@ -133,6 +137,12 @@ def plugin_upload(package, **kwargs):
         new_version = PluginVersion(**version_data)
         new_version.clean()
         new_version.save()
+
+        # Send Stage 1 upload confirmation email
+        send_upload_confirmation_email(new_version)
+
+        # Queue async security scan task
+        run_security_scan_task.delay(new_version.pk)
     except IntegrityError as e:
         # Avoids error: current transaction is aborted, commands ignored until
         # end of transaction block

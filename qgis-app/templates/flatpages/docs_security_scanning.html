@@ -2,144 +2,186 @@
 
 {% block content %}
 <div class="responsive-content">
-  <h4>Security Scanning Feature</h4>
+  <h4>Security Scanning</h4>
 
   <h5>Overview</h5>
   <p>
-    The QGIS Plugins Website includes an automated security, quality, and code analysis system that scans all uploaded plugin packages using <strong>industry-standard professional security tools</strong>. This is a <strong>non-blocking, informational feature</strong> designed to help developers identify potential security issues, code quality problems, and best practice violations.
+    Every plugin version uploaded to the QGIS Plugins Website is automatically scanned using
+    <strong>industry-standard open-source security tools</strong>. Scans run asynchronously in
+    the background immediately after upload. Checks are divided into two tiers:
   </p>
 
-  <p class="alert alert-info">
-    <strong>Important:</strong> These security checks are informational and do not block plugin upload or approval. Results are provided to help you improve your plugin's security and quality.
-  </p>
+  <div class="content">
+    <ul>
+      <li>
+        <strong class="has-text-danger">Blocking (CRITICAL)</strong> — Bandit and Secrets
+        Detection. A plugin version is <strong>blocked</strong> from download and approval until
+        critical findings are resolved by uploading a new, clean version.
+      </li>
+      <li>
+        <strong class="has-text-info">Non-blocking (INFO / WARNING)</strong> — Flake8, file
+        permissions, and suspicious file detection. Results are informational and do not affect
+        availability.
+      </li>
+    </ul>
+  </div>
 
-  <h5>Security Tools Used</h5>
-  <p>The scanner leverages professional open-source security tools:</p>
+  <h5>Validation Statuses</h5>
+
+  <div class="content">
+    <ul>
+      <li>
+        <strong>Validating</strong> — The scan is queued or running. The version is not yet
+        available for download or approval.
+      </li>
+      <li>
+        <strong>Validated</strong> — All checks passed (no critical issues). The version is
+        available for approval; trusted users are approved automatically.
+      </li>
+      <li>
+        <strong class="has-text-danger">Blocked</strong> — One or more critical issues were
+        found. The version cannot be downloaded or approved until a new, fixed version is
+        uploaded.
+      </li>
+    </ul>
+  </div>
+
+  <h5>Upload Flow</h5>
 
   <div class="content">
     <ol>
+      <li>You upload a plugin ZIP file.</li>
       <li>
-        <strong><a href="https://github.com/PyCQA/bandit" target="_blank" rel="noopener">Bandit</a></strong> - Industry-standard security linter for Python code
+        The plugin passes structural validation (metadata, package format, size limits) and is
+        saved to the database with status <em>Validating</em>.
+      </li>
+      <li>
+        You receive a <strong>confirmation email</strong> acknowledging receipt and noting that
+        checks are running.
+      </li>
+      <li>Security and quality checks run asynchronously in the background.</li>
+      <li>
+        You receive a <strong>results email</strong> once checks complete:
         <ul>
-          <li>Detects common security issues</li>
-          <li>Identifies SQL injection vulnerabilities</li>
-          <li>Finds hardcoded passwords and secrets</li>
-          <li>Checks for unsafe function usage</li>
+          <li>
+            <em>All checks passed</em> — your plugin is now available. Trusted users are
+            auto-approved; others await staff approval.
+          </li>
+          <li>
+            <em>Critical issues found</em> — your plugin is blocked. The email lists the
+            specific findings so you can fix them.
+          </li>
         </ul>
       </li>
       <li>
-        <strong><a href="https://github.com/Yelp/detect-secrets" target="_blank" rel="noopener">detect-secrets</a></strong> - Yelp's secrets detection tool
-        <ul>
-          <li>Finds API keys, tokens, passwords</li>
-          <li>Detects various secret patterns</li>
-          <li>Low false-positive rate</li>
-        </ul>
-      </li>
-      <li>
-        <strong><a href="https://flake8.pycqa.org/" target="_blank" rel="noopener">Flake8</a></strong> - Python code quality checker
-        <ul>
-          <li>PEP 8 style guide enforcement</li>
-          <li>Syntax error detection</li>
-          <li>Code complexity analysis</li>
-        </ul>
+        Full scan details are always available on the version detail page under the
+        <strong>Security</strong> tab.
       </li>
     </ol>
   </div>
 
-  <h5>What Gets Scanned</h5>
+  <h5>Security Tools Used</h5>
 
   <div class="content">
     <ol>
       <li>
-        <strong>Bandit Security Analysis (CRITICAL)</strong>
+        <strong><a href="https://github.com/PyCQA/bandit" target="_blank" rel="noopener">Bandit</a></strong>
+        <span class="tag is-danger is-light ml-2">BLOCKING</span> — Static analysis for Python security issues:
         <ul>
-          <li>Common security vulnerabilities in Python</li>
+          <li>Shell injection (<code>subprocess</code> with <code>shell=True</code>)</li>
+          <li>Use of unsafe built-ins (<code>eval</code>, <code>exec</code>, <code>pickle</code>)</li>
           <li>SQL injection risks</li>
-          <li>Hardcoded passwords and keys</li>
-          <li>Use of unsafe functions (eval, exec, pickle)</li>
-          <li>Shell injection vulnerabilities</li>
-          <li>Weak cryptography usage</li>
-          <li>And 100+ other security checks</li>
+          <li>Hardcoded passwords and weak cryptography</li>
+          <li>100+ additional checks</li>
         </ul>
       </li>
       <li>
-        <strong>Secrets Detection (CRITICAL)</strong>
+        <strong><a href="https://github.com/Yelp/detect-secrets" target="_blank" rel="noopener">detect-secrets</a></strong>
+        <span class="tag is-danger is-light ml-2">BLOCKING</span> — Detects hardcoded secrets:
         <ul>
-          <li>API keys and tokens</li>
-          <li>AWS credentials</li>
+          <li>AWS / cloud provider credentials</li>
+          <li>API keys and OAuth tokens</li>
           <li>Private SSH keys</li>
           <li>Database connection strings</li>
-          <li>OAuth tokens</li>
-          <li>Generic high-entropy strings</li>
+          <li>High-entropy strings that resemble secrets</li>
         </ul>
       </li>
       <li>
-        <strong>Code Quality - Flake8 (INFO)</strong>
+        <strong><a href="https://flake8.pycqa.org/" target="_blank" rel="noopener">Flake8</a></strong>
+        <span class="tag is-info is-light ml-2">INFORMATIONAL</span> — Python code quality:
         <ul>
-          <li>Python syntax errors</li>
           <li>PEP 8 style violations</li>
-          <li>Undefined names</li>
-          <li>Unused imports</li>
-          <li>Code complexity warnings</li>
+          <li>Syntax errors and undefined names</li>
+          <li>Unused imports and variables</li>
         </ul>
       </li>
       <li>
-        <strong>File Analysis (INFO/WARNING)</strong>
+        <strong>File Analysis</strong>
+        <span class="tag is-warning is-light ml-2">INFORMATIONAL</span> — Package structure checks:
         <ul>
-          <li>Executable files detection</li>
-          <li>Hidden files</li>
-          <li>Suspicious file types</li>
+          <li>Executable and hidden files</li>
+          <li>Suspicious file types (e.g. compiled binaries, scripts)</li>
           <li>Unusual file permissions</li>
         </ul>
       </li>
     </ol>
   </div>
 
-  <h5>How It Works</h5>
-
-  <p><strong>Upload Flow:</strong></p>
-  <div class="content">
-    <ol>
-      <li>User uploads a plugin ZIP file</li>
-      <li>Plugin passes blocking validation (metadata, structure, size limits)</li>
-      <li><strong>Security scan runs automatically</strong> during the upload process</li>
-      <li>Plugin is saved to database</li>
-      <li>Results are stored and displayed immediately</li>
-      <li>User sees scan summary in success messages</li>
-      <li>Full details available on version detail page</li>
-    </ol>
-  </div>
-
-  <p class="alert alert-info">
-    <strong>Note:</strong> The security scan runs synchronously during upload, which means the upload process completes once the scan finishes. This typically takes a few seconds for most plugins.
-  </p>
-
   <h5>Understanding Scan Results</h5>
 
-  <p>Each plugin version has a dedicated <strong>Security Scan</strong> tab showing:</p>
+  <p>
+    The <strong>Security</strong> tab on every version detail page shows:
+  </p>
 
   <div class="content">
     <ul>
-      <li><strong>Summary Card:</strong> Overall status, pass rate percentage, scan timestamp</li>
-      <li><strong>Quick Stats Grid:</strong> Total checks, passed checks, warnings, critical issues, files scanned</li>
-      <li><strong>Detailed Check Results:</strong> Expandable cards for each check showing:
+      <li><strong>Summary card</strong> — Overall status, pass rate, and scan timestamp</li>
+      <li><strong>Stats grid</strong> — Total checks, passed checks, warnings, critical issues, files scanned</li>
+      <li>
+        <strong>Per-check details</strong> — Expandable cards for each check showing:
         <ul>
-          <li>Affected file names</li>
-          <li>Line numbers</li>
-          <li>Issue descriptions</li>
-          <li>Code snippets (when applicable)</li>
+          <li>Affected file names and line numbers</li>
+          <li>Issue descriptions and code snippets</li>
         </ul>
       </li>
     </ul>
   </div>
 
+  <h5>Manual Re-scan</h5>
+
+  <p>
+    Plugin editors can trigger a manual re-scan at any time from the <strong>Security</strong>
+    tab. Re-scans are <strong>informational only</strong> — they refresh the displayed results
+    and the scan timestamp but do not change the version's validation status or approval state.
+    To clear a <em>Blocked</em> status, upload a new version with the issues resolved.
+  </p>
+
+  <h5>Trusted Users &amp; Auto-approval</h5>
+
+  <p>
+    Users who have been granted the <em>trusted</em> permission (<code>can_approve</code>) have
+    their plugin versions <strong>automatically approved</strong> once validation passes. Staff
+    approvers are notified by email only after a version reaches <em>Validated</em> status and
+    requires manual approval.
+  </p>
+
   <h5>Severity Levels</h5>
 
   <div class="content">
     <ul>
-      <li><strong class="has-text-danger">CRITICAL:</strong> Security vulnerabilities that should be fixed immediately (e.g., hardcoded credentials, SQL injection risks)</li>
-      <li><strong class="has-text-warning">WARNING:</strong> Issues that could lead to problems (e.g., vulnerable dependencies, weak practices)</li>
-      <li><strong class="has-text-info">INFO:</strong> Informational items and code quality suggestions (e.g., style violations, complexity warnings)</li>
+      <li>
+        <strong class="has-text-danger">CRITICAL</strong> — Blocking. Security vulnerabilities
+        that must be fixed before the plugin can be published (e.g. hardcoded credentials, shell
+        injection).
+      </li>
+      <li>
+        <strong class="has-text-warning">WARNING</strong> — Non-blocking. Issues that could lead
+        to problems and should be addressed (e.g. suspicious files, executable permissions).
+      </li>
+      <li>
+        <strong class="has-text-info">INFO</strong> — Non-blocking. Code quality suggestions
+        (e.g. PEP 8 violations, unused imports).
+      </li>
     </ul>
   </div>
 
@@ -147,54 +189,65 @@
 
   <div class="content">
     <ul>
-      <li><strong>✅ Non-Blocking:</strong> Scans never prevent plugin upload or approval</li>
-      <li><strong>⚠️ False Positives:</strong> Some warnings may be false positives. Review results in context of your plugin's functionality. For example, a password manager plugin may legitimately need to handle passwords.</li>
-      <li><strong>🔒 Privacy:</strong> Scans run locally on the server after upload. No external services are used except for Safety database lookups.</li>
-      <li><strong>📊 Transparency:</strong> All scan results are visible to plugin authors and administrators</li>
+      <li>
+        <strong>⚠️ False positives:</strong> Some findings may be false positives. For example,
+        a password-manager plugin may legitimately handle credentials. If you believe a critical
+        finding is incorrect, contact the site administrators.
+      </li>
+      <li>
+        <strong>🔒 Privacy:</strong> All scans run locally on the server. No plugin code is
+        sent to external services.
+      </li>
+      <li>
+        <strong>📊 Transparency:</strong> Full scan results are always visible to plugin authors
+        and administrators on the version detail page.
+      </li>
     </ul>
   </div>
 
-  <h5>Best Practices</h5>
+  <h5>Resolving a Blocked Plugin</h5>
 
   <div class="content">
     <ol>
-      <li><strong>Review critical issues immediately</strong> - These may indicate serious security vulnerabilities</li>
-      <li><strong>Address warnings when possible</strong> - They help improve plugin security and quality</li>
-      <li><strong>Use external configuration</strong> - Don't hardcode secrets, API keys, or credentials in your code</li>
-      <li><strong>Keep dependencies updated</strong> - Regularly check for vulnerable packages</li>
-      <li><strong>Follow PEP 8</strong> - Clean code is easier to audit and maintain</li>
-      <li><strong>Document legitimate use cases</strong> - If a warning is a false positive, consider adding comments explaining why</li>
+      <li>Open the <strong>Security</strong> tab on the blocked version's detail page.</li>
+      <li>Review the critical findings and fix them in your local copy of the plugin.</li>
+      <li>Upload a new version — the new version will be scanned automatically.</li>
+      <li>
+        You cannot unblock an existing version; each new upload starts a fresh scan.
+      </li>
     </ol>
   </div>
 
-  <h5>For Plugin Developers</h5>
+  <h5>Check Your Plugin Locally</h5>
 
-  <p>To check your plugin locally before uploading:</p>
+  <p>Run the same tools locally before uploading to catch issues early:</p>
 
-  <div >
-    <pre><code># Install the security tools
-pip install bandit detect-secrets flake8 flake8-json
+  <pre><code># Install the security tools
+pip install bandit detect-secrets flake8
 
 # Run checks on your plugin directory
 bandit -r your_plugin_directory/
 detect-secrets scan your_plugin_directory/
 flake8 your_plugin_directory/</code></pre>
-  </div>
 
   <h5>Support</h5>
 
-  <p>
-    If you have questions about scan results or need help addressing issues:
-  </p>
   <ul>
-    <li>Review the detailed scan results on your plugin's version detail page</li>
-    <li>Check the linked documentation for each security tool</li>
-    <li>Ask questions on the QGIS Developers mailing list</li>
-    <li>File issues on the <a href="https://github.com/qgis/QGIS-Plugins-Website" target="_blank" rel="noopener">QGIS-Plugins-Website GitHub repository</a></li>
+    <li>Review the detailed scan results on your plugin's version detail page.</li>
+    <li>Check the linked documentation for each security tool.</li>
+    <li>Ask questions on the QGIS Developers mailing list.</li>
+    <li>
+      File issues on the
+      <a href="https://github.com/qgis/QGIS-Plugins-Website" target="_blank" rel="noopener">
+        QGIS-Plugins-Website GitHub repository
+      </a>.
+    </li>
   </ul>
 
   <p class="alert alert-success">
-    <strong>Remember:</strong> The security scanner is here to help you create safer, higher-quality plugins. It's a tool to support you, not a barrier to entry. We encourage iterative improvements based on scan results.
+    <strong>Remember:</strong> The security scanner is here to help you create safer,
+    higher-quality plugins. Critical findings must be resolved, but non-blocking results are
+    purely advisory — use them as a guide for continuous improvement.
   </p>
 </div>
 {% endblock %}

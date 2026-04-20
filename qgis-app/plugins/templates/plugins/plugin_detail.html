@@ -583,9 +583,13 @@
                                         {% if not user.is_anonymous %}
                                         <td class="has-text-centered">
                                             {% if version.approved %}
-                                                <i class="fas fa-check-circle has-text-success"></i>
+                                                <i class="fas fa-check-circle has-text-success" title="{% trans 'Approved' %}"></i>
+                                            {% elif version.validation_status == 'validating' %}
+                                                <i class="fas fa-spinner fa-spin has-text-info" title="{% trans 'Validating security checks...' %}"></i>
+                                            {% elif version.validation_status == 'blocked' %}
+                                                <i class="fas fa-ban has-text-danger" title="{% trans 'Blocked: critical security issues found' %}"></i>
                                             {% else %}
-                                                <i class="fas fa-times-circle has-text-danger"></i>
+                                                <i class="fas fa-times-circle has-text-danger" title="{% trans 'Not approved' %}"></i>
                                             {% endif %}
                                         </td>
                                         {% endif %}
@@ -661,6 +665,16 @@
                                             {% endif %}
                                             {% if user.is_staff or user in version.plugin.approvers %}
                                                 {% if not version.approved %}
+                                                {% if not version.is_available %}
+                                                    <button class="button is-warning is-small is-outlined" disabled
+                                                            title="{% if version.validation_status == 'blocked' %}{% trans 'Blocked: critical security issues' %}{% else %}{% trans 'Validating...' %}{% endif %}">
+                                                        {% if version.validation_status == 'blocked' %}
+                                                        <i class="fas fa-ban"></i>
+                                                        {% else %}
+                                                        <i class="fas fa-spinner fa-spin"></i>
+                                                        {% endif %}
+                                                    </button>
+                                                {% else %}
                                                     <form id="approve-version-{{ version.pk }}" method="post" action="{% url 'version_approve' object.package_name version.version %}" style="display:inline;">
                                                         {% csrf_token %}
                                                         <button class="button is-success is-small is-outlined"
@@ -670,6 +684,7 @@
                                                             <i class="fas fa-thumbs-up"></i>
                                                         </button>
                                                     </form>
+                                                {% endif %}
                                                 {% else %}
                                                     <form id="unapprove-version-{{ version.pk }}" method="post" action="{% url 'version_unapprove' object.package_name version.version %}" style="display:inline;">
                                                         {% csrf_token %}
