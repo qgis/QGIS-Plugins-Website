@@ -73,7 +73,7 @@ class ValidationStatusPropertyTest(TestCase):
 
     def test_is_available_pending(self):
         _, version = _make_plugin_version(self.user, VALIDATION_STATUS_PENDING)
-        self.assertTrue(version.is_available)
+        self.assertFalse(version.is_available)
 
     def test_is_available_validating(self):
         _, version = _make_plugin_version(self.user, VALIDATION_STATUS_VALIDATING)
