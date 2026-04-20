@@ -1,0 +1,240 @@
+{% extends 'flatpages/docs.html' %}
+
+{% block content %}
+<div class="responsive-content">
+  <h1>Plugin Guidelines</h1>
+  <p>
+    These guidelines help you publish a plugin that meets community expectations, passes the approval
+    process smoothly, and reaches the users who will benefit from it most.
+    See the <a href="{% url 'docs_publish' %}">Publish a Plugin</a> and
+    <a href="{% url 'docs_approval' %}">Approval Process</a> pages for the technical requirements.
+  </p>
+
+  <hr />
+
+  <h2>1. Write Clear and Honest Metadata</h2>
+
+  <p>
+    Your plugin's metadata is the first — and often only — thing a user reads before deciding whether
+    to install it. It must give an accurate picture of what the plugin does and what it requires.
+  </p>
+
+  <h3>Description and About fields</h3>
+  <ul>
+    <li>
+      State clearly and concisely what the plugin does and which problem it solves in the
+      <code>description</code> field (one line, shown in the Plugin Manager list).
+    </li>
+    <li>
+      Use the <code>about</code> field for a fuller explanation, including any external
+      software, service, or account required to use all features. If a free trial is available,
+      say so explicitly.
+    </li>
+    <li>
+      Never imply the plugin is fully functional when a paid or separately installed dependency
+      is required for core functionality.
+    </li>
+  </ul>
+  <p>Example of a transparent <code>about</code> entry:</p>
+  <blockquote>
+    <em>
+      "This plugin provides a QGIS interface for district energy modelling workflows.
+      Basic project setup is available without additional software.
+      Running detailed simulations requires IDA Districts (commercial software;
+      a free trial is available at example.com)."
+    </em>
+  </blockquote>
+
+  <h3>Plugins with external software or commercial integrations</h3>
+  <p>
+    Plugins that act as front-ends for commercial software, web services, or proprietary platforms
+    are permitted in the repository, provided:
+  </p>
+  <ul>
+    <li>
+      The dependency is disclosed in <code>metadata.txt</code> (the <code>about</code> field),
+      in the README or homepage, and in the plugin's own UI when the dependency is not detected.
+    </li>
+    <li>
+      Any cost, licensing requirement, or registration step is stated, not hidden behind a link.
+    </li>
+    <li>
+      The plugin itself remains free of charge to download and install from this repository.
+    </li>
+  </ul>
+  <p class="alert alert-info">
+    <strong>Note:</strong> The approval team specifically reviews external-dependency disclosures.
+    Incomplete or misleading descriptions are the most common reason an approval is delayed.
+  </p>
+
+  <h3>Tags, icon, and links</h3>
+  <ul>
+    <li>
+      Choose specific <strong>tags</strong> that reflect the plugin's domain and workflow
+      (e.g. <em>energy, urban planning, simulation, hydrology</em>). Good tags are the primary
+      way users discover plugins through search.
+    </li>
+    <li>
+      Provide a recognisable <strong>icon</strong> — it appears at small sizes in the Plugin Manager list.
+    </li>
+    <li>
+      Keep the <strong>homepage</strong>, <strong>repository</strong>, and <strong>tracker</strong>
+      links valid and up to date. The homepage should include screenshots and quick-start instructions.
+    </li>
+  </ul>
+
+  <hr />
+
+  <h2>2. Maintain a Quality Plugin Page</h2>
+
+  <p>
+    Once published, your plugin's page on this repository is publicly indexed by search engines and
+    visible to every QGIS user who opens the Plugin Manager. Treat it as a living document:
+  </p>
+  <ul>
+    <li>Keep the version, changelog, and description up to date with each release.</li>
+    <li>Respond to issues raised in the tracker — active maintenance signals to users that the plugin is trustworthy.</li>
+    <li>Ensure the source repository is publicly accessible and contains a <code>README</code> and <code>LICENSE</code> file.</li>
+  </ul>
+
+  <h3>Security scanning</h3>
+  <p>
+    Every plugin version uploaded to this repository is automatically scanned for security issues
+    and code quality. Review your results after each upload and address any findings before
+    releasing to users. See the <a href="{% url 'docs_security_scanning' %}">Security Scanning</a>
+    page for details.
+  </p>
+
+  <hr />
+
+  <h2>3. Declare QGIS Version Compatibility</h2>
+
+  <p>
+    QGIS version compatibility is determined by the <code>qgisMinimumVersion</code> and
+    <code>qgisMaximumVersion</code> fields in <code>metadata.txt</code>. Declaring these
+    accurately ensures your plugin appears in the correct filter lists inside the Plugin Manager
+    and avoids compatibility warnings for users.
+  </p>
+  <ul>
+    <li>
+      If your plugin supports both QGIS 3 and QGIS 4, keep the existing
+      <code>qgisMinimumVersion=3.x</code> and add <code>qgisMaximumVersion=4.99</code>.
+      This makes it appear in the
+      <a href="/plugins/new_qgis_ready/">QGIS 4 Ready Plugins</a> list.
+    </li>
+    <li>
+      If <code>qgisMaximumVersion</code> is omitted, compatibility is assumed only up to the
+      end of the major version set by <code>qgisMinimumVersion</code>.
+    </li>
+    <li>
+      QGIS 4 uses Qt 6, which requires code changes in plugins. Before declaring QGIS 4
+      compatibility, follow the
+      <a href="https://github.com/qgis/QGIS/wiki/Plugin-migration-to-be-compatible-with-Qt5-and-Qt6"
+         target="_blank" rel="noopener">Plugin migration to Qt5 and Qt6</a> guide.
+    </li>
+  </ul>
+  <p>
+    See the <a href="{% url 'docs_migrate_qgis4' %}">Migrate to QGIS 4</a> page for full
+    instructions and version range examples.
+  </p>
+
+  <hr />
+
+  <h2>4. Promote Your Plugin Through Community Channels</h2>
+
+  <p>
+    The channels below are the accepted ways to raise community awareness of a new plugin.
+    In all of them, keep announcements informative rather than promotional — focus on what users
+    can accomplish, not on marketing the product.
+  </p>
+  <p>
+    Before posting, review each channel's own posting rules. Posts that are off-topic, excessively
+    self-promotional, or not in English (where required) may be moderated.
+  </p>
+
+  <h3>Mailing lists</h3>
+  <p>
+    QGIS maintains several mailing lists. The two most relevant for plugin announcements are:
+  </p>
+  <ul>
+    <li>
+      <a href="https://lists.osgeo.org/mailman/listinfo/qgis-user" target="_blank" rel="noopener">qgis-user</a>
+      — general user discussion; the right place to announce a newly published plugin to the
+      broader community.
+    </li>
+    <li>
+      <a href="https://lists.osgeo.org/mailman/listinfo/qgis-developer" target="_blank" rel="noopener">qgis-developer</a>
+      — technical developer discussion; appropriate when you want peer feedback on implementation
+      choices or are looking for contributors.
+    </li>
+  </ul>
+  <p>
+    See the full list of mailing lists at
+    <a href="https://qgis.org/community/organisation/mailinglists" target="_blank" rel="noopener">qgis.org/community/organisation/mailinglists</a>.
+  </p>
+
+  <h3>Discourse forum</h3>
+  <p>
+    The QGIS community forum runs on OSGeo-hosted Discourse at
+    <a href="https://discourse.osgeo.org/tag/qgis" target="_blank" rel="noopener">discourse.osgeo.org/tag/qgis</a>.
+    It is a good place to start a discussion, gather early user feedback, and answer questions
+    from users who find your plugin.
+  </p>
+
+  <h3>GIS Stack Exchange</h3>
+  <p>
+    <a href="https://gis.stackexchange.com/?tags=qgis" target="_blank" rel="noopener">GIS Stack Exchange</a>
+    is an active question-and-answer site heavily used by QGIS users. Answering relevant questions
+    and mentioning your plugin where it genuinely helps is a well-accepted community practice.
+  </p>
+
+  <h3>Telegram</h3>
+  <p>
+    The official English-spoken QGIS community chat group is available on
+    <a href="https://t.me/joinchat/Aq2V5RPoxYYhXqUPoxRWPQ" target="_blank" rel="noopener">Telegram</a>.
+    It is an informal, real-time channel suitable for short announcements and quick feedback.
+  </p>
+
+  <h3>Matrix / IRC</h3>
+  <p>
+    QGIS has a Matrix room at
+    <a href="https://matrix.to/#/#qgis:osgeo.org" target="_blank" rel="noopener">#qgis:osgeo.org</a>,
+    which is bridged to the <code>#qgis</code> channel on
+    <a href="https://web.libera.chat/?channels=#qgis" target="_blank" rel="noopener">Libera.Chat IRC</a>.
+  </p>
+
+  <h3>Reddit — r/QGIS</h3>
+  <p>
+    The
+    <a href="https://www.reddit.com/r/QGIS/" target="_blank" rel="noopener">r/QGIS subreddit</a>
+    is an active community where plugin announcements are well received, provided they include
+    a description of what the plugin does and how to get started.
+  </p>
+
+  <h3>Facebook</h3>
+  <p>
+    The English-speaking global QGIS community group on Facebook can be found at
+    <a href="https://www.facebook.com/groups/qgiscommunityofficialvirtualgroup" target="_blank" rel="noopener">
+    QGIS Community Official Virtual Group</a>.
+  </p>
+
+  <h3>Local user groups</h3>
+  <p>
+    QGIS has an active network of local and regional user groups. Presenting your plugin to a
+    relevant user group is a great way to reach domain-specific users and collect focused feedback.
+    Find groups at <a href="https://qgis.org/community/groups/" target="_blank" rel="noopener">qgis.org/community/groups</a>.
+  </p>
+
+  <h3>QGIS Open Day (QOD)</h3>
+  <p>
+    The <a href="https://github.com/qgis/QGIS/wiki/QOD-Events" target="_blank" rel="noopener">QGIS Open Day</a>
+    is a monthly informal virtual meeting held on the last Friday of each month. Sessions are
+    community-driven, live-streamed, and recorded on the
+    <a href="https://www.youtube.com/channel/UCGS162t4hkOA0b35ucf1yng" target="_blank" rel="noopener">QGIS YouTube channel</a>.
+    It is the ideal venue for a short live demo of a new plugin to a diverse, international audience.
+    Add a session to the relevant event's wiki page or contact the event organisers to schedule a slot.
+  </p>
+
+  <hr />
+</div>
+{% endblock %}
