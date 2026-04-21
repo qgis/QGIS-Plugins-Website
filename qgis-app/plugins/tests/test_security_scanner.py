@@ -313,6 +313,47 @@ def broken_function(
         # Clean up
         os.remove(zip_path)
 
+    def test_commit_sha1_in_metadata_not_flagged_as_secret(self):
+        """
+        Regression test for https://github.com/qgis/QGIS-Plugins-Website/issues/300
+
+        qgis-plugin-ci injects a commitSha1 field into metadata.txt. This is a
+        git commit SHA (a hex string), not a secret, but detect-secrets would
+        flag it as a "Potential Hex High Entropy String". Ensure that the
+        secrets scan passes when metadata.txt contains a commitSha1 field.
+        """
+        metadata_with_sha = (
+            "[general]\n"
+            "name=Test Plugin\n"
+            "version=1.0.0\n"
+            "commitSha1=a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2\n"
+        )
+
+        zip_path = self._create_test_zip(
+            {
+                "test_plugin/__init__.py": "# Clean code",
+                "test_plugin/metadata.txt": metadata_with_sha,
+            }
+        )
+
+        scanner = PluginSecurityScanner(zip_path)
+        report = scanner.scan()
+
+        secrets_check = next(
+            (c for c in report["checks"] if c["name"] == "Secrets Detection"),
+            None,
+        )
+
+        self.assertIsNotNone(secrets_check)
+        self.assertTrue(
+            secrets_check["passed"],
+            "commitSha1 in metadata.txt should not be flagged as a secret",
+        )
+        self.assertEqual(secrets_check["issues_found"], 0)
+
+        # Clean up
+        os.remove(zip_path)
+
     def test_report_structure(self):
         """Test that scan report has correct structure"""
         zip_path = self._create_test_zip({"test_plugin/__init__.py": "# Clean code"})
