@@ -94,7 +94,12 @@ class PluginSecurityScanner:
             name="Bandit Security Analysis",
             category="security",
             severity="critical",
-            description="Professional security vulnerability scanner for Python code (checks for SQL injection, hardcoded passwords, unsafe functions, etc.)",
+            description=(
+                "Professional security vulnerability scanner for Python code "
+                "(SQL injection, hardcoded passwords, unsafe functions, etc.). "
+                "Skips XML-stdlib warnings (defusedxml is unavailable in QGIS Python) "
+                "and MD5/SHA1 usage warnings (not always security-sensitive)."
+            ),
         )
 
         try:
@@ -115,6 +120,14 @@ class PluginSecurityScanner:
 
             # Run Bandit via subprocess with JSON output
             # Note: Bandit returns exit code 1 when issues are found, which is normal
+            #
+            # Skipped checks (QGIS-context false positives):
+            #   B303, B324 — MD5/SHA1 hash use: not always security-sensitive
+            #                (e.g. file checksums, non-cryptographic hashing).
+            #   B313-B320  — XML parsing via stdlib: Bandit recommends defusedxml,
+            #                but defusedxml is a third-party package that is NOT
+            #                bundled with QGIS's Python environment.
+            #   B405-B411  — XML import warnings: same reason as above.
             result = subprocess.run(
                 [
                     "bandit",
@@ -124,6 +137,9 @@ class PluginSecurityScanner:
                     "json",
                     "-ll",  # Only medium/high severity
                     "--quiet",  # Suppress progress bar and other non-JSON output
+                    "--skip",
+                    "B303,B324,B313,B314,B315,B316,B317,B318,B319,B320,"
+                    "B405,B406,B407,B408,B409,B411",
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,  # Capture stderr too
@@ -204,17 +220,17 @@ class PluginSecurityScanner:
 
         try:
             # Use subprocess to avoid any import/logging issues
-            # Exclude lines containing 'commitSha1' to avoid false positives:
-            # qgis-plugin-ci injects a commitSha1 field in metadata.txt which
-            # is a git commit SHA and not a secret, but detect-secrets flags it
-            # as a "Potential Hex High Entropy String".
+            # Disable HexHighEntropyString detector to avoid false positives:
+            # hex values are common in legitimate plugin code (git commit SHAs
+            # in metadata.txt via qgis-plugin-ci, Alembic migration revision
+            # identifiers, colour constants, etc.) and are not secrets.
             result = subprocess.run(
                 [
                     "detect-secrets",
                     "scan",
                     "--all-files",
-                    "--exclude-lines",
-                    r"commitSha1\s*=",
+                    "--disable-plugin",
+                    "HexHighEntropyString",
                     ".",
                 ],
                 cwd=self.extracted_dir,
@@ -277,7 +293,14 @@ class PluginSecurityScanner:
             name="Code Quality (Flake8)",
             category="quality",
             severity="info",
-            description="Python code quality and style checker.",
+            description=(
+                "Python code quality and style checker (includes QGIS-specific "
+                "rules via flake8-qgis: protected member imports, direct PyQt "
+                "imports, Qt6/QGIS4 compatibility, etc.). "
+                "Ignores E501 (line length, relaxed to 120 chars), W503 "
+                "(deprecated line-break rule), and QGS201/QGS202 "
+                "(experimental return-value checks with high false-positive rate)."
+            ),
         )
 
         try:
@@ -297,6 +320,16 @@ class PluginSecurityScanner:
 
             check.files_checked = len(python_files)
 
+            # Flake8 ignore list:
+            #   E501    — line too long: max-line-length=120 already relaxes this
+            #   W503    — line break before binary operator: deprecated rule;
+            #             PEP 8 was revised to prefer W504 (break after operator)
+            #   QGS201  — return-value check for probable PyQGIS methods:
+            #             marked experimental on PyPI with many false positives
+            #   QGS202  — return-value check for possible PyQGIS methods:
+            #             same as QGS201 but wider scope, even more false positives
+            flake8_ignore = "E501,W503,QGS201,QGS202"
+
             # Try flake8 with JSON output first (requires flake8-json)
             try:
                 result = subprocess.run(
@@ -304,7 +337,7 @@ class PluginSecurityScanner:
                         "flake8",
                         "--format=json",
                         "--max-line-length=120",
-                        "--ignore=E501",  # Ignore line length for quality check
+                        f"--extend-ignore={flake8_ignore}",
                     ]
                     + python_files,
                     capture_output=True,
@@ -354,7 +387,11 @@ class PluginSecurityScanner:
                 # Fallback: Try flake8 with standard output
                 try:
                     result = subprocess.run(
-                        ["flake8", "--max-line-length=120", "--ignore=E501"]
+                        [
+                            "flake8",
+                            "--max-line-length=120",
+                            f"--extend-ignore={flake8_ignore}",
+                        ]
                         + python_files,
                         capture_output=True,
                         text=True,

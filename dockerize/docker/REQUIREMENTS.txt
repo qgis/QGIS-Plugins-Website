@@ -27,6 +27,7 @@ drf-yasg~=1.21
 feedparser~=6.0
 flake8~=7.3
 flake8-json~=24.4
+flake8-qgis~=2.0
 freezegun~=1.4
 geoip2==4.5.0
 git+https://github.com/Xpirix/django-ratings.git@modernize

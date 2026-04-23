@@ -193,6 +193,232 @@ def run_subprocess(cmd):
         # Clean up
         os.remove(zip_path)
 
+    def test_xml_stdlib_parsing_not_flagged_by_bandit(self):
+        """
+        Regression test for https://github.com/qgis/QGIS-Plugins-Website/issues/302
+
+        Bandit recommends defusedxml for XML parsing, but defusedxml is a
+        third-party package that is not bundled with QGIS's Python environment.
+        Plugins that parse XML with the standard library (xml.etree.ElementTree,
+        xml.dom.minidom, etc.) must not be flagged as critical security issues.
+        Bandit tests B313-B320 and B405-B411 are skipped for this reason.
+        """
+        xml_parsing_code = """
+import xml.etree.ElementTree as ET
+import xml.dom.minidom
+
+def parse_layer_config(xml_string):
+    root = ET.fromstring(xml_string)
+    return root
+
+def parse_project_file(path):
+    tree = ET.parse(path)
+    return tree.getroot()
+
+def pretty_print_xml(xml_string):
+    dom = xml.dom.minidom.parseString(xml_string)
+    return dom.toprettyxml()
+"""
+
+        zip_path = self._create_test_zip(
+            {"test_plugin/xml_utils.py": xml_parsing_code}
+        )
+
+        scanner = PluginSecurityScanner(zip_path)
+        report = scanner.scan()
+
+        bandit_check = next(
+            (c for c in report["checks"] if c["name"] == "Bandit Security Analysis"),
+            None,
+        )
+
+        self.assertIsNotNone(bandit_check)
+        self.assertTrue(
+            bandit_check["passed"],
+            "stdlib XML parsing should not be flagged as a critical issue "
+            "(defusedxml is not available in QGIS Python)",
+        )
+
+        # Clean up
+        os.remove(zip_path)
+
+    def test_hashlib_md5_not_flagged_by_bandit(self):
+        """
+        Regression test for https://github.com/qgis/QGIS-Plugins-Website/issues/302
+
+        Bandit flags hashlib.md5 and hashlib.sha1 as insecure even when they
+        are used for non-security purposes (e.g. file checksums, cache keys).
+        Bandit tests B303 and B324 are skipped to avoid these false positives.
+        """
+        hashlib_code = """
+import hashlib
+
+def compute_file_checksum(path):
+    \"\"\"Compute MD5 checksum for file integrity verification, not cryptography.\"\"\"
+    h = hashlib.md5()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(8192), b''):
+            h.update(chunk)
+    return h.hexdigest()
+
+def cache_key(value):
+    return hashlib.sha1(value.encode()).hexdigest()
+"""
+
+        zip_path = self._create_test_zip(
+            {"test_plugin/utils.py": hashlib_code}
+        )
+
+        scanner = PluginSecurityScanner(zip_path)
+        report = scanner.scan()
+
+        bandit_check = next(
+            (c for c in report["checks"] if c["name"] == "Bandit Security Analysis"),
+            None,
+        )
+
+        self.assertIsNotNone(bandit_check)
+        self.assertTrue(
+            bandit_check["passed"],
+            "hashlib.md5/sha1 used for non-cryptographic purposes "
+            "should not be flagged as a critical security issue",
+        )
+
+        # Clean up
+        os.remove(zip_path)
+
+    def test_w503_line_break_not_flagged_by_flake8(self):
+        """
+        Regression test for https://github.com/qgis/QGIS-Plugins-Website/issues/302
+
+        W503 (line break before binary operator) is a deprecated Flake8 rule.
+        PEP 8 was revised to prefer W504 (break after operator). Plugins using
+        the modern style must not be penalised by an outdated rule.
+        """
+        modern_style_code = """
+def compute(a, b, c, d):
+    result = (
+        a
+        + b
+        + c
+        + d
+    )
+    return result
+"""
+
+        zip_path = self._create_test_zip(
+            {"test_plugin/compute.py": modern_style_code}
+        )
+
+        scanner = PluginSecurityScanner(zip_path)
+        report = scanner.scan()
+
+        quality_check = next(
+            (c for c in report["checks"] if c["name"] == "Code Quality (Flake8)"),
+            None,
+        )
+
+        self.assertIsNotNone(quality_check)
+        # W503 violations must not contribute issues
+        w503_issues = [
+            d for d in quality_check.get("details", [])
+            if d.get("code") == "W503"
+        ]
+        self.assertEqual(
+            len(w503_issues),
+            0,
+            "W503 (deprecated line-break rule) should not be reported",
+        )
+
+        # Clean up
+        os.remove(zip_path)
+
+    def test_direct_pyqt5_import_flagged_by_flake8_qgis(self):
+        """
+        Regression test for https://github.com/qgis/QGIS-Plugins-Website/issues/240
+
+        flake8-qgis rule QGS401 flags direct PyQt5/PyQt4 imports. Plugins should
+        use the qgis.PyQt compatibility shim so they work with both Qt5 and Qt6
+        (QGIS 4). This test ensures flake8-qgis is installed and active.
+        """
+        code = (
+            "from PyQt5.QtWidgets import QDialog, QPushButton\n"
+            "from PyQt5.QtCore import Qt, QThread\n"
+            "\n"
+            "\n"
+            "class MyDialog(QDialog):\n"
+            "    pass\n"
+        )
+
+        zip_path = self._create_test_zip({"test_plugin/dialog.py": code})
+
+        scanner = PluginSecurityScanner(zip_path)
+        report = scanner.scan()
+
+        quality_check = next(
+            (c for c in report["checks"] if c["name"] == "Code Quality (Flake8)"),
+            None,
+        )
+
+        self.assertIsNotNone(quality_check)
+        qgs_issues = [
+            d for d in quality_check.get("details", [])
+            if d.get("code", "").startswith("QGS")
+        ]
+        self.assertGreater(
+            len(qgs_issues),
+            0,
+            "flake8-qgis should flag direct PyQt5 imports with a QGS rule "
+            "(e.g. QGS401). Is flake8-qgis installed in the Docker image?",
+        )
+
+        # Clean up
+        os.remove(zip_path)
+
+    def test_qgs201_qgs202_suppressed_by_flake8_qgis(self):
+        """
+        Regression test for https://github.com/qgis/QGIS-Plugins-Website/issues/240
+
+        QGS201 and QGS202 are experimental return-value checks explicitly marked
+        as having a high false-positive rate on PyPI. They must be suppressed so
+        that normal PyQGIS code (where discarding a return value is intentional)
+        is not incorrectly flagged.
+        """
+        code = (
+            "class QgsVectorLayer:\n"
+            "    def setCrs(self, crs):\n"
+            "        return True\n"
+            "\n"
+            "\n"
+            "layer = QgsVectorLayer()\n"
+            "layer.setCrs(None)  # return value intentionally discarded\n"
+        )
+
+        zip_path = self._create_test_zip({"test_plugin/layer_ops.py": code})
+
+        scanner = PluginSecurityScanner(zip_path)
+        report = scanner.scan()
+
+        quality_check = next(
+            (c for c in report["checks"] if c["name"] == "Code Quality (Flake8)"),
+            None,
+        )
+
+        self.assertIsNotNone(quality_check)
+        suppressed_issues = [
+            d for d in quality_check.get("details", [])
+            if d.get("code") in ("QGS201", "QGS202")
+        ]
+        self.assertEqual(
+            len(suppressed_issues),
+            0,
+            "QGS201/QGS202 (experimental return-value checks) must be suppressed "
+            "via --extend-ignore to avoid high false-positive rate",
+        )
+
+        # Clean up
+        os.remove(zip_path)
+
     def test_detect_syntax_errors(self):
         """Test detection of Python syntax errors"""
         invalid_code = """
@@ -313,14 +539,18 @@ def broken_function(
         # Clean up
         os.remove(zip_path)
 
-    def test_commit_sha1_in_metadata_not_flagged_as_secret(self):
+    def test_hex_values_not_flagged_as_secrets(self):
         """
         Regression test for https://github.com/qgis/QGIS-Plugins-Website/issues/300
 
-        qgis-plugin-ci injects a commitSha1 field into metadata.txt. This is a
-        git commit SHA (a hex string), not a secret, but detect-secrets would
-        flag it as a "Potential Hex High Entropy String". Ensure that the
-        secrets scan passes when metadata.txt contains a commitSha1 field.
+        Hex values are common in legitimate plugin code and must not be flagged
+        as secrets by the HexHighEntropyString detector:
+        - qgis-plugin-ci injects a commitSha1 field (full 40-char git SHA) into
+          metadata.txt.
+        - Alembic database migrations use short hex revision identifiers in SQL
+          statements such as UPDATE alembic_version SET version_num='315e0f69004f'.
+        The HexHighEntropyString detector is disabled to prevent these false
+        positives.
         """
         metadata_with_sha = (
             "[general]\n"
@@ -328,11 +558,22 @@ def broken_function(
             "version=1.0.0\n"
             "commitSha1=a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2\n"
         )
+        alembic_migration = (
+            "# Alembic migration\n"
+            "revision = '315e0f69004f'\n"
+            "down_revision = '98624e3008ab'\n"
+            "def upgrade():\n"
+            "    op.execute(\n"
+            "        \"UPDATE alembic_version SET version_num='315e0f69004f'\"\n"
+            "        \" WHERE alembic_version.version_num = '98624e3008ab'\"\n"
+            "    )\n"
+        )
 
         zip_path = self._create_test_zip(
             {
                 "test_plugin/__init__.py": "# Clean code",
                 "test_plugin/metadata.txt": metadata_with_sha,
+                "test_plugin/migrations/001_initial.py": alembic_migration,
             }
         )
 
@@ -347,7 +588,7 @@ def broken_function(
         self.assertIsNotNone(secrets_check)
         self.assertTrue(
             secrets_check["passed"],
-            "commitSha1 in metadata.txt should not be flagged as a secret",
+            "Hex values (git SHAs, Alembic revision IDs) must not be flagged as secrets",
         )
         self.assertEqual(secrets_check["issues_found"], 0)
 
