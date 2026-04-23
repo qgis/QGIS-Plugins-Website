@@ -26,10 +26,10 @@ urlpatterns = [
     url(r"^tags/(?P<tags>[^\/]+)/$", TagsPluginsList.as_view(), name="tags_plugins"),
     url(r"^add/$", plugin_upload, {}, name="plugin_upload"),
     url(r"^add-empty/$", plugin_create_empty, {}, name="plugin_create_empty"),
-    url(r"^user/(?P<username>\w+)/block/$", user_block, {}, name="user_block"),
-    url(r"^user/(?P<username>\w+)/unblock/$", user_unblock, {}, name="user_unblock"),
-    url(r"^user/(?P<username>\w+)/trust/$", user_trust, {}, name="user_trust"),
-    url(r"^user/(?P<username>\w+)/untrust/$", user_untrust, {}, name="user_untrust"),
+    url(r"^user/(?P<username>[\w.@+-]+)/block/$", user_block, {}, name="user_block"),
+    url(r"^user/(?P<username>[\w.@+-]+)/unblock/$", user_unblock, {}, name="user_unblock"),
+    url(r"^user/(?P<username>[\w.@+-]+)/trust/$", user_trust, {}, name="user_trust"),
+    url(r"^user/(?P<username>[\w.@+-]+)/untrust/$", user_untrust, {}, name="user_untrust"),
     url(
         r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/manage/$",
         plugin_manage,
@@ -102,7 +102,7 @@ urlpatterns = [
     #     name="plugin_unset_featured",
     # ),
     url(
-        r"^user/(?P<username>\w+)/admin$",
+        r"^user/(?P<username>[\w.@+-]+)/admin$",
         UserDetailsPluginsList.as_view(),
         name="user_details",
     ),
@@ -142,7 +142,7 @@ urlpatterns = [
     #     ),
     #     name="featured_plugins",
     # ),
-    url(r"^user/(?P<username>\w+)/$", UserPluginsList.as_view(), name="user_plugins"),
+    url(r"^user/(?P<username>[\w.@+-]+)/$", UserPluginsList.as_view(), name="user_plugins"),
     url(
         r"^server/$",
         PluginsList.as_view(
@@ -355,7 +355,7 @@ urlpatterns = [
 # User management
 urlpatterns += [
     url(
-        r"^user/(?P<username>\w+)/manage/$",
+        r"^user/(?P<username>[\w.@+-]+)/manage/$",
         user_permissions_manage,
         {},
         name="user_permissions_manage",
