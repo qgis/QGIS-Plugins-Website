@@ -55,3 +55,14 @@ def docs_migrate_qgis4(request):
         "flatpages/docs_migrate_qgis4.html",
         {},
     )
+
+
+def docs_guidelines(request):
+    """
+    Renders the Plugin Publishing Guidelines page
+    """
+    return render(
+        request,
+        "flatpages/docs_guidelines.html",
+        {},
+    )
