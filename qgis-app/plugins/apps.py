@@ -6,4 +6,4 @@ class PluginsConfig(AppConfig):
     verbose_name = "QGIS Plugins"
 
     def ready(self):
-        from . import api
+        from . import api, signals

@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 import time
+import re
 
 from django.conf import settings
 from django.contrib import messages
@@ -614,7 +615,9 @@ def plugin_upload(request):
 
                 new_version = PluginVersion(**version_data)
                 new_version.save()
-                msg = _("The Plugin has been successfully uploaded. Security and quality checks are now running asynchronously.")
+                msg = _(
+                    "The Plugin has been successfully uploaded. Security and quality checks are now running asynchronously. A Qt6 compliance check will be launched. The result is displayed on the plugin's version page."
+                )
                 messages.success(request, msg, fail_silently=True)
 
                 # Send Stage 1: Upload confirmation email
@@ -2355,6 +2358,24 @@ def version_detail(request, package_name, version):
         security_scan = None
         scan_badge = get_scan_badge_info(None)
 
+    # Parse Qt6 logs
+    qt6_issues = []
+    if version.qt6_logs:
+        pattern = re.compile(r"^(/[^:]+):(\d+):(\d+)\s+-\s+(.+)$")
+        for line in version.qt6_logs.splitlines():
+            match = pattern.match(line)
+            if not match:
+                continue
+            filepath, lineno, col, message = match.groups()
+            path_parts = filepath.split("/")
+            relative_path = "/".join(path_parts[4:]) if len(path_parts) > 4 else filepath
+            qt6_issues.append({
+                "file": relative_path,
+                "line": lineno,
+                "col": col,
+                "message": message.strip(),
+            })
+
     return render(
         request,
         "plugins/version_detail.html",
@@ -2362,6 +2383,7 @@ def version_detail(request, package_name, version):
             "version": version,
             "security_scan": security_scan,
             "scan_badge": scan_badge,
+            "qt6_issues": qt6_issues,
         },
     )
 
@@ -2474,11 +2496,7 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         filters.update(
-            {
-                "pluginversion__max_qg_version__gte": _add_patch_version(
-                    qg_version, "0"
-                )
-            }
+            {"pluginversion__max_qg_version__gte": _add_patch_version(qg_version, "0")}
         )
         version_filters.update(
             {"max_qg_version__gte": _add_patch_version(qg_version, "0")}
@@ -2602,11 +2620,7 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         filters.update(
-            {
-                "pluginversion__max_qg_version__gte": _add_patch_version(
-                    qg_version, "0"
-                )
-            }
+            {"pluginversion__max_qg_version__gte": _add_patch_version(qg_version, "0")}
         )
         version_filters.update(
             {"max_qg_version__gte": _add_patch_version(qg_version, "0")}

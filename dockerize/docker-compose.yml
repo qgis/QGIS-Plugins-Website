@@ -5,6 +5,7 @@ volumes:
   static-data:
   media-data:
   backups-data:
+  plugins-data:
 services:
   maindev:
     build:
@@ -73,6 +74,7 @@ services:
       - ${QGISPLUGINS_STATIC_VOLUME}:/home/web/static:rw
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw
       - celerybeat-schedule:/home/web/celerybeat-schedule:rw
+      - plugins-data:/home/web/shared
     command: bash -c "npm install && npm run build && uwsgi --ini /uwsgi.conf"
     depends_on:
       - db
@@ -96,6 +98,7 @@ services:
       - ../qgis-app:/home/web/django_project
       - ${QGISPLUGINS_STATIC_VOLUME}:/home/web/static:rw
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw
+      - plugins-data:/home/web/shared
     ports:
       # for django test server
       - "62202:8081"
@@ -116,6 +119,24 @@ services:
       - ../qgis-app:/home/web/django_project
       - ${QGISPLUGINS_STATIC_VOLUME}:/home/web/static:rw
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw
+  qgis-qt6:
+    container_name: qgis-plugins-qgis-qt6
+    build:
+      context: ${PWD}/../
+      dockerfile: dockerize/docker-qt6-validator.dockerfile
+    volumes:
+      - ../qt6-validator:/celery_task
+      - plugins-data:/home/web/shared
+      - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:ro
+    working_dir: /celery_task
+    command: ["celery", "-A", "plugins", "worker", "-l", "DEBUG", "-Q", "qt6"]
+    env_file:
+      - .env 
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      internal:
 
   rabbitmq:
     image: ${RABBITMQ_IMAGE:-rabbitmq:3.7-alpine}
