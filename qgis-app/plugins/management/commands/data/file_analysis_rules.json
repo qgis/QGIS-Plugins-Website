@@ -1,0 +1,38 @@
+{
+  "_source": "Internal custom checks",
+  "_severity_note": "These rules are custom file-level analysis checks specific to the QGIS plugin upload pipeline. Severity reflects the potential security impact of each finding.",
+  "rules": [
+    {
+      "check_code": "FILE_EXECUTABLE",
+      "check_name": "Executable file",
+      "check_description": "A file inside the plugin archive has its executable bit set. Executable files increase the attack surface and may be run directly by users or scripts.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "FILE_HIDDEN",
+      "check_name": "Hidden file",
+      "check_description": "A hidden file (name starting with a dot) was found inside the plugin archive. Hidden files may include sensitive configuration, credentials, or development artefacts unintentionally bundled.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "FILE_BINARY",
+      "check_name": "Binary file",
+      "check_description": "A binary file was found inside the plugin archive. Binary files cannot be reviewed for malicious code and may contain exploits or backdoors.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "FILE_SUSPICIOUS",
+      "check_name": "Suspicious file type",
+      "check_description": "A file with a suspicious extension (e.g. .exe, .dll, .so, .sh, .bat, .cmd) was found inside the plugin archive. These file types pose a significant risk and are rarely needed in a QGIS plugin.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    }
+  ]
+}

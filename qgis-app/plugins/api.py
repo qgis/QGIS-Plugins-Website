@@ -141,8 +141,9 @@ def plugin_upload(package, **kwargs):
         # Send Stage 1 upload confirmation email
         send_upload_confirmation_email(new_version)
 
-        # Queue async security scan task
-        run_security_scan_task.delay(new_version.pk)
+        # Queue async security scan task (no rule skipping for XML-RPC2 API)
+        # XML-RPC2 clients cannot skip rules for backward compatibility
+        run_security_scan_task.delay(new_version.pk, skipped_rule_ids=[])
     except IntegrityError as e:
         # Avoids error: current transaction is aborted, commands ignored until
         # end of transaction block

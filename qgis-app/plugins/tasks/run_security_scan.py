@@ -36,7 +36,7 @@ logger = get_task_logger(__name__)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def run_security_scan_task(self, plugin_version_pk, is_manual=False):
+def run_security_scan_task(self, plugin_version_pk, is_manual=False, skipped_rule_ids=None):
     """
     Run security scan on a plugin version asynchronously.
 
@@ -45,6 +45,7 @@ def run_security_scan_task(self, plugin_version_pk, is_manual=False):
         is_manual: If True, this is a manual re-scan on an existing version.
                    Manual scans are informational only and do not change
                    the plugin's approval or validation status.
+        skipped_rule_ids: List of SecurityRule IDs that the developer chose to skip (optional)
     """
     try:
         plugin_version = PluginVersion.objects.select_related(
@@ -57,11 +58,11 @@ def run_security_scan_task(self, plugin_version_pk, is_manual=False):
     plugin = plugin_version.plugin
     logger.info(
         f"Starting security scan for {plugin.package_name} v{plugin_version.version} "
-        f"(manual={is_manual})"
+        f"(manual={is_manual}, skipped_rules={len(skipped_rule_ids or [])})"
     )
 
     # Run the security scan (synchronous scan running in the worker)
-    security_scan = run_security_scan(plugin_version)
+    security_scan = run_security_scan(plugin_version, skipped_rule_ids=skipped_rule_ids)
 
     if security_scan is None:
         # Scan failed to run — treat as validated to avoid blocking on tool errors

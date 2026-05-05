@@ -48,7 +48,7 @@ from plugins.models import (
     PluginVersionSecurityScan,
     vjust,
 )
-from plugins.security_utils import get_scan_badge_info
+from plugins.security_utils import get_scan_badge_info, get_security_rules_grouped
 from plugins.utils import parse_remote_addr
 from plugins.validator import PLUGIN_REQUIRED_METADATA
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -620,8 +620,14 @@ def plugin_upload(request):
                 # Send Stage 1: Upload confirmation email
                 send_upload_confirmation_email(new_version)
 
+                # Extract skipped security rule IDs from form
+                skipped_rule_ids = form.cleaned_data.get("skip_security_rules", [])
+                # Convert to list of integers if needed
+                if skipped_rule_ids:
+                    skipped_rule_ids = [int(rule_id) for rule_id in skipped_rule_ids]
+
                 # Queue async security scan task
-                run_security_scan_task.delay(new_version.pk)
+                run_security_scan_task.delay(new_version.pk, skipped_rule_ids=skipped_rule_ids)
 
                 # Update plugins cached xml
                 generate_plugins_xml.delay()
@@ -684,12 +690,29 @@ def plugin_upload(request):
                 connection.close()
                 messages.error(request, e, fail_silently=True)
                 if not plugin.pk:
-                    return render(request, "plugins/plugin_upload.html", {"form": form})
+                    _srg = get_security_rules_grouped()
+                    return render(request, "plugins/plugin_upload.html", {
+                        "form": form,
+                        "security_rules_grouped": _srg,
+                        "total_enabled_rules": sum(g["enabled_count"] for g in _srg),
+                        "total_skippable_rules": sum(g["skippable_count"] for g in _srg),
+                        "total_mandatory_rules": sum(g["mandatory_count"] for g in _srg),
+                    })
             return HttpResponseRedirect(plugin.get_absolute_url())
     else:
         form = PackageUploadForm()
 
-    return render(request, "plugins/plugin_upload.html", {"form": form})
+    security_rules_grouped = get_security_rules_grouped()
+    total_enabled_rules = sum(g["enabled_count"] for g in security_rules_grouped)
+    total_skippable_rules = sum(g["skippable_count"] for g in security_rules_grouped)
+    total_mandatory_rules = sum(g["mandatory_count"] for g in security_rules_grouped)
+    return render(request, "plugins/plugin_upload.html", {
+        "form": form,
+        "security_rules_grouped": security_rules_grouped,
+        "total_enabled_rules": total_enabled_rules,
+        "total_skippable_rules": total_skippable_rules,
+        "total_mandatory_rules": total_mandatory_rules,
+    })
 
 
 @login_required
@@ -1618,8 +1641,14 @@ def _version_create(request, plugin, version):
                 # Send Stage 1: Upload confirmation email
                 send_upload_confirmation_email(new_object)
 
+                # Extract skipped security rule IDs from form
+                skipped_rule_ids = form.cleaned_data.get("skip_security_rules", [])
+                # Convert to list of integers if needed
+                if skipped_rule_ids:
+                    skipped_rule_ids = [int(rule_id) for rule_id in skipped_rule_ids]
+
                 # Queue async security scan task
-                run_security_scan_task.delay(new_object.pk)
+                run_security_scan_task.delay(new_object.pk, skipped_rule_ids=skipped_rule_ids)
 
                 scan_url = f"{new_object.get_absolute_url()}#security-tab"
                 response_data["validation_status"] = VALIDATION_STATUS_VALIDATING
@@ -1741,10 +1770,22 @@ def _version_create(request, plugin, version):
             )
         form = PluginVersionForm(is_trusted=is_trusted)
 
+    security_rules_grouped = get_security_rules_grouped()
+    total_enabled_rules = sum(g["enabled_count"] for g in security_rules_grouped)
+    total_skippable_rules = sum(g["skippable_count"] for g in security_rules_grouped)
+    total_mandatory_rules = sum(g["mandatory_count"] for g in security_rules_grouped)
     return render(
         request,
         "plugins/version_form.html",
-        {"form": form, "plugin": plugin, "form_title": _("New version for plugin")},
+        {
+            "form": form,
+            "plugin": plugin,
+            "form_title": _("New version for plugin"),
+            "security_rules_grouped": security_rules_grouped,
+            "total_enabled_rules": total_enabled_rules,
+            "total_skippable_rules": total_skippable_rules,
+            "total_mandatory_rules": total_mandatory_rules,
+        },
     )
 
 
