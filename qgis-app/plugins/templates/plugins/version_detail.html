@@ -111,7 +111,7 @@
                 <span class="tag ml-2 is-danger">{% trans "Blocked" %}</span>
                 {% elif security_scan %}
                 <span class="tag ml-2 {{ scan_badge.class }}">
-                    {% if security_scan.overall_status == 'passed' %}✓{% elif security_scan.overall_status == 'critical' %}!{% else %}ℹ{% endif %}
+                    {% if security_scan.overall_status == 'passed' and security_scan.config_files_detected %}⚙{% elif security_scan.overall_status == 'passed' %}✓{% elif security_scan.overall_status == 'critical' %}!{% else %}ℹ{% endif %}
                 </span>
                 {% endif %}
             </a></li>
@@ -244,11 +244,14 @@
                     </span>
                 </h4>
                 <!-- Scan Summary -->
-                <div class="notification {% if security_scan.overall_status == 'passed' %}is-success{% elif security_scan.overall_status == 'critical' %}is-danger{% elif security_scan.overall_status == 'warning' %}is-warning{% else %}is-info{% endif %} is-light mb-5">
+                <div class="notification {% if security_scan.overall_status == 'passed' and security_scan.config_files_detected %}is-warning{% elif security_scan.overall_status == 'passed' %}is-success{% elif security_scan.overall_status == 'critical' %}is-danger{% elif security_scan.overall_status == 'warning' %}is-warning{% else %}is-info{% endif %} is-light mb-5">
                     <div class="columns is-vcentered">
                         <div class="column">
                             <p class="is-size-5 has-text-weight-bold">
-                                {% if security_scan.overall_status == 'passed' %}
+                                {% if security_scan.overall_status == 'passed' and security_scan.config_files_detected %}
+                                    <span class="icon"><i class="fas fa-gear"></i></span>
+                                    {% trans "All checks passed (developer config files used)" %}
+                                {% elif security_scan.overall_status == 'passed' %}
                                     <span class="icon"><i class="fas fa-check-circle"></i></span>
                                     {% trans "All security checks passed!" %}
                                 {% elif security_scan.overall_status == 'critical' %}
@@ -263,6 +266,15 @@
                                 {% endif %}
                             </p>
                             <p class="mt-2">{% trans "Scanned on" %}: {{ security_scan.scanned_on|local_timezone }}</p>
+                            {% if security_scan.config_files_detected %}
+                            <p class="mt-2 is-size-7">
+                                <span class="icon is-small has-text-warning-dark"><i class="fas fa-triangle-exclamation"></i></span>
+                                <strong>{% trans "Config files detected" %}:</strong>
+                                {% for cf in security_scan.config_files_detected %}
+                                    <span class="tag is-warning is-light mr-1">{{ cf }}</span>
+                                {% endfor %}
+                            </p>
+                            {% endif %}
                         </div>
                         <div class="column is-narrow">
                             <div class="is-size-3 has-text-weight-bold">
@@ -313,6 +325,55 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Config Files Section -->
+                {% if security_scan.config_files_detected %}
+                <div class="card mb-5">
+                    <header class="card-header has-background-warning-light">
+                        <p class="card-header-title">
+                            <span class="icon-text">
+                                <span class="icon"><i class="fas fa-gear has-text-warning-dark"></i></span>
+                                <span>{% trans "Developer-Supplied Config Files" %}</span>
+                            </span>
+                        </p>
+                        <div class="card-header-icon">
+                            <span class="tag is-warning">{{ security_scan.config_files_detected|length }} {% trans "detected" %}</span>
+                        </div>
+                    </header>
+                    <div class="card-content">
+                        <div class="content">
+                            <p class="mb-3">
+                                <span class="icon-text">
+                                    <span class="icon has-text-warning-dark"><i class="fas fa-triangle-exclamation"></i></span>
+                                    <span>{% trans "This plugin includes tool configuration files that influence the scan results. The checks below may not reflect our standard security rules." %}</span>
+                                </span>
+                            </p>
+                            <div class="tags mb-3">
+                                {% for cf in security_scan.config_files_detected %}
+                                <span class="tag is-warning is-light is-medium">
+                                    <span class="icon is-small mr-1"><i class="fas fa-file-code"></i></span>
+                                    {{ cf }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            <div class="notification is-warning is-light">
+                                <p class="is-size-7">
+                                    <strong>{% trans "What this means" %}:</strong>
+                                    {% trans "The developer included config files (e.g. .bandit, .flake8, .secrets.baseline) that suppress or adjust certain checks. This plugin has been marked as 'Validated (configured)' rather than 'Validated'. Administrators should review whether the suppressed rules are acceptable before approving this version." %}
+                                </p>
+                                <p class="is-size-7 mt-2">
+                                    <a href="{% url 'docs_security_config_files' %}" target="_blank" class="has-text-weight-semibold">
+                                        <span class="icon-text">
+                                            <span class="icon"><i class="fas fa-book"></i></span>
+                                            <span>{% trans "Learn about security config files" %}</span>
+                                        </span>
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
 
                 <!-- Skipped Rules Section -->
                 {% if security_scan.skipped_rules %}

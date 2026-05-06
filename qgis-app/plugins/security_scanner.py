@@ -23,6 +23,10 @@ from plugins.models import SecurityRule
 
 # All security tools are invoked via subprocess to avoid import/dependency issues
 
+# Config files that plugin developers may include to tune tool behaviour.
+# These are explicitly allowed and are not flagged as hidden files.
+SECURITY_CONFIG_FILES = [".bandit", ".secrets.baseline", ".flake8"]
+
 
 class SecurityCheck:
     """Base class for security checks"""
@@ -61,13 +65,13 @@ class PluginSecurityScanner:
         self.checks = []
         self.extracted_dir = None
         self.enabled_rules = enabled_rules or []
-        
+
         # Build rule lookup dictionaries for faster filtering
         self.enabled_bandit_rules = set()
         self.enabled_secrets_rules = set()
         self.enabled_flake8_rules = set()
         self.enabled_file_analysis_rules = set()
-        
+
         for rule in self.enabled_rules:
             if rule.check_category == "bandit":
                 self.enabled_bandit_rules.add(rule.check_code)
@@ -82,9 +86,9 @@ class PluginSecurityScanner:
         # need a DB query mid-scan.  Only needed when there are enabled rules.
         if self.enabled_secrets_rules:
             self._all_secrets_plugins = list(
-                SecurityRule.objects.filter(
-                    check_category="secrets"
-                ).values_list("check_code", flat=True)
+                SecurityRule.objects.filter(check_category="secrets").values_list(
+                    "check_code", flat=True
+                )
             )
         else:
             self._all_secrets_plugins = []
@@ -116,8 +120,9 @@ class PluginSecurityScanner:
             self._check_file_permissions()
             self._check_suspicious_files()
 
-        # Calculate summary
-        return self._generate_report()
+        # Calculate summary, including any developer-supplied config files
+        config_files = self._detect_config_files()
+        return self._generate_report(config_files=config_files)
 
     def _check_with_bandit(self):
         """Run Bandit security scanner on Python files"""
@@ -257,7 +262,25 @@ class PluginSecurityScanner:
                 # Excluding the file prevents false positives on hex entropy.
                 "--exclude-files",
                 r"metadata\.txt",
+                # .secrets.baseline itself contains hashed_secret hex values;
+                # scanning it would produce spurious HexHighEntropyString hits.
+                "--exclude-files",
+                r"\.secrets\.baseline",
             ]
+
+            # If a .secrets.baseline is present, pass it via --baseline so that
+            # detect-secrets only reports NEW secrets not already acknowledged.
+            for _root, _dirs, _files in os.walk(self.extracted_dir):
+                for _f in _files:
+                    if _f == ".secrets.baseline":
+                        _rel = os.path.relpath(
+                            os.path.join(_root, _f), self.extracted_dir
+                        )
+                        cmd.extend(["--baseline", _rel])
+                        break
+                else:
+                    continue
+                break
 
             # If we have enabled rules configured, disable all plugins NOT in that list
             if self.enabled_secrets_rules:
@@ -267,7 +290,7 @@ class PluginSecurityScanner:
                         cmd.extend(["--disable-plugin", plugin])
 
             cmd.append(".")
-            
+
             result = subprocess.run(
                 cmd,
                 cwd=self.extracted_dir,
@@ -355,13 +378,13 @@ class PluginSecurityScanner:
                 "--format=json",
                 "--max-line-length=120",
             ]
-            
+
             # If we have enabled rules configured, run only those checks
             if self.enabled_flake8_rules:
                 # Use --select to specify which checks to run (comma-separated)
                 codes_list = ",".join(sorted(self.enabled_flake8_rules))
                 cmd.extend(["--select", codes_list])
-            
+
             cmd.extend(python_files)
 
             # Try flake8 with JSON output first (requires flake8-json)
@@ -415,14 +438,14 @@ class PluginSecurityScanner:
                 try:
                     # Build standard format command with same filtering
                     fallback_cmd = ["flake8", "--max-line-length=120"]
-                    
+
                     if self.enabled_flake8_rules:
                         # Use --select to specify which checks to run (comma-separated)
                         codes_list = ",".join(sorted(self.enabled_flake8_rules))
                         fallback_cmd.extend(["--select", codes_list])
-                    
+
                     fallback_cmd.extend(python_files)
-                    
+
                     result = subprocess.run(
                         fallback_cmd,
                         capture_output=True,
@@ -556,7 +579,11 @@ class PluginSecurityScanner:
                     unix_perm = file_info.external_attr >> 16
 
                     if unix_perm and (unix_perm & 0o111):  # Has execute bit
-                        if self.enabled_file_analysis_rules and "FILE_EXECUTABLE" not in self.enabled_file_analysis_rules:
+                        if (
+                            self.enabled_file_analysis_rules
+                            and "FILE_EXECUTABLE"
+                            not in self.enabled_file_analysis_rules
+                        ):
                             continue
                         # .py files shouldn't typically be executable in a plugin
                         if file_info.filename.endswith(".py"):
@@ -605,11 +632,16 @@ class PluginSecurityScanner:
                     filename = os.path.basename(file_info.filename)
 
                     # Check for hidden files (starting with .)
-                    if filename.startswith(".") and filename not in [
+                    # Known tool config files are explicitly allowed.
+                    _hidden_allowlist = [
                         ".gitignore",
                         ".gitattributes",
-                    ]:
-                        if not self.enabled_file_analysis_rules or "FILE_HIDDEN" in self.enabled_file_analysis_rules:
+                    ] + SECURITY_CONFIG_FILES
+                    if filename.startswith(".") and filename not in _hidden_allowlist:
+                        if (
+                            not self.enabled_file_analysis_rules
+                            or "FILE_HIDDEN" in self.enabled_file_analysis_rules
+                        ):
                             check.issues_found += 1
                             check.details.append(
                                 {
@@ -622,7 +654,10 @@ class PluginSecurityScanner:
                     # Check for suspicious extensions
                     for ext in suspicious_extensions:
                         if file_info.filename.lower().endswith(ext):
-                            if not self.enabled_file_analysis_rules or "FILE_SUSPICIOUS" in self.enabled_file_analysis_rules:
+                            if (
+                                not self.enabled_file_analysis_rules
+                                or "FILE_SUSPICIOUS" in self.enabled_file_analysis_rules
+                            ):
                                 check.issues_found += 1
                                 check.details.append(
                                     {
@@ -642,7 +677,20 @@ class PluginSecurityScanner:
 
         self.checks.append(check)
 
-    def _generate_report(self) -> Dict:
+    def _detect_config_files(self) -> list:
+        """Return the basenames of any SECURITY_CONFIG_FILES present in the ZIP."""
+        found = []
+        try:
+            with zipfile.ZipFile(self.package_path, "r") as zf:
+                for name in zf.namelist():
+                    basename = os.path.basename(name)
+                    if basename in SECURITY_CONFIG_FILES and basename not in found:
+                        found.append(basename)
+        except Exception:
+            pass
+        return found
+
+    def _generate_report(self, config_files: list = None) -> Dict:
         """Generate comprehensive report from all checks"""
         report = {
             "summary": {
@@ -660,6 +708,7 @@ class PluginSecurityScanner:
                 "files_scanned": sum(c.files_checked for c in self.checks),
                 "total_issues": sum(c.issues_found for c in self.checks),
             },
+            "config_files": config_files or [],
             "checks": [],
         }
 

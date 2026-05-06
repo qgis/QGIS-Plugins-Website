@@ -109,7 +109,7 @@ class NewQgisMajorVersionReadyPlugins(BasePluginManager):
     """
     Shows only public plugins: i.e. those with "approved" flag set
     and with one version that is compatible with the new QGIS major version.
-    This is determined by checking if the max_qg_version is greater 
+    This is determined by checking if the max_qg_version is greater
     than or equal to the new QGIS major version.
     This manager filters out deprecated plugins as well.
     """
@@ -441,9 +441,11 @@ class FeedbackPendingPlugins(models.Manager):
     """
 
     def get_queryset(self):
-        latest_version = PluginVersion.objects.filter(
-            plugin=OuterRef("pk")
-        ).order_by("-created_on").values("approved")[:1]
+        latest_version = (
+            PluginVersion.objects.filter(plugin=OuterRef("pk"))
+            .order_by("-created_on")
+            .values("approved")[:1]
+        )
 
         return (
             super(FeedbackPendingPlugins, self)
@@ -806,12 +808,14 @@ class ExperimentalPluginVersions(ApprovedPluginVersions):
 VALIDATION_STATUS_PENDING = "pending"
 VALIDATION_STATUS_VALIDATING = "validating"
 VALIDATION_STATUS_VALIDATED = "validated"
+VALIDATION_STATUS_VALIDATED_WITH_CONFIG = "validated_with_config"
 VALIDATION_STATUS_BLOCKED = "blocked"
 
 VALIDATION_STATUS_CHOICES = [
     (VALIDATION_STATUS_PENDING, _("Pending")),
     (VALIDATION_STATUS_VALIDATING, _("Validating")),
     (VALIDATION_STATUS_VALIDATED, _("Validated")),
+    (VALIDATION_STATUS_VALIDATED_WITH_CONFIG, _("Validated (configured)")),
     (VALIDATION_STATUS_BLOCKED, _("Blocked")),
 ]
 
@@ -968,7 +972,7 @@ class PluginVersion(models.Model):
     # Validation status for security and QA checks
     validation_status = models.CharField(
         _("Validation status"),
-        max_length=20,
+        max_length=25,
         choices=VALIDATION_STATUS_CHOICES,
         default=VALIDATION_STATUS_PENDING,
         db_index=True,
@@ -1296,9 +1300,7 @@ class SecurityRule(models.Model):
     created_on = models.DateTimeField(
         _("Created on"), default=timezone.now, editable=False
     )
-    updated_on = models.DateTimeField(
-        _("Updated on"), auto_now=True
-    )
+    updated_on = models.DateTimeField(_("Updated on"), auto_now=True)
 
     class Meta:
         verbose_name = _("Security Rule")
@@ -1346,6 +1348,15 @@ class PluginVersionSecurityScan(models.Model):
         default=list,
         blank=True,
         help_text=_("List of rule codes that were skipped by the developer"),
+    )
+    config_files_detected = models.JSONField(
+        _("Config files detected"),
+        default=list,
+        blank=True,
+        help_text=_(
+            "Config files found in the plugin ZIP that may have influenced scan results "
+            "(e.g. .bandit, .secrets.baseline, .flake8)"
+        ),
     )
 
     # Full scan report (JSON field)

@@ -15,28 +15,28 @@ Upload flow:
 5. Email sent to maintainer(s) with results
 """
 
-from django.conf import settings
-from django.contrib.auth.models import User
-from django.core.mail import send_mail
-from django.contrib.sites.models import Site
-from django.utils.translation import gettext_lazy as _
-
 from celery import shared_task
 from celery.utils.log import get_task_logger
-
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.contrib.sites.models import Site
+from django.core.mail import send_mail
+from django.utils.translation import gettext_lazy as _
 from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_VALIDATED,
+    VALIDATION_STATUS_VALIDATED_WITH_CONFIG,
     PluginVersion,
 )
 from plugins.security_utils import run_security_scan
-
 
 logger = get_task_logger(__name__)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def run_security_scan_task(self, plugin_version_pk, is_manual=False, skipped_rule_ids=None):
+def run_security_scan_task(
+    self, plugin_version_pk, is_manual=False, skipped_rule_ids=None
+):
     """
     Run security scan on a plugin version asynchronously.
 
@@ -97,11 +97,18 @@ def run_security_scan_task(self, plugin_version_pk, is_manual=False, skipped_rul
             f"{security_scan.critical_count} critical issue(s) found"
         )
     else:
-        plugin_version.validation_status = VALIDATION_STATUS_VALIDATED
+        if security_scan.config_files_detected:
+            plugin_version.validation_status = VALIDATION_STATUS_VALIDATED_WITH_CONFIG
+            logger.info(
+                f"Plugin {plugin.package_name} v{plugin_version.version} validated "
+                f"(config files used: {security_scan.config_files_detected})"
+            )
+        else:
+            plugin_version.validation_status = VALIDATION_STATUS_VALIDATED
+            logger.info(
+                f"Plugin {plugin.package_name} v{plugin_version.version} validated successfully"
+            )
         _auto_approve_if_trusted(plugin_version)
-        logger.info(
-            f"Plugin {plugin.package_name} v{plugin_version.version} validated successfully"
-        )
 
     plugin_version.save()
 
@@ -110,7 +117,11 @@ def run_security_scan_task(self, plugin_version_pk, is_manual=False, skipped_rul
 
     # Notify staff approvers when a non-trusted plugin is ready for review
     if (
-        plugin_version.validation_status == VALIDATION_STATUS_VALIDATED
+        plugin_version.validation_status
+        in (
+            VALIDATION_STATUS_VALIDATED,
+            VALIDATION_STATUS_VALIDATED_WITH_CONFIG,
+        )
         and not plugin_version.approved
     ):
         _notify_staff_for_review(plugin_version)
@@ -124,9 +135,7 @@ def _auto_approve_if_trusted(plugin_version):
     created_by = plugin_version.created_by
     plugin = plugin_version.plugin
 
-    if created_by and (
-        created_by.has_perm("plugins.can_approve") or plugin.approved
-    ):
+    if created_by and (created_by.has_perm("plugins.can_approve") or plugin.approved):
         plugin_version.approved = True
         logger.info(
             f"Auto-approving {plugin.package_name} v{plugin_version.version} "
@@ -272,7 +281,7 @@ Uploaded by: {plugin_version.created_by}
 Link: http://{domain}{plugin_version.get_absolute_url()}
 """,
             mail_from,
-            recipients
+            recipients,
         )
     except Exception as e:
         logger.error(f"Failed to send staff review notification: {e}")

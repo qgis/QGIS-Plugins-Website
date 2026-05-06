@@ -5,8 +5,11 @@ Utility functions for running security scans on plugin versions
 import logging
 
 from django.utils import timezone
-
-from plugins.models import PluginVersionSecurityScan, SecurityRule, PluginVersionSecurityRuleSkip
+from plugins.models import (
+    PluginVersionSecurityRuleSkip,
+    PluginVersionSecurityScan,
+    SecurityRule,
+)
 from plugins.security_scanner import PluginSecurityScanner
 
 logger = logging.getLogger(__name__)
@@ -29,30 +32,29 @@ def run_security_scan(plugin_version, skipped_rule_ids=None):
 
         # Get all enabled security rules
         enabled_rules = list(SecurityRule.objects.filter(enabled=True))
-        enabled_rule_ids = set(rule.id for rule in enabled_rules)
-        
+        set(rule.id for rule in enabled_rules)
+
         # Track skipped rules
         skipped_rule_ids = skipped_rule_ids or []
         skipped_rule_codes = []
-        
+
         # Filter out skipped rules from enabled rules
         if skipped_rule_ids:
             # Validate that skipped rules are actually enabled and skippable
             skippable_rules = SecurityRule.objects.filter(
-                id__in=skipped_rule_ids,
-                enabled=True,
-                can_be_skipped=True
+                id__in=skipped_rule_ids, enabled=True, can_be_skipped=True
             )
-            
+
             skipped_rule_ids_validated = set(rule.id for rule in skippable_rules)
             skipped_rule_codes = [rule.check_code for rule in skippable_rules]
-            
+
             # Remove skipped rules from enabled rules
             enabled_rules = [
-                rule for rule in enabled_rules 
+                rule
+                for rule in enabled_rules
                 if rule.id not in skipped_rule_ids_validated
             ]
-            
+
             # Create PluginVersionSecurityRuleSkip records
             for rule in skippable_rules:
                 PluginVersionSecurityRuleSkip.objects.get_or_create(
@@ -60,12 +62,13 @@ def run_security_scan(plugin_version, skipped_rule_ids=None):
                     security_rule=rule,
                     defaults={
                         "skipped_by": plugin_version.created_by,
-                    }
+                    },
                 )
 
         # Initialize and run scanner with enabled rules
         scanner = PluginSecurityScanner(package_path, enabled_rules=enabled_rules)
         report = scanner.scan()
+        config_files = report.get("config_files", [])
 
         # Create or update security scan record
         security_scan, created = PluginVersionSecurityScan.objects.update_or_create(
@@ -81,6 +84,7 @@ def run_security_scan(plugin_version, skipped_rule_ids=None):
                 "total_issues": report["summary"]["total_issues"],
                 "enabled_rules_count": len(enabled_rules),
                 "skipped_rules": skipped_rule_codes,
+                "config_files_detected": config_files,
                 "scan_report": report,
             },
         )
@@ -113,10 +117,10 @@ def get_security_rules_grouped():
             critical_count, warning_count, info_count
     """
     category_meta = [
-        ("bandit",        "Bandit Security",   "fas fa-bug"),
-        ("secrets",       "Detect Secrets",    "fas fa-key"),
-        ("flake8",        "Flake8 Quality",    "fas fa-code"),
-        ("file_analysis", "File Analysis",     "fas fa-folder-open"),
+        ("bandit", "Bandit Security", "fas fa-bug"),
+        ("secrets", "Detect Secrets", "fas fa-key"),
+        ("flake8", "Flake8 Quality", "fas fa-code"),
+        ("file_analysis", "File Analysis", "fas fa-folder-open"),
     ]
 
     # Build severity ordering so Critical rules sort first
@@ -149,20 +153,22 @@ def get_security_rules_grouped():
         info = sum(1 for r in rules if r.severity == "info")
         skippable_rules = [r for r in rules if r.enabled and r.can_be_skipped]
 
-        result.append({
-            "key": cat_key,
-            "label": cat_label,
-            "icon": cat_icon,
-            "rules": rules,
-            "skippable_rules": skippable_rules,
-            "total_count": total,
-            "enabled_count": enabled,
-            "skippable_count": skippable,
-            "mandatory_count": mandatory,
-            "critical_count": critical,
-            "warning_count": warning,
-            "info_count": info,
-        })
+        result.append(
+            {
+                "key": cat_key,
+                "label": cat_label,
+                "icon": cat_icon,
+                "rules": rules,
+                "skippable_rules": skippable_rules,
+                "total_count": total,
+                "enabled_count": enabled,
+                "skippable_count": skippable,
+                "mandatory_count": mandatory,
+                "critical_count": critical,
+                "warning_count": warning,
+                "info_count": info,
+            }
+        )
 
     return result
 
@@ -194,6 +200,12 @@ def get_scan_badge_info(security_scan):
             "icon": "fa-check-circle",
             "class": "badge-success",
         },
+        "passed_with_config": {
+            "color": "warning",
+            "text": "⚙ Passed (config files used)",
+            "icon": "fa-gear",
+            "class": "badge-config",
+        },
         "info": {
             "color": "info",
             "text": f"{security_scan.info_count} Info Items",
@@ -213,5 +225,9 @@ def get_scan_badge_info(security_scan):
             "class": "badge-danger",
         },
     }
+
+    # Promote "passed" badge to "passed_with_config" when config files were used
+    if status == "passed" and security_scan.config_files_detected:
+        return badges["passed_with_config"]
 
     return badges.get(status, badges["passed"])
