@@ -379,6 +379,22 @@ class PluginSecurityScanner:
                 "--max-line-length=120",
             ]
 
+            # If the package ships a .flake8 config, pass it explicitly.
+            # Config files must be at the ZIP root or the top-level plugin
+            # folder.  Flake8 won't auto-discover the file when invoked with
+            # absolute file paths, so we forward it with --config.
+            _flake8_cfg = os.path.join(self.extracted_dir, ".flake8")
+            if not os.path.isfile(_flake8_cfg):
+                _flake8_cfg = None
+                for _entry in os.scandir(self.extracted_dir):
+                    if _entry.is_dir():
+                        _candidate = os.path.join(_entry.path, ".flake8")
+                        if os.path.isfile(_candidate):
+                            _flake8_cfg = _candidate
+                            break
+            if _flake8_cfg:
+                cmd.extend(["--config", _flake8_cfg])
+
             # If we have enabled rules configured, run only those checks
             if self.enabled_flake8_rules:
                 # Use --select to specify which checks to run (comma-separated)
@@ -438,6 +454,9 @@ class PluginSecurityScanner:
                 try:
                     # Build standard format command with same filtering
                     fallback_cmd = ["flake8", "--max-line-length=120"]
+
+                    if _flake8_cfg:
+                        fallback_cmd.extend(["--config", _flake8_cfg])
 
                     if self.enabled_flake8_rules:
                         # Use --select to specify which checks to run (comma-separated)
