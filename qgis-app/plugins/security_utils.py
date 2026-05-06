@@ -4,6 +4,8 @@ Utility functions for running security scans on plugin versions
 
 import logging
 
+from django.utils import timezone
+
 from plugins.models import PluginVersionSecurityScan, SecurityRule, PluginVersionSecurityRuleSkip
 from plugins.security_scanner import PluginSecurityScanner
 
@@ -22,8 +24,6 @@ def run_security_scan(plugin_version, skipped_rule_ids=None):
         PluginVersionSecurityScan instance or None if scan fails
     """
     try:
-        from django.utils import timezone
-
         # Get the package file path
         package_path = plugin_version.package.path
 

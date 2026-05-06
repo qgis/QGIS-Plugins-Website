@@ -15,7 +15,7 @@ from django.contrib.sites.models import Site
 from django.core.exceptions import FieldDoesNotExist
 from django.core.mail import EmailMessage, send_mail
 from django.db import IntegrityError, connection, transaction
-from django.db.models import Q
+from django.db.models import F, Q
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Lower
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
@@ -2227,8 +2227,6 @@ def version_feedback_edit(request, package_name, version, feedback):
             # Extract attachment ID or filename from URL to identify the attachment
             # Assuming URL format like /media/feedback_attachments/filename.jpg
             try:
-                import os
-
                 filename = os.path.basename(url)
                 attachment = PluginVersionFeedbackAttachment.objects.filter(
                     feedback=feedback, image__endswith=filename
@@ -2302,8 +2300,6 @@ def version_download(request, package_name, version):
     Update download counter(s) using atomic operations to prevent race conditions
     and improve performance under high concurrent load.
     """
-    from django.db.models import F
-
     plugin = get_object_or_404(Plugin, package_name=package_name)
     version = get_object_or_404(PluginVersion, plugin=plugin, version=version)
 
