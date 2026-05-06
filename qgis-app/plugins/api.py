@@ -14,9 +14,10 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import IntegrityError, connection
 from django.utils.translation import gettext_lazy as _
 from plugins.models import *
+from plugins.models import SecurityRule
+from plugins.tasks.run_security_scan import run_security_scan_task
 from plugins.validator import validator
 from plugins.views import plugin_notify, send_upload_confirmation_email
-from plugins.tasks.run_security_scan import run_security_scan_task
 from rpc4django import rpcmethod
 from taggit.models import Tag
 
@@ -141,9 +142,17 @@ def plugin_upload(package, **kwargs):
         # Send Stage 1 upload confirmation email
         send_upload_confirmation_email(new_version)
 
-        # Queue async security scan task (no rule skipping for XML-RPC2 API)
-        # XML-RPC2 clients cannot skip rules for backward compatibility
-        run_security_scan_task.delay(new_version.pk, skipped_rule_ids=[])
+        # Queue async security scan task.
+        # XML-RPC clients cannot specify rules to skip in the request, so we
+        # automatically skip all currently-skippable rules on their behalf.
+        xmlrpc_skipped_ids = list(
+            SecurityRule.objects.filter(enabled=True, can_be_skipped=True).values_list(
+                "id", flat=True
+            )
+        )
+        run_security_scan_task.delay(
+            new_version.pk, skipped_rule_ids=xmlrpc_skipped_ids
+        )
     except IntegrityError as e:
         # Avoids error: current transaction is aborted, commands ignored until
         # end of transaction block

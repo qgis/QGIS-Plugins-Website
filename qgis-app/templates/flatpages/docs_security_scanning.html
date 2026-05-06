@@ -4,7 +4,6 @@
 <div class="responsive-content">
   <h4>Security Scanning</h4>
 
-  <h5>Overview</h5>
   <p>
     Every plugin version uploaded to the QGIS Plugins Website is automatically scanned using
     <strong>industry-standard open-source security tools</strong>. Scans run asynchronously in
@@ -14,18 +13,21 @@
   <div class="content">
     <ul>
       <li>
-        <strong class="has-text-danger">Blocking (CRITICAL)</strong> — Bandit and Secrets
-        Detection. A plugin version is <strong>blocked</strong> from download and approval until
-        critical findings are resolved by uploading a new, clean version.
+        <strong class="has-text-danger">Blocking (CRITICAL)</strong> — Bandit and
+        detect-secrets. A plugin version is <strong>blocked</strong> from download and
+        approval until critical findings are resolved by uploading a new, clean version.
       </li>
       <li>
         <strong class="has-text-info">Non-blocking (INFO / WARNING)</strong> — Flake8, file
-        permissions, and suspicious file detection. Results are informational and do not affect
-        availability.
+        permissions, and suspicious file detection. Results are informational and do not
+        affect availability.
       </li>
     </ul>
   </div>
 
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       VALIDATION STATUSES
+       ═══════════════════════════════════════════════════════════════════════ -->
   <h5>Validation Statuses</h5>
 
   <div class="content">
@@ -39,6 +41,14 @@
         available for approval; trusted users are approved automatically.
       </li>
       <li>
+        <strong class="has-text-warning">Validated (configured)</strong> — All checks passed
+        <em>and</em> one or more
+        <a href="{% url 'docs_security_config_files' %}">security config files</a>
+        were detected in the plugin ZIP. Fully available for approval — identical to
+        <em>Validated</em> — but the distinct status flags that scanner behaviour was
+        influenced by developer-supplied config.
+      </li>
+      <li>
         <strong class="has-text-danger">Blocked</strong> — One or more critical issues were
         found. The version cannot be downloaded or approved until a new, fixed version is
         uploaded.
@@ -46,6 +56,9 @@
     </ul>
   </div>
 
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       UPLOAD FLOW
+       ═══════════════════════════════════════════════════════════════════════ -->
   <h5>Upload Flow</h5>
 
   <div class="content">
@@ -80,346 +93,6 @@
     </ol>
   </div>
 
-  <h5>Security Tools Used</h5>
-
-  <div class="content">
-    <ol>
-      <li>
-        <strong><a href="https://github.com/PyCQA/bandit" target="_blank" rel="noopener">Bandit</a></strong>
-        <span class="tag is-danger is-light ml-2">BLOCKING</span> — Static analysis for Python security issues:
-        <ul>
-          <li>Shell injection (<code>subprocess</code> with <code>shell=True</code>)</li>
-          <li>Use of unsafe built-ins (<code>eval</code>, <code>exec</code>, <code>pickle</code>)</li>
-          <li>SQL injection risks</li>
-          <li>Hardcoded passwords and weak cryptography</li>
-          <li>100+ additional checks</li>
-        </ul>
-      </li>
-      <li>
-        <strong><a href="https://github.com/Yelp/detect-secrets" target="_blank" rel="noopener">detect-secrets</a></strong>
-        <span class="tag is-danger is-light ml-2">BLOCKING</span> — Detects hardcoded secrets:
-        <ul>
-          <li>AWS / cloud provider credentials</li>
-          <li>API keys and OAuth tokens</li>
-          <li>Private SSH keys</li>
-          <li>Database connection strings</li>
-          <li>High-entropy strings that resemble secrets</li>
-        </ul>
-      </li>
-      <li>
-        <strong><a href="https://flake8.pycqa.org/" target="_blank" rel="noopener">Flake8</a></strong>
-        <span class="tag is-info is-light ml-2">INFORMATIONAL</span> — Python code quality:
-        <ul>
-          <li>PEP 8 style violations</li>
-          <li>Syntax errors and undefined names</li>
-          <li>Unused imports and variables</li>
-        </ul>
-      </li>
-      <li>
-        <strong>File Analysis</strong>
-        <span class="tag is-warning is-light ml-2">INFORMATIONAL</span> — Package structure checks:
-        <ul>
-          <li>Executable and hidden files</li>
-          <li>Suspicious file types (e.g. compiled binaries, scripts)</li>
-          <li>Unusual file permissions</li>
-        </ul>
-      </li>
-    </ol>
-  </div>
-
-  <h5>Understanding Scan Results</h5>
-
-  <p>
-    The <strong>Security</strong> tab on every version detail page shows:
-  </p>
-
-  <div class="content">
-    <ul>
-      <li><strong>Summary card</strong> — Overall status, pass rate, and scan timestamp</li>
-      <li><strong>Stats grid</strong> — Total checks, passed checks, warnings, critical issues, files scanned</li>
-      <li>
-        <strong>Per-check details</strong> — Expandable cards for each check showing:
-        <ul>
-          <li>Affected file names and line numbers</li>
-          <li>Issue descriptions and code snippets</li>
-        </ul>
-      </li>
-    </ul>
-  </div>
-
-  <h5>Manual Re-scan</h5>
-
-  <p>
-    Plugin editors can trigger a manual re-scan at any time from the <strong>Security</strong>
-    tab. Re-scans are <strong>informational only</strong> — they refresh the displayed results
-    and the scan timestamp but do not change the version's validation status or approval state.
-    To clear a <em>Blocked</em> status, upload a new version with the issues resolved.
-  </p>
-
-  <h5>Trusted Users &amp; Auto-approval</h5>
-
-  <p>
-    Users who have been granted the <em>trusted</em> permission (<code>can_approve</code>) have
-    their plugin versions <strong>automatically approved</strong> once validation passes. Staff
-    approvers are notified by email only after a version reaches <em>Validated</em> status and
-    requires manual approval.
-  </p>
-
-  <h5>Severity Levels</h5>
-
-  <div class="content">
-    <ul>
-      <li>
-        <strong class="has-text-danger">CRITICAL</strong> — Blocking. Security vulnerabilities
-        that must be fixed before the plugin can be published (e.g. hardcoded credentials, shell
-        injection).
-      </li>
-      <li>
-        <strong class="has-text-warning">WARNING</strong> — Non-blocking. Issues that could lead
-        to problems and should be addressed (e.g. suspicious files, executable permissions).
-      </li>
-      <li>
-        <strong class="has-text-info">INFO</strong> — Non-blocking. Code quality suggestions
-        (e.g. PEP 8 violations, unused imports).
-      </li>
-    </ul>
-  </div>
-
-  <h5>Rule Configuration and Skipping</h5>
-
-  <p>
-    The security scanning system uses a <strong>configurable, opt-in rule model</strong> to
-    minimize false positives while maintaining security standards. This allows site
-    administrators to fine-tune which checks are enforced and enables developers to skip
-    specific rules that produce false positives for their plugins.
-  </p>
-
-  <h6>Administrator Rule Configuration</h6>
-
-  <p>
-    Site administrators can configure security rules through the Django admin interface:
-  </p>
-
-  <div class="content">
-    <ul>
-      <li>
-        <strong>Enabled/Disabled:</strong> Rules ship with sensible defaults: <em>critical</em>
-        and <em>warning</em> rules are enabled; <em>info</em> (style/cosmetic) rules are
-        disabled. Only enabled rules are checked during scans. Administrators can override
-        these defaults at any time.
-      </li>
-      <li>
-        <strong>Skippable:</strong> Each rule can be marked as skippable or non-skippable.
-        <em>Critical</em> rules are non-skippable by default and cannot be bypassed by
-        developers. <em>Warning</em> and <em>info</em> rules are skippable by default.
-      </li>
-      <li>
-        <strong>Severity:</strong> Rules are categorized by severity (Critical, Warning, Info)
-        which determines how they're displayed and whether they block plugin approval.
-      </li>
-      <li>
-        <strong>Bulk Actions:</strong> The admin interface provides bulk actions to enable,
-        disable, or toggle skippability for multiple rules at once.
-      </li>
-    </ul>
-  </div>
-
-  <h6>Developer Rule Skipping</h6>
-
-  <p>
-    When uploading a plugin version, developers can choose to skip specific security rules that
-    are known to produce false positives for their plugin. For example:
-  </p>
-
-  <div class="content">
-    <ul>
-      <li>
-        A plugin that safely uses XML parsing may skip Bandit's XML-related warnings if those
-        uses have been verified as secure.
-      </li>
-      <li>
-        A plugin that includes vendored third-party libraries may skip secrets detection for
-        those specific library files if they contain test keys or example configurations.
-      </li>
-      <li>
-        A plugin with intentional style choices may skip specific Flake8 rules that conflict
-        with the project's coding standards.
-      </li>
-    </ul>
-  </div>
-
-  <p>
-    <strong>Important limitations:</strong>
-  </p>
-
-  <div class="content">
-    <ul>
-      <li>
-        Only rules that are both <em>enabled</em> AND marked as <em>skippable</em> by
-        administrators can be skipped by developers.
-      </li>
-      <li>
-        Non-skippable rules (typically the most critical security checks) cannot be bypassed.
-      </li>
-      <li>
-        All skipped rules are logged and visible to administrators, creating an audit trail.
-      </li>
-      <li>
-        The skip list is displayed on the version detail page's Security tab, providing
-        transparency about which checks were bypassed.
-      </li>
-      <li>
-        <strong>XML-RPC clients cannot skip rules.</strong> The legacy XML-RPC upload
-        interface (<code>plugin.upload</code> / <code>plugin.uploadVersion</code>) has a
-        fixed binary parameter signature that predates the security scanning feature.
-        Extending it with new optional parameters would silently break existing automation
-        scripts and CI/CD pipelines that rely on the stable RPC contract. Rule skipping is
-        only available via the web upload form and the token-based REST API.
-      </li>
-    </ul>
-  </div>
-
-  <h6>How to Skip Rules During Upload (Web Form)</h6>
-
-  <div class="content">
-    <ol>
-      <li>Navigate to the plugin upload page or version creation form.</li>
-      <li>
-        Below the file upload field, a <strong>Security Rules</strong> panel lists all
-        enabled, skippable rules (only shown if at least one such rule is configured).
-      </li>
-      <li>
-        All rules start with their toggle <strong>ON</strong> (enabled — will be checked
-        during the scan). Click a row or the toggle switch to turn a rule <strong>OFF</strong>
-        and skip it for this upload. Each rule shows its code, name, severity, and a short
-        description. A counter in the panel header tracks how many rules will actually run.
-      </li>
-      <li>Upload your plugin as normal.</li>
-      <li>
-        Rules toggled <strong>OFF</strong> are excluded from the scan for this specific
-        version only and do not affect any other version.
-      </li>
-      <li>
-        View which rules were skipped in the <strong>Security</strong> tab on the version
-        detail page.
-      </li>
-    </ol>
-  </div>
-
-  <h6>Skipping Rules via the Token-Based REST API</h6>
-
-  <p>
-    When uploading with an authentication token, include one <code>skip_security_rules</code>
-    POST field per rule you want to skip. The value must be the rule's
-    <strong>check code</strong> exactly as shown on the
-    <a href="{% url 'docs_security_rules' %}">Security Rules reference page</a>
-    (e.g. <code>B311</code>, <code>KeywordDetector</code>, <code>E722</code>).
-  </p>
-
-  <pre><code># Upload and skip two skippable rules
-curl -X POST https://plugins.qgis.org/plugins/&lt;plugin-slug&gt;/version/add/ \
-  -H "Authorization: Token &lt;your-token&gt;" \
-  -F "package=@myplugin.zip" \
-  -F "skip_security_rules=B311" \
-  -F "skip_security_rules=KeywordDetector"</code></pre>
-
-  <p>The same constraints apply as for the web form:</p>
-  <div class="content">
-    <ul>
-      <li>Only rules that are <em>enabled</em> and marked <em>skippable</em> by an
-        administrator can be skipped this way.</li>
-      <li>Check codes are case-sensitive. Unknown or non-skippable codes are silently
-        ignored.</li>
-      <li>Skipped rules are recorded and visible on the version detail page's
-        <strong>Security</strong> tab.</li>
-    </ul>
-  </div>
-
-  <h6>Requesting Rule Configuration Changes</h6>
-
-  <p>
-    If you believe a security rule is producing excessive false positives or should be made
-    skippable, please:
-  </p>
-
-  <div class="content">
-    <ul>
-      <li>
-        File an issue on the
-        <a href="https://github.com/qgis/QGIS-Plugins-Website" target="_blank" rel="noopener">
-          QGIS-Plugins-Website GitHub repository
-        </a>
-        explaining the specific rule and why it's problematic.
-      </li>
-      <li>
-        Provide concrete examples of false positives from your plugin or other plugins.
-      </li>
-      <li>
-        Site administrators will review the request and may adjust the rule configuration or
-        provide guidance on resolving the issue.
-      </li>
-    </ul>
-  </div>
-
-  <h5>Important Notes</h5>
-
-  <div class="content">
-    <ul>
-      <li>
-        <strong>⚠️ False positives:</strong> Some findings may be false positives. For example,
-        a password-manager plugin may legitimately handle credentials. If you believe a critical
-        finding is incorrect, contact the site administrators.
-      </li>
-      <li>
-        <strong>🔒 Privacy:</strong> All scans run locally on the server. No plugin code is
-        sent to external services.
-      </li>
-      <li>
-        <strong>📊 Transparency:</strong> Full scan results are always visible to plugin authors
-        and administrators on the version detail page.
-      </li>
-    </ul>
-  </div>
-
-  <h5>Resolving a Blocked Plugin</h5>
-
-  <div class="content">
-    <ol>
-      <li>Open the <strong>Security</strong> tab on the blocked version's detail page.</li>
-      <li>Review the critical findings and fix them in your local copy of the plugin.</li>
-      <li>Upload a new version — the new version will be scanned automatically.</li>
-      <li>
-        You cannot unblock an existing version; each new upload starts a fresh scan.
-      </li>
-    </ol>
-  </div>
-
-  <h5>Check Your Plugin Locally</h5>
-
-  <p>Run the same tools locally before uploading to catch issues early:</p>
-
-  <pre><code># Install the security tools
-pip install bandit detect-secrets flake8
-
-# Run checks on your plugin directory
-bandit -r your_plugin_directory/
-detect-secrets scan your_plugin_directory/
-flake8 your_plugin_directory/</code></pre>
-
-  <h5>Support</h5>
-
-  <ul>
-    <li>Review the detailed scan results on your plugin's version detail page.</li>
-    <li>Check the linked documentation for each security tool.</li>
-    <li>Ask questions on the QGIS Developers mailing list.</li>
-    <li>
-      File issues on the
-      <a href="https://github.com/qgis/QGIS-Plugins-Website" target="_blank" rel="noopener">
-        QGIS-Plugins-Website GitHub repository
-      </a>.
-    </li>
-  </ul>
-
   <p class="notification is-success is-light">
     <strong>Remember:</strong> The security scanner is here to help you create safer,
     higher-quality plugins. Critical findings must be resolved, but non-blocking results are
@@ -427,25 +100,111 @@ flake8 your_plugin_directory/</code></pre>
   </p>
 
   <!-- ═══════════════════════════════════════════════════════════════════════
-       RULES REFERENCE LINK
+       DETAILED PAGES
        ═══════════════════════════════════════════════════════════════════════ -->
   <hr>
-  <div class="notification is-link is-light mt-5">
-    <div class="is-flex is-align-items-center" style="gap:1rem;">
-      <span class="icon is-large has-text-link" style="flex-shrink:0;">
-        <i class="fas fa-list-alt fa-2x"></i>
-      </span>
-      <div>
-        <p class="has-text-weight-bold is-size-5 mb-1">Complete Rules Reference</p>
-        <p class="mb-2">
-          Looking for the full list of security and quality rules with their severity,
-          active status, and skip permissions?
-          The rules reference has been moved to its own dedicated page for easier navigation.
-        </p>
-        <a class="button is-link is-small" href="{% url 'docs_security_rules' %}">
-          <span class="icon"><i class="fas fa-list-alt"></i></span>
-          <span>View All Security Rules</span>
-        </a>
+  <h5>Detailed Documentation</h5>
+
+  <div class="columns is-multiline">
+    <div class="column is-half">
+      <div class="notification is-link is-light" style="height:100%;">
+        <div class="is-flex is-align-items-flex-start" style="gap:1rem;">
+          <span class="icon is-large has-text-link" style="flex-shrink:0;">
+            <i class="fas fa-shield-alt fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold is-size-6 mb-1">Security Tools</p>
+            <p class="is-size-7 mb-2">
+              Bandit, detect-secrets, Flake8, and File Analysis — what each tool checks,
+              severity levels, how to read results, and how to run them locally.
+            </p>
+            <a class="button is-link is-small" href="{% url 'docs_security_tools' %}">
+              <span class="icon"><i class="fas fa-shield-alt"></i></span>
+              <span>Security Tools</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="column is-half">
+      <div class="notification is-link is-light" style="height:100%;">
+        <div class="is-flex is-align-items-flex-start" style="gap:1rem;">
+          <span class="icon is-large has-text-link" style="flex-shrink:0;">
+            <i class="fas fa-list-alt fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold is-size-6 mb-1">Rules Reference</p>
+            <p class="is-size-7 mb-2">
+              Full live list of every security and quality rule with its severity,
+              enabled/disabled status, and skip permissions.
+            </p>
+            <a class="button is-link is-small" href="{% url 'docs_security_rules' %}">
+              <span class="icon"><i class="fas fa-list-alt"></i></span>
+              <span>View All Rules</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="column is-half">
+      <div class="notification is-warning is-light" style="height:100%;">
+        <div class="is-flex is-align-items-flex-start" style="gap:1rem;">
+          <span class="icon is-large has-text-warning" style="flex-shrink:0;">
+            <i class="fas fa-toggle-off fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold is-size-6 mb-1">Rule Skipping</p>
+            <p class="is-size-7 mb-2">
+              How to skip skippable rules during upload via the web form or REST API,
+              administrator configuration, and how to request rule changes.
+            </p>
+            <a class="button is-warning is-small" href="{% url 'docs_security_skipping' %}">
+              <span class="icon"><i class="fas fa-toggle-off"></i></span>
+              <span>Rule Skipping Guide</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="column is-half">
+      <div class="notification is-warning is-light" style="height:100%;">
+        <div class="is-flex is-align-items-flex-start" style="gap:1rem;">
+          <span class="icon is-large has-text-warning" style="flex-shrink:0;">
+            <i class="fas fa-cog fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold is-size-6 mb-1">Config Files</p>
+            <p class="is-size-7 mb-2">
+              Suppress specific findings by bundling <code>.bandit</code>,
+              <code>.secrets.baseline</code>, or <code>.flake8</code> config files inside
+              your plugin ZIP.
+            </p>
+            <a class="button is-warning is-small" href="{% url 'docs_security_config_files' %}">
+              <span class="icon"><i class="fas fa-cog"></i></span>
+              <span>Config Files Guide</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="column is-half">
+      <div class="notification is-danger is-light" style="height:100%;">
+        <div class="is-flex is-align-items-flex-start" style="gap:1rem;">
+          <span class="icon is-large has-text-danger" style="flex-shrink:0;">
+            <i class="fas fa-life-ring fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold is-size-6 mb-1">Troubleshooting</p>
+            <p class="is-size-7 mb-2">
+              Resolving a blocked plugin, dealing with false positives, raising an issue
+              about a mandatory check, and getting support.
+            </p>
+            <a class="button is-danger is-small" href="{% url 'docs_security_troubleshooting' %}">
+              <span class="icon"><i class="fas fa-life-ring"></i></span>
+              <span>Troubleshooting</span>
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   </div>

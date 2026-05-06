@@ -47,6 +47,18 @@ def docs_security_scanning(request):
     )
 
 
+def docs_security_config_files(request):
+    """
+    Renders the documentation page about using tool config files (.bandit,
+    .secrets.baseline, .flake8) inside a plugin ZIP to influence scan results.
+    """
+    return render(
+        request,
+        "flatpages/docs_security_config_files.html",
+        {},
+    )
+
+
 def docs_security_rules(request):
     """
     Renders the complete security rules reference page with live rule data from the database.
@@ -72,6 +84,42 @@ def docs_security_rules(request):
             "total_warning": total_warning,
             "total_info": total_info,
         },
+    )
+
+
+def docs_security_tools(request):
+    """
+    Renders the security tools detail page (Bandit, detect-secrets, Flake8, File Analysis,
+    severity levels, understanding results, manual re-scan, local checks).
+    """
+    return render(
+        request,
+        "flatpages/docs_security_tools.html",
+        {},
+    )
+
+
+def docs_security_skipping(request):
+    """
+    Renders the rule configuration and skipping guide (admin config, developer skipping,
+    web form, REST API, requesting rule changes).
+    """
+    return render(
+        request,
+        "flatpages/docs_security_skipping.html",
+        {},
+    )
+
+
+def docs_security_troubleshooting(request):
+    """
+    Renders the security scanning troubleshooting page (resolving blocked plugins,
+    false positives, raising issues via GitHub, support).
+    """
+    return render(
+        request,
+        "flatpages/docs_security_troubleshooting.html",
+        {},
     )
 
 
