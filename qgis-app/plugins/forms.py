@@ -145,7 +145,7 @@ class PluginVersionForm(ModelForm):
         choices = []
         for rule in skippable_rules:
             label = f"{rule.check_code}: {rule.check_name} ({rule.get_severity_display()})"
-            choices.append((rule.id, label))
+            choices.append((rule.check_code, label))
         
         self.fields['skip_security_rules'].choices = choices
 
@@ -305,7 +305,7 @@ class PackageUploadForm(forms.Form):
         choices = []
         for rule in skippable_rules:
             label = f"{rule.check_code}: {rule.check_name} ({rule.get_severity_display()})"
-            choices.append((rule.id, label))
+            choices.append((rule.check_code, label))
         
         self.fields['skip_security_rules'].choices = choices
 

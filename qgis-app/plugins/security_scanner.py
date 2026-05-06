@@ -252,16 +252,20 @@ class PluginSecurityScanner:
                 "detect-secrets",
                 "scan",
                 "--all-files",
-                ".",
+                # metadata.txt is a standard QGIS plugin manifest; commitSha1
+                # (injected by qgis-plugin-ci) is a git SHA, not a secret.
+                # Excluding the file prevents false positives on hex entropy.
+                "--exclude-files",
+                r"metadata\.txt",
             ]
-            
+
             # If we have enabled rules configured, disable all plugins NOT in that list
             if self.enabled_secrets_rules:
                 # Use pre-fetched list from __init__ (no extra DB query here)
                 for plugin in self._all_secrets_plugins:
                     if plugin not in self.enabled_secrets_rules:
                         cmd.extend(["--disable-plugin", plugin])
-            
+
             cmd.append(".")
             
             result = subprocess.run(

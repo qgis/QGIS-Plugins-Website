@@ -46,6 +46,7 @@ from plugins.models import (
     PluginVersionFeedback,
     PluginVersionFeedbackAttachment,
     PluginVersionSecurityScan,
+    SecurityRule,
     vjust,
 )
 from plugins.security_utils import get_scan_badge_info, get_security_rules_grouped
@@ -621,10 +622,16 @@ def plugin_upload(request):
                 send_upload_confirmation_email(new_version)
 
                 # Extract skipped security rule IDs from form
-                skipped_rule_ids = form.cleaned_data.get("skip_security_rules", [])
-                # Convert to list of integers if needed
-                if skipped_rule_ids:
-                    skipped_rule_ids = [int(rule_id) for rule_id in skipped_rule_ids]
+                skipped_rule_codes = form.cleaned_data.get("skip_security_rules", [])
+                # Resolve check_codes to DB IDs
+                if skipped_rule_codes:
+                    skipped_rule_ids = list(
+                        SecurityRule.objects.filter(
+                            check_code__in=skipped_rule_codes, enabled=True, can_be_skipped=True
+                        ).values_list("id", flat=True)
+                    )
+                else:
+                    skipped_rule_ids = []
 
                 # Queue async security scan task
                 run_security_scan_task.delay(new_version.pk, skipped_rule_ids=skipped_rule_ids)
@@ -1642,10 +1649,16 @@ def _version_create(request, plugin, version):
                 send_upload_confirmation_email(new_object)
 
                 # Extract skipped security rule IDs from form
-                skipped_rule_ids = form.cleaned_data.get("skip_security_rules", [])
-                # Convert to list of integers if needed
-                if skipped_rule_ids:
-                    skipped_rule_ids = [int(rule_id) for rule_id in skipped_rule_ids]
+                skipped_rule_codes = form.cleaned_data.get("skip_security_rules", [])
+                # Resolve check_codes to DB IDs
+                if skipped_rule_codes:
+                    skipped_rule_ids = list(
+                        SecurityRule.objects.filter(
+                            check_code__in=skipped_rule_codes, enabled=True, can_be_skipped=True
+                        ).values_list("id", flat=True)
+                    )
+                else:
+                    skipped_rule_ids = []
 
                 # Queue async security scan task
                 run_security_scan_task.delay(new_object.pk, skipped_rule_ids=skipped_rule_ids)

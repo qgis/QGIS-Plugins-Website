@@ -112,7 +112,7 @@
                 <label class="srw-toggle" onclick="srwToggleSwitcher(event, this)" title="{% trans 'Toggle' %} {{ rule.check_code }} {% trans 'for this upload' %}">
                   <input type="checkbox"
                          class="srw-skip-checkbox"
-                         value="{{ rule.id }}"
+                         value="{{ rule.check_code }}"
                          data-category="{{ category.key }}"
                          tabindex="-1"
                          checked>
