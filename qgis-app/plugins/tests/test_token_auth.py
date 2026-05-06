@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from plugins.forms import PackageUploadForm
-from plugins.models import Plugin, PluginVersion
+from plugins.models import Plugin, PluginVersion, SecurityRule
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -570,8 +570,6 @@ class EmptyPluginWithTokenTestCase(TestCase):
 
     def test_create_empty_plugin_then_upload_with_token(self):
         """Test complete workflow: create empty plugin, generate token, upload version"""
-        from unittest.mock import patch
-
         # Step 1: Create empty plugin
         with patch("plugins.views.plugin_notify", new=do_nothing):
             url_create_empty = reverse("plugin_create_empty")
@@ -637,8 +635,6 @@ class EmptyPluginWithTokenTestCase(TestCase):
 
     def test_cannot_upload_mismatched_package_name_to_empty_plugin(self):
         """Test that uploading a package with wrong folder name fails"""
-        from unittest.mock import patch
-
         # Create empty plugin with specific package_name
         with patch("plugins.views.plugin_notify", new=do_nothing):
             url_create_empty = reverse("plugin_create_empty")
@@ -692,3 +688,101 @@ class EmptyPluginWithTokenTestCase(TestCase):
         # No version should be created
         plugin.refresh_from_db()
         self.assertEqual(plugin.pluginversion_set.count(), 0)
+
+
+# ---------------------------------------------------------------------------
+# Security rule skipping via token API
+# ---------------------------------------------------------------------------
+
+class TokenAPISkipSecurityRulesTest(TestCase):
+    """Tests for passing skip_security_rules via the token-based REST API."""
+
+    fixtures = ["fixtures/auth.json"]
+
+    @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
+    @patch("plugins.validator._check_url_link", new=do_nothing)
+    @override_settings(MEDIA_ROOT="api/tests")
+    def setUp(self):
+        self.client = Client()
+        self.url_upload = reverse("plugin_upload")
+
+        self.user = User.objects.create_user(
+            username="skiptoken_user", password="testpassword", email="skiptoken@example.com"
+        )
+        self.client.login(username="skiptoken_user", password="testpassword")
+
+        valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin.zip_")
+        with open(valid_plugin, "rb") as file:
+            uploaded_file = SimpleUploadedFile(
+                "valid_plugin.zip_", file.read(), content_type="application/zip"
+            )
+        self.client.post(self.url_upload, {"package": uploaded_file})
+
+        self.plugin = Plugin.objects.get(name="Test Plugin")
+        package_name = self.plugin.package_name
+
+        self.url_add_version = reverse("version_create_api", args=[package_name])
+        url_token_create = reverse("plugin_token_create", args=[package_name])
+
+        self.client.post(url_token_create, {})
+        outstanding_token = OutstandingToken.objects.last().token
+        refresh = RefreshToken(outstanding_token)
+        refresh["plugin_id"] = self.plugin.pk
+        refresh["refresh_jti"] = refresh["jti"]
+        self.access_token = str(refresh.access_token)
+
+        self.client.logout()
+
+        # Create a skippable warning rule
+        self.rule = SecurityRule.objects.create(
+            check_code="B311",
+            check_category="bandit",
+            check_name="Use of random for security",
+            check_description="Random module is not suitable for crypto.",
+            severity="warning",
+            enabled=True,
+            can_be_skipped=True,
+        )
+
+    @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay")
+    def test_token_upload_with_skip_passes_rule_ids(self, mock_task):
+        """Token API upload with skip_security_rules passes matching rule IDs to the task."""
+        valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin_0.0.2.zip_")
+        with open(valid_plugin, "rb") as file:
+            uploaded_file = SimpleUploadedFile(
+                "valid_plugin_0.0.2.zip_", file.read(), content_type="application/zip_"
+            )
+
+        c = Client(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+        response = c.post(
+            self.url_add_version,
+            {
+                "package": uploaded_file,
+                "skip_security_rules": [self.rule.check_code],
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+        mock_task.assert_called_once()
+        _args, kwargs = mock_task.call_args
+        self.assertIn(self.rule.id, kwargs.get("skipped_rule_ids", []))
+
+    @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay")
+    def test_token_upload_without_skip_passes_empty_list(self, mock_task):
+        """Token API upload without skip_security_rules passes empty list to task."""
+        valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin_0.0.2.zip_")
+        with open(valid_plugin, "rb") as file:
+            uploaded_file = SimpleUploadedFile(
+                "valid_plugin_0.0.2.zip_", file.read(), content_type="application/zip_"
+            )
+
+        c = Client(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+        response = c.post(
+            self.url_add_version,
+            {"package": uploaded_file},
+        )
+
+        self.assertEqual(response.status_code, 201)
+        mock_task.assert_called_once()
+        _args, kwargs = mock_task.call_args
+        self.assertEqual(kwargs.get("skipped_rule_ids", []), [])
