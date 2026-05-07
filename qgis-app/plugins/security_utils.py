@@ -21,6 +21,8 @@ def run_security_scan(plugin_version):
         PluginVersionSecurityScan instance or None if scan fails
     """
     try:
+        from django.utils import timezone
+
         # Get the package file path
         package_path = plugin_version.package.path
 
@@ -32,6 +34,7 @@ def run_security_scan(plugin_version):
         security_scan, created = PluginVersionSecurityScan.objects.update_or_create(
             plugin_version=plugin_version,
             defaults={
+                "scanned_on": timezone.now(),
                 "total_checks": report["summary"]["total_checks"],
                 "passed_checks": report["summary"]["passed"],
                 "warning_count": report["summary"]["warnings"],

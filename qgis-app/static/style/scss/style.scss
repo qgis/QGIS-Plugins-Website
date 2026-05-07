@@ -4,6 +4,7 @@
 @import "sustaining_members.scss";
 @import "security_scan.scss";
 @import "file_upload_widget.scss";
+@import "tooltip.scss";
 
 
 html {
@@ -225,6 +226,10 @@ p {
   .content > .columns .content {
     width: 100%;
   }
+  .login-container {
+    max-width: 100%;
+    min-width: 40dvw;
+  }
 }
 
 @media screen and (min-width: 1024px) {
@@ -238,6 +243,9 @@ p {
   .container {
     max-width: unset;
   }
+  .login-container {
+    width: 650px !important;
+  }
 }
 
 a.is-active > span {
@@ -245,8 +253,9 @@ a.is-active > span {
 }
 
 .login-container {
-  max-width: 100%;
-  min-width: 40dvw;
+  border-radius: 20px;
+  border: #ffffff1c solid;
+  backdrop-filter: blur(8px);
 }
 
 .login-container hr {
@@ -264,6 +273,25 @@ a.is-active > span {
 
 .is-semi-transparent {
   opacity: 0.9;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.25rem 0;
+
+  &::before,
+  &::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid #dbdbdb;
+  }
+
+  span {
+    padding: 0 0.75rem;
+    color: #7a7a7a;
+    font-size: 0.875rem;
+  }
 }
 
 .form-error {

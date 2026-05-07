@@ -5,7 +5,7 @@ Tests for creating empty plugins (without versions)
 import os
 from unittest.mock import patch
 
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
@@ -207,7 +207,9 @@ class PluginCreateEmptyTestCase(TestCase):
     @patch("plugins.views.plugin_notify", new=do_nothing)
     @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
     @patch("plugins.validator._check_url_link", new=do_nothing)
-    @patch("plugins.security_utils.run_security_scan", new=do_nothing)
+    @patch(
+        "plugins.tasks.run_security_scan.run_security_scan_task.delay", new=do_nothing
+    )
     def test_upload_version_after_creating_empty_plugin(self):
         """Test that a version can be uploaded after creating an empty plugin"""
         self.client.login(username="testuser", password="testpassword")
@@ -296,7 +298,9 @@ class PluginCreateEmptyTestCase(TestCase):
     @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
     @patch("plugins.validator._check_url_link", new=do_nothing)
     @patch("plugins.security_utils.run_security_scan", new=do_nothing)
-    def test_version_create_not_auto_approved_for_untrusted_user_on_approved_plugin(self):
+    def test_version_create_not_auto_approved_for_untrusted_user_on_approved_plugin(
+        self,
+    ):
         """
         Security: uploading a new version via the web form must NOT be auto-approved
         because the plugin already has an approved version. Only the user's

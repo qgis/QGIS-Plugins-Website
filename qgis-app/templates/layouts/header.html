@@ -10,7 +10,7 @@
                     </a>
                 </div>
                 {% if user.is_authenticated %}
-                <a class="button is-warning is-small mb-0" href="{% url "logout" %}">
+                <a class="button is-warning is-small mb-0" href="{% url "account_logout" %}">
                     <span class="mr-2">
                         <i class="fas fa-sign-out-alt"></i>
                     </span>
@@ -19,7 +19,7 @@
                     </span>
                 </a>
                 {% else %}
-                <a class="button is-info is-small mb-0" href="{% url "login" %}">
+                <a class="button is-info is-small mb-0" href="{% url "account_login" %}">
                     <span class="mr-2">
                         <i class="fas fa-sign-in-alt"></i>
                     </span>
@@ -87,13 +87,13 @@
                                 {{ user.get_full_name|default:user.username }}
                             </a>
                             <div class="navbar-dropdown">
-                                <a href='{% url "logout" %}' class="navbar-item has-text-weight-semibold is-size-7">
+                                <a href='{% url "account_logout" %}' class="navbar-item has-text-weight-semibold is-size-7">
                                     {% trans "Logout" %}
                                 </a>
                             </div>
                         </div>
                     {% else %}
-                    <a class="navbar-item has-text-weight-semibold is-size-7" href="/accounts/login/">
+                    <a class="navbar-item has-text-weight-semibold is-size-7" href="{% url "account_login" %}">
                         <span class="mr-2">
                             <i class="fas fa-sign-in-alt"></i>
                         </span>

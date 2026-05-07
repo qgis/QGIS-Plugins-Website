@@ -7,3 +7,44 @@ EMAIL_HOST_USER = "resend"
 EMAIL_HOST_PASSWORD = ""
 EMAIL_SUBJECT_PREFIX = '[QGIS Plugins] '
 DEFAULT_FROM_EMAIL = 'no-reply-plugins@qgis.org'
+
+# -----------------------------------------------------------------------------
+# Social authentication — provider overrides
+# Only add the sections for providers you are configuring.
+# Credentials (Client ID / Secret) are stored in Django Admin, not here.
+# See docs/oauth-setup.md for full setup instructions.
+# -----------------------------------------------------------------------------
+
+SOCIALACCOUNT_PROVIDERS = {
+
+    # GitLab — only needed when connecting to a self-hosted instance.
+    # Remove or leave commented out to use gitlab.com (the default).
+    "gitlab": {
+        "GITLAB_URL": "https://your-gitlab.example.com",
+        "SCOPE": ["read_user"],
+    },
+
+    # Microsoft — set a specific tenant ID to restrict login to one
+    # organisation. Use "common" (default) to allow any Microsoft account.
+    "microsoft": {
+        "tenant": "common",   # or your Directory (tenant) ID
+        "SCOPE": ["User.Read"],
+    },
+
+    # Apple — certificate_key is the content of the .p8 file downloaded
+    # from the Apple Developer portal. key is the Key ID (10 chars).
+    # client_id and secret (Team ID) are stored in Django Admin.
+    "apple": {
+        "APP": {
+            "client_id": "org.your.bundle.web",
+            "secret": "TEAM_ID_10CHARS",
+            "key": "KEY_ID_10CHARS",
+            "settings": {
+                "certificate_key": """-----BEGIN PRIVATE KEY-----
+<paste .p8 content here>
+-----END PRIVATE KEY-----"""
+            },
+        }
+    },
+}
+

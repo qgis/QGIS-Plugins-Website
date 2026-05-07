@@ -52,12 +52,47 @@
     <div class="is-flex is-justify-content-space-between">
         <h2 class="title is-4">{% trans "Version" %}: {{ version }}</h2>
         <div>
+            {% if not version.approved and version.validation_status == 'validating' %}
+            <button class="button" disabled title="{% trans "Plugin is being validated - download unavailable" %}">
+                <span class="icon"><i class="fas fa-spinner fa-spin"></i></span>
+                <span>{% trans "Validating..." %}</span>
+            </button>
+            {% elif not version.approved and version.validation_status == 'blocked' %}
+            <button class="button is-danger" disabled title="{% trans "Plugin is blocked due to critical security issues" %}">
+                <span class="icon"><i class="fas fa-ban"></i></span>
+                <span>{% trans "Blocked" %}</span>
+            </button>
+            {% else %}
             <a href="{% url "version_download" version.plugin.package_name version.version %}" class="button">
                 <span class="icon"><i class="fas fa-download"></i></span>
                 <span>{% trans "Download" %}</span>
             </a>
+            {% endif %}
         </div>
     </div>
+
+    {% if not version.approved and version.validation_status == 'validating' %}
+    <div class="notification is-info is-light">
+        <p><strong><span class="icon"><i class="fas fa-spinner fa-spin"></i></span> {% trans "Validation in progress" %}</strong></p>
+        <p>{% trans "Security and quality checks are running asynchronously. This plugin version is not yet available for approval or download. You will receive an email with the results shortly." %}</p>
+        <p><a href="{% url 'docs_security_scanning' %}">{% trans "Learn more about security scanning" %}</a></p>
+    </div>
+    {% elif not version.approved and version.validation_status == 'blocked' %}
+    <div class="notification is-danger is-light">
+        <p><strong><span class="icon"><i class="fas fa-ban"></i></span> {% trans "Plugin Blocked" %}</strong></p>
+        <p>{% trans "This plugin version has been blocked because critical security issues were found during validation. It is not available for approval or download until the issues are resolved." %}</p>
+        {% if user.is_staff or user in version.plugin.editors %}
+        <p>{% trans "To resolve this:" %}</p>
+        <ol>
+            <li>{% trans "Fix the critical issues listed in the Security Scan tab below" %}</li>
+            <li>{% trans "Upload a new version of your plugin" %}</li>
+            <li>{% trans "The new version will be automatically re-scanned" %}</li>
+        </ol>
+        <p><a href="{% url 'docs_security_scanning' %}">{% trans "Learn more about fixing security issues" %}</a></p>
+        {% endif %}
+    </div>
+    {% endif %}
+
     {% if not version.created_by.is_active and not version.is_from_token %}
     <div class="notification is-danger is-light">
         {% trans "The plugin author has been blocked." %}
@@ -70,7 +105,11 @@
             {% if user.is_staff or user in version.plugin.editors %}
             <li data-tab="2"><a href="#security-tab">
                 <span>{% trans "Security Scan" %}</span>
-                {% if security_scan %}
+                {% if version.validation_status == 'validating' %}
+                <span class="tag ml-2 is-info">{% trans "Validating" %}</span>
+                {% elif version.validation_status == 'blocked' %}
+                <span class="tag ml-2 is-danger">{% trans "Blocked" %}</span>
+                {% elif security_scan %}
                 <span class="tag ml-2 {{ scan_badge.class }}">
                     {% if security_scan.overall_status == 'passed' %}✓{% elif security_scan.overall_status == 'critical' %}!{% else %}ℹ{% endif %}
                 </span>
@@ -162,7 +201,13 @@
         {% if user.is_staff or user in version.plugin.editors %}
         <div class="tab-pane" id="security-tab">
 
-            {% if security_scan %}
+            {% if version.validation_status == 'validating' %}
+            <div class="notification is-info is-light">
+                <p><strong><span class="icon"><i class="fas fa-spinner fa-spin"></i></span> {% trans "Security validation in progress" %}</strong></p>
+                <p>{% trans "Security and quality checks are currently running. This tab will show the results once complete. Refresh the page in a few moments." %}</p>
+            </div>
+
+            {% elif security_scan %}
 
                 <!-- Important Notes -->
                 <div class="container rich">
@@ -170,9 +215,13 @@
                         <h3>{% trans "Important Information" %}</h3>
                         <p>
                             <ul>
-                                <li>{% trans "These security checks are informational and do not block plugin upload." %}</li>
+                                {% if version.validation_status == 'blocked' %}
+                                <li class="has-text-danger has-text-weight-bold">{% trans "This plugin version is BLOCKED due to critical security issues and is not available for approval or download." %}</li>
+                                {% else %}
                                 <li>{% trans "Warnings and issues should be reviewed and addressed when possible to ensure plugin security and quality." %}</li>
-                                <li>{% trans "Critical issues may indicate security vulnerabilities that should be fixed immediately." %}</li>
+                                {% endif %}
+                                <li>{% trans "Critical issues (Bandit Security Analysis, Secrets Detection) block the plugin until resolved." %}</li>
+                                <li>{% trans "Non-critical issues (warnings, info) are informational." %}</li>
                                 <li>{% trans "False positives may occur - review results in context of your plugin's functionality." %}</li>
                                 <li>
                                     <a href="{% url 'docs_security_scanning' %}" target="_blank" class="has-text-weight-semibold">
@@ -357,9 +406,37 @@
                         <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
                         {% trans "No security scan available for this version" %}
                     </p>
-                    <p class="mt-2">{% trans "This version was uploaded before security scanning was implemented, or the scan failed. Please contact an administrator if you'd like to request a scan." %}</p>
+                    <p class="mt-2">{% trans "This version was uploaded before security scanning was implemented, or the scan results are pending. You can trigger a manual scan below." %}</p>
                 </div>
+                <!-- Manual rescan button for existing versions -->
+                <form method="post" action="{% url 'version_rescan' version.plugin.package_name version.version %}">
+                    {% csrf_token %}
+                    <button type="submit" class="button is-info is-outlined mt-3">
+                        <span class="icon"><i class="fas fa-sync-alt"></i></span>
+                        <span>{% trans "Run security scan (informational only)" %}</span>
+                    </button>
+                </form>
+                <p class="is-size-7 has-text-grey mt-2">
+                    {% trans "Manual scans on existing versions are informational only and will not change the plugin's approval status." %}
+                </p>
             {% endif %}
+
+            {% if security_scan and version.validation_status not in 'validating' %}
+            <!-- Manual rescan button (always available for owners/staff on existing scans) -->
+            <div class="mt-5">
+                <form method="post" action="{% url 'version_rescan' version.plugin.package_name version.version %}">
+                    {% csrf_token %}
+                    <button type="submit" class="button is-light is-small">
+                        <span class="icon"><i class="fas fa-sync-alt"></i></span>
+                        <span>{% trans "Re-run scan (informational)" %}</span>
+                    </button>
+                </form>
+                <p class="is-size-7 has-text-grey mt-1">
+                    {% trans "Re-running a scan on an existing version is informational only and will not change the plugin's status." %}
+                </p>
+            </div>
+            {% endif %}
+
         </div>
         {% endif %}
 
@@ -384,10 +461,24 @@
             <h4 class="title is-6 mb-2 mt-5">{% trans "Version approval"%}</h4>
             <form class="form-inline" method="post" action="{% url "version_manage" version.plugin.package_name version.version %}">{% csrf_token %}
                 {% if not version.approved %}
+                {% if not version.is_available %}
+                <button class="button is-success is-outlined" disabled title="{% if version.validation_status == 'blocked' %}{% trans 'This version is blocked due to critical security issues and cannot be approved' %}{% else %}{% trans 'Security validation is in progress - please wait before approving' %}{% endif %}">
+                    <span class="icon"><i class="fas fa-check"></i></span>
+                    <span>{% trans "Approve this version" %}</span>
+                </button>
+                <p class="is-size-7 has-text-danger mt-1">
+                    {% if version.validation_status == 'blocked' %}
+                    {% trans "Blocked: critical security issues must be resolved first" %}
+                    {% else %}
+                    {% trans "Validation in progress: approval not available yet" %}
+                    {% endif %}
+                </p>
+                {% else %}
                 <button class="button is-success is-outlined" type="submit" name="version_approve" id="version_approve">
                     <span class="icon"><i class="fas fa-check"></i></span>
                     <span>{% trans "Approve this version" %}</span>
                 </button>
+                {% endif %}
                 {% else %}
                 <button class="button is-warning is-outlined" type="submit" name="version_unapprove" id="version_unapprove">
                     <span class="icon"><i class="fas fa-times"></i></span>

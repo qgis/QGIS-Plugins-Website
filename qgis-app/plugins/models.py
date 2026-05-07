@@ -803,6 +803,19 @@ class ExperimentalPluginVersions(ApprovedPluginVersions):
         )
 
 
+VALIDATION_STATUS_PENDING = "pending"
+VALIDATION_STATUS_VALIDATING = "validating"
+VALIDATION_STATUS_VALIDATED = "validated"
+VALIDATION_STATUS_BLOCKED = "blocked"
+
+VALIDATION_STATUS_CHOICES = [
+    (VALIDATION_STATUS_PENDING, _("Pending")),
+    (VALIDATION_STATUS_VALIDATING, _("Validating")),
+    (VALIDATION_STATUS_VALIDATED, _("Validated")),
+    (VALIDATION_STATUS_BLOCKED, _("Blocked")),
+]
+
+
 def vjust(str, level=3, delim=".", bitsize=3, fillchar=" ", force_zero=False):
     """
     Normalize a dotted version string.
@@ -951,6 +964,22 @@ class PluginVersion(models.Model):
         null=True,
     )
     is_from_token = models.BooleanField(_("Is uploaded using token"), default=False)
+
+    # Validation status for security and QA checks
+    validation_status = models.CharField(
+        _("Validation status"),
+        max_length=20,
+        choices=VALIDATION_STATUS_CHOICES,
+        default=VALIDATION_STATUS_PENDING,
+        db_index=True,
+        help_text=_(
+            "Validation status based on security and quality checks. "
+            "New uploads start as 'validating' until checks complete. "
+            "'blocked' means critical issues were found and the version "
+            "is not available for approval or download."
+        ),
+    )
+
     # Link to the token if upload is using token
     token = models.ForeignKey(
         PluginOutstandingToken,
@@ -965,6 +994,18 @@ class PluginVersion(models.Model):
     approved_objects = ApprovedPluginVersions()
     stable_objects = StablePluginVersions()
     experimental_objects = ExperimentalPluginVersions()
+
+    @property
+    def is_available(self):
+        """
+        Returns True if the version is available for download/approval
+        (not blocked by security checks).
+        """
+        return self.validation_status not in [
+            VALIDATION_STATUS_PENDING,
+            VALIDATION_STATUS_VALIDATING,
+            VALIDATION_STATUS_BLOCKED,
+        ]
 
     @property
     def file_name(self):
@@ -1202,7 +1243,7 @@ class PluginVersionSecurityScan(models.Model):
         PluginVersion, on_delete=models.CASCADE, related_name="security_scan"
     )
     scanned_on = models.DateTimeField(
-        _("Scanned on"), auto_now_add=True, editable=False
+        _("Scanned on"), default=timezone.now, editable=False
     )
 
     # Summary statistics

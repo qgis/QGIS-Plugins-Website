@@ -10,6 +10,7 @@ ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
     "django.contrib.auth.backends.RemoteUserBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
 )
 
 if ast.literal_eval(os.environ.get("ENABLE_LDAP", "False")):

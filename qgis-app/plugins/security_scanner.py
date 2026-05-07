@@ -204,8 +204,19 @@ class PluginSecurityScanner:
 
         try:
             # Use subprocess to avoid any import/logging issues
+            # Exclude lines containing 'commitSha1' to avoid false positives:
+            # qgis-plugin-ci injects a commitSha1 field in metadata.txt which
+            # is a git commit SHA and not a secret, but detect-secrets flags it
+            # as a "Potential Hex High Entropy String".
             result = subprocess.run(
-                ["detect-secrets", "scan", "--all-files", "."],
+                [
+                    "detect-secrets",
+                    "scan",
+                    "--all-files",
+                    "--exclude-lines",
+                    r"commitSha1\s*=",
+                    ".",
+                ],
                 cwd=self.extracted_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,  # Suppress stderr completely
