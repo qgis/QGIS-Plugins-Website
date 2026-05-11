@@ -11,7 +11,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from plugins.forms import PluginCreateForm
-from plugins.models import Plugin
+from plugins.models import VALIDATION_STATUS_VALIDATING, Plugin, PluginVersion
 
 
 def do_nothing(*args, **kwargs):
@@ -345,10 +345,13 @@ class PluginCreateEmptyTestCase(TestCase):
     @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
     @patch("plugins.validator._check_url_link", new=do_nothing)
     @patch("plugins.security_utils.run_security_scan", new=do_nothing)
-    def test_version_create_auto_approved_for_trusted_user(self):
+    @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay")
+    def test_version_create_queued_for_scan_for_trusted_user(self, mock_scan_delay):
         """
-        A user with can_approve permission should have their uploaded version
-        approved automatically via the version_create view.
+        A trusted user's upload starts async security validation, NOT immediate
+        approval. The version is created with approved=False and
+        validation_status=VALIDATING, and the security scan task is queued.
+        Approval happens asynchronously after the scan passes.
         """
 
         ct = ContentType.objects.get_for_model(Plugin)
@@ -373,10 +376,16 @@ class PluginCreateEmptyTestCase(TestCase):
         self.client.post(upload_url, {"package": uploaded_file})
 
         version = plugin.pluginversion_set.get(version="0.0.1")
-        self.assertTrue(
+        self.assertFalse(
             version.approved,
-            "Version uploaded by a trusted user (can_approve) should be approved automatically.",
+            "Upload always starts unapproved; approval is deferred to the async security scan.",
         )
+        self.assertEqual(
+            version.validation_status,
+            VALIDATION_STATUS_VALIDATING,
+            "New version should be in VALIDATING state immediately after upload.",
+        )
+        mock_scan_delay.assert_any_call(version.pk, auto_approve=False)
 
     def tearDown(self):
         self.client.logout()

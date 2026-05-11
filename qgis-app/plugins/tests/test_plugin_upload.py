@@ -9,7 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from plugins.forms import PackageUploadForm
-from plugins.models import Plugin, PluginVersion
+from plugins.models import VALIDATION_STATUS_VALIDATING, Plugin, PluginVersion
 
 
 def do_nothing(*args, **kwargs):
@@ -138,10 +138,13 @@ class PluginUploadTestCase(TestCase):
 
     @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
     @patch("plugins.validator._check_url_link", new=do_nothing)
-    def test_new_version_auto_approved_for_trusted_user(self):
+    @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay")
+    def test_new_version_queued_for_scan_for_trusted_user(self, mock_scan_delay):
         """
-        A user with can_approve permission should have their uploaded version
-        approved automatically via the plugin_upload view.
+        A trusted user's upload starts async security validation, NOT immediate
+        approval. The version is created with approved=False and
+        validation_status=VALIDATING, and the security scan task is queued.
+        Approval happens asynchronously after the scan passes.
         """
         ct = ContentType.objects.get_for_model(Plugin)
         perm = Permission.objects.get(codename="can_approve", content_type=ct)
@@ -171,10 +174,51 @@ class PluginUploadTestCase(TestCase):
 
         self.assertEqual(response.status_code, 302)
         new_version = PluginVersion.objects.get(plugin=plugin, version="0.0.2")
-        self.assertTrue(
+        self.assertFalse(
             new_version.approved,
-            "Version uploaded by a trusted user (can_approve) should be approved automatically.",
+            "Upload always starts unapproved; approval is deferred to the async security scan.",
         )
+        self.assertEqual(
+            new_version.validation_status,
+            VALIDATION_STATUS_VALIDATING,
+            "New version should be in VALIDATING state immediately after upload.",
+        )
+        mock_scan_delay.assert_any_call(new_version.pk, auto_approve=False)
+
+    @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
+    @patch("plugins.validator._check_url_link", new=do_nothing)
+    @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay")
+    def test_new_version_publish_immediately_opt_in_for_trusted_user(
+        self, mock_scan_delay
+    ):
+        """
+        A trusted user who checks "Publish immediately" on the upload form should
+        have the scan task called with auto_approve=True.
+        """
+        ct = ContentType.objects.get_for_model(Plugin)
+        perm = Permission.objects.get(codename="can_approve", content_type=ct)
+        self.user.user_permissions.add(perm)
+        self.user = self.user.__class__.objects.get(pk=self.user.pk)
+
+        self.client.login(username="testuser", password="testpassword")
+
+        valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin.zip_")
+        with open(valid_plugin, "rb") as file:
+            uploaded_file = SimpleUploadedFile(
+                "valid_plugin.zip_", file.read(), content_type="application/zip"
+            )
+        # POST with opt-in checkbox ticked
+        response = self.client.post(
+            self.url, {"package": uploaded_file, "auto_approve_after_scan": "on"}
+        )
+
+        self.assertEqual(response.status_code, 302)
+        version = PluginVersion.objects.get(plugin__name="Test Plugin", version="0.0.1")
+        # Still starts unapproved — approval happens in the task
+        self.assertFalse(version.approved)
+        self.assertEqual(version.validation_status, VALIDATION_STATUS_VALIDATING)
+        # Task must be queued with auto_approve=True
+        mock_scan_delay.assert_any_call(version.pk, auto_approve=True)
 
     def tearDown(self):
         self.client.logout()

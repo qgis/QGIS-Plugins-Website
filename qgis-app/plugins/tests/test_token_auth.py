@@ -1,15 +1,14 @@
 import os
 from unittest.mock import patch
 
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from plugins.models import VALIDATION_STATUS_VALIDATING, Plugin, PluginVersion
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
-
-from plugins.models import Plugin, PluginVersion
 
 
 def do_nothing(*args, **kwargs):
@@ -273,7 +272,9 @@ class UploadWithTokenTestCase(TestCase):
         data = response.json()
         self.assertTrue(data.get("success"))
 
-        new_version = PluginVersion.objects.get(plugin__name="Test Plugin", version="0.0.2")
+        new_version = PluginVersion.objects.get(
+            plugin__name="Test Plugin", version="0.0.2"
+        )
         self.assertFalse(
             new_version.approved,
             "New version must NOT be auto-approved just because the plugin is approved; "
@@ -282,10 +283,13 @@ class UploadWithTokenTestCase(TestCase):
         self.assertFalse(data.get("approved"))
         self.assertIn("approval_message", data)
 
-    def test_new_version_auto_approved_for_trusted_token_user(self):
+    @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay")
+    def test_new_version_queued_for_scan_for_trusted_token_user(self, mock_scan_delay):
         """
-        A token whose owner holds can_approve should result in an approved version,
-        regardless of whether request.user is AnonymousUser (token path).
+        A token whose owner holds can_approve triggers async security validation,
+        NOT immediate approval. The version starts with approved=False and
+        validation_status=VALIDATING; the scan task is queued. Approval happens
+        asynchronously after the scan passes.
         """
         # Grant can_approve to the token user
         ct = ContentType.objects.get_for_model(Plugin)
@@ -317,12 +321,55 @@ class UploadWithTokenTestCase(TestCase):
         data = response.json()
         self.assertTrue(data.get("success"))
 
-        new_version = PluginVersion.objects.get(plugin__name="Test Plugin", version="0.0.2")
-        self.assertTrue(
-            new_version.approved,
-            "Version uploaded via token by a trusted user (can_approve) should be approved.",
+        new_version = PluginVersion.objects.get(
+            plugin__name="Test Plugin", version="0.0.2"
         )
-        self.assertTrue(data.get("approved"))
+        self.assertFalse(
+            new_version.approved,
+            "Upload always starts unapproved; approval is deferred to the async security scan.",
+        )
+        self.assertEqual(new_version.validation_status, VALIDATION_STATUS_VALIDATING)
+        self.assertFalse(data.get("approved"))
+        mock_scan_delay.assert_called_once_with(new_version.pk, auto_approve=False)
+
+    @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay")
+    def test_new_version_publish_immediately_opt_in_for_trusted_token_user(
+        self, mock_scan_delay
+    ):
+        """
+        A trusted token user who passes auto_approve_after_scan=true in the POST body
+        should have the scan task queued with auto_approve=True.
+        """
+        # Grant can_approve to the token user
+        ct = ContentType.objects.get_for_model(Plugin)
+        perm = Permission.objects.get(codename="can_approve", content_type=ct)
+        self.user.user_permissions.add(perm)
+        self.user = self.user.__class__.objects.get(pk=self.user.pk)
+
+        self.client.post(self.url_token_create, {})
+        outstanding_token = OutstandingToken.objects.last().token
+        refresh = RefreshToken(outstanding_token)
+        refresh["plugin_id"] = self.plugin.pk
+        refresh["refresh_jti"] = refresh["jti"]
+        access_token = str(refresh.access_token)
+
+        self.client.logout()
+
+        valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin_0.0.2.zip_")
+        with open(valid_plugin, "rb") as file:
+            uploaded_file = SimpleUploadedFile(
+                "valid_plugin_0.0.2.zip_", file.read(), content_type="application/zip_"
+            )
+
+        c = Client(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        response = c.post(
+            self.url_add_version,
+            {"package": uploaded_file, "auto_approve_after_scan": "true"},
+        )
+
+        self.assertEqual(response.status_code, 201)
+        version = PluginVersion.objects.get(plugin__name="Test Plugin", version="0.0.2")
+        mock_scan_delay.assert_called_once_with(version.pk, auto_approve=True)
 
 
 class APIResponseTestCase(TestCase):

@@ -506,8 +506,9 @@ def plugin_upload(request):
     uploads a package and creates a new Plugin with a new PluginVersion
     can also update an existing plugin
     """
+    is_trusted = request.user.has_perm("plugins.can_approve")
     if request.method == "POST":
-        form = PackageUploadForm(request.POST, request.FILES)
+        form = PackageUploadForm(request.POST, request.FILES, is_trusted=is_trusted)
         if form.is_valid():
             try:
                 plugin_data = {
@@ -624,8 +625,13 @@ def plugin_upload(request):
                 # Send Stage 1: Upload confirmation email
                 send_upload_confirmation_email(new_version)
 
-                # Queue async security scan task
-                run_security_scan_task.delay(new_version.pk)
+                # Queue async security scan task.
+                # auto_approve=True only when a trusted user explicitly opts in via
+                # the "Publish immediately" checkbox on the upload form.
+                auto_approve = is_trusted and form.cleaned_data.get(
+                    "auto_approve_after_scan", False
+                )
+                run_security_scan_task.delay(new_version.pk, auto_approve=auto_approve)
 
                 # Update plugins cached xml
                 generate_plugins_xml.delay()
@@ -691,7 +697,7 @@ def plugin_upload(request):
                     return render(request, "plugins/plugin_upload.html", {"form": form})
             return HttpResponseRedirect(plugin.get_absolute_url())
     else:
-        form = PackageUploadForm()
+        form = PackageUploadForm(is_trusted=is_trusted)
 
     return render(request, "plugins/plugin_upload.html", {"form": form})
 
@@ -1629,8 +1635,14 @@ def _version_create(request, plugin, version):
                 # Send Stage 1: Upload confirmation email
                 send_upload_confirmation_email(new_object)
 
-                # Queue async security scan task
-                run_security_scan_task.delay(new_object.pk)
+                # Queue async security scan task.
+                # auto_approve=True only when a trusted user explicitly opts in:
+                # web form users tick "Publish immediately"; token/API users
+                # pass auto_approve_after_scan=true in their POST body.
+                auto_approve = is_trusted and form.cleaned_data.get(
+                    "auto_approve_after_scan", False
+                )
+                run_security_scan_task.delay(new_object.pk, auto_approve=auto_approve)
 
                 scan_url = f"{new_object.get_absolute_url()}#security-tab"
                 response_data["validation_status"] = VALIDATION_STATUS_VALIDATING
