@@ -111,7 +111,9 @@ def send_upload_confirmation_email(plugin_version):
         "docs_url": docs_url,
     }
 
-    send_mail_wrapper(str(subject), str(message), mail_from, recipients, fail_silently=True)
+    send_mail_wrapper(
+        str(subject), str(message), mail_from, recipients, fail_silently=True
+    )
 
 
 def send_mail_wrapper(subject, message, mail_from, recipients, fail_silently=True):
@@ -614,7 +616,9 @@ def plugin_upload(request):
 
                 new_version = PluginVersion(**version_data)
                 new_version.save()
-                msg = _("The Plugin has been successfully uploaded. Security and quality checks are now running asynchronously.")
+                msg = _(
+                    "The Plugin has been successfully uploaded. Security and quality checks are now running asynchronously."
+                )
                 messages.success(request, msg, fail_silently=True)
 
                 # Send Stage 1: Upload confirmation email
@@ -720,6 +724,105 @@ def plugin_create_empty(request):
         form = PluginCreateForm()
 
     return render(request, "plugins/plugin_create_empty.html", {"form": form})
+
+
+def plugin_versions_json(request, package_name):
+    """
+    Return plugin metadata and all approved versions as JSON.
+
+    GET /plugins/<package_name>/json
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    approved_versions = plugin.pluginversion_set.filter(approved=True).order_by(
+        "-version"
+    )
+    if not approved_versions.exists():
+        raise Http404
+
+    latest = approved_versions.first()
+    data = {
+        "name": plugin.name,
+        "package_name": plugin.package_name,
+        "description": plugin.description,
+        "about": plugin.about,
+        "homepage": plugin.homepage,
+        "repository": plugin.repository,
+        "tracker": plugin.tracker,
+        "author": plugin.author,
+        "tags": [t.name for t in plugin.tags.all()],
+        "downloads": plugin.downloads,
+        "latest_version": str(latest.version),
+        "versions": [
+            {
+                "version": str(v.version),
+                "experimental": v.experimental,
+                "qgis_min": str(v.min_qg_version),
+                "qgis_max": str(v.max_qg_version),
+                "downloads": v.downloads,
+                "uploaded_by": v.created_by.username if v.created_by else None,
+                "upload_datetime": v.created_on.isoformat(),
+            }
+            for v in approved_versions
+        ],
+    }
+    return JsonResponse(data)
+
+
+def plugin_version_json(request, package_name, version):
+    """
+    Return metadata for a specific approved plugin version as JSON.
+
+    GET /plugins/<package_name>/version/<version_name>/json
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    version_obj = get_object_or_404(
+        PluginVersion, plugin=plugin, version=version, approved=True
+    )
+    data = {
+        "name": plugin.name,
+        "package_name": plugin.package_name,
+        "version": str(version_obj.version),
+        "experimental": version_obj.experimental,
+        "qgis_min": str(version_obj.min_qg_version),
+        "qgis_max": str(version_obj.max_qg_version),
+        "downloads": version_obj.downloads,
+        "uploaded_by": (
+            version_obj.created_by.username if version_obj.created_by else None
+        ),
+        "upload_datetime": version_obj.created_on.isoformat(),
+        "changelog": version_obj.changelog,
+        "external_deps": version_obj.external_deps,
+        "download_url": request.build_absolute_uri(version_obj.get_download_url()),
+    }
+    return JsonResponse(data)
+
+
+def plugin_latest_redirect(request, package_name):
+    """
+    Redirect to the detail page of the latest approved plugin version.
+
+    GET /plugins/<package_name>/latest/
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    latest = plugin.pluginversion_set.filter(approved=True).order_by("-version").first()
+    if latest is None:
+        raise Http404
+    return HttpResponseRedirect(latest.get_absolute_url())
+
+
+def plugin_latest_json_redirect(request, package_name):
+    """
+    Redirect to the JSON endpoint of the latest approved plugin version.
+
+    GET /plugins/<package_name>/latest/json
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    latest = plugin.pluginversion_set.filter(approved=True).order_by("-version").first()
+    if latest is None:
+        raise Http404
+    return HttpResponseRedirect(
+        reverse("plugin_version_json", args=(plugin.package_name, latest.version))
+    )
 
 
 class PluginDetailView(DetailView):
@@ -2382,7 +2485,9 @@ def version_rescan(request, package_name, version):
     version_obj = get_object_or_404(PluginVersion, plugin=plugin, version=version)
 
     if not check_plugin_access(request.user, plugin):
-        msg = _("You do not have permission to trigger a security scan for this plugin.")
+        msg = _(
+            "You do not have permission to trigger a security scan for this plugin."
+        )
         messages.error(request, msg, fail_silently=True)
         return HttpResponseRedirect(version_obj.get_absolute_url())
 
@@ -2401,9 +2506,7 @@ def version_rescan(request, package_name, version):
         ),
         fail_silently=True,
     )
-    return HttpResponseRedirect(
-        version_obj.get_absolute_url() + "#security-tab"
-    )
+    return HttpResponseRedirect(version_obj.get_absolute_url() + "#security-tab")
 
 
 ###############################################
@@ -2474,11 +2577,7 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         filters.update(
-            {
-                "pluginversion__max_qg_version__gte": _add_patch_version(
-                    qg_version, "0"
-                )
-            }
+            {"pluginversion__max_qg_version__gte": _add_patch_version(qg_version, "0")}
         )
         version_filters.update(
             {"max_qg_version__gte": _add_patch_version(qg_version, "0")}
@@ -2602,11 +2701,7 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         filters.update(
-            {
-                "pluginversion__max_qg_version__gte": _add_patch_version(
-                    qg_version, "0"
-                )
-            }
+            {"pluginversion__max_qg_version__gte": _add_patch_version(qg_version, "0")}
         )
         version_filters.update(
             {"max_qg_version__gte": _add_patch_version(qg_version, "0")}
