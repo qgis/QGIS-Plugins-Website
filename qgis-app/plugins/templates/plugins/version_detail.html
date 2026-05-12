@@ -69,7 +69,7 @@
             </a>
             {% endif %}
             <div class="tooltip">
-                <a href="{% url 'plugin_version_json' version.plugin.package_name version.version %}" class="button is-light" aria-label="{% trans 'JSON' %}">
+                <a href="{% url 'plugin_version_json' version.plugin.package_name version.version %}" class="button is-outlined" aria-label="{% trans 'JSON' %}">
                     <span class="icon"><i class="fas fa-code"></i></span>
                 </a>
                 <span class="tooltiptext">{% trans "JSON" %}</span>
