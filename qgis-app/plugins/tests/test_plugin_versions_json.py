@@ -1,17 +1,25 @@
 """
 Tests for the plugin JSON endpoints (issue #227):
-  - GET /plugins/<package_name>.json          -> all approved versions
-  - GET /plugins/<package_name>/<version>.json -> specific version
+  - GET /plugins/<package_name>/json           -> all approved versions
+  - GET /plugins/<package_name>/version/<v>/json -> specific version
   - GET /plugins/<package_name>/latest/        -> redirect to latest version detail
+  - GET /plugins/<package_name>/latest/json    -> redirect to latest version JSON
   - GET /plugins/<package_name>/?latest        -> same redirect via query param
+  - Bearer token / session auth -> extra fields (validation_status, security_scan)
 """
 
 import json
 
 from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
-from plugins.models import Plugin, PluginVersion
+from plugins.decorators import validate_plugin_token
+from plugins.models import Plugin, PluginOutstandingToken, PluginVersion
+from rest_framework_simplejwt.token_blacklist.models import (
+    BlacklistedToken,
+    OutstandingToken,
+)
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 def _make_plugin(creator, package_name="test_plugin", name="Test Plugin"):
@@ -272,6 +280,226 @@ class PluginLatestRedirectTests(TestCase):
         url = reverse("plugin_latest_json_redirect", args=["redirect_plugin"])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+
+    def tearDown(self):
+        for pv in PluginVersion.objects.filter(plugin=self.plugin):
+            if pv.package:
+                try:
+                    pv.package.delete(save=False)
+                except Exception:
+                    pass
+
+
+# ---------------------------------------------------------------------------
+# Helpers shared by the auth-related test classes
+# ---------------------------------------------------------------------------
+
+
+def _make_plugin_token(user, plugin):
+    """
+    Create a PluginOutstandingToken for *plugin* and return
+    ``(access_token_str, outstanding_token)``.
+    Mirrors the logic in ``plugin_token_create``.
+    """
+    refresh = RefreshToken.for_user(user)
+    refresh["plugin_id"] = plugin.pk
+    refresh["refresh_jti"] = refresh["jti"]
+    outstanding = OutstandingToken.objects.get(jti=refresh["jti"])
+    PluginOutstandingToken.objects.create(
+        plugin=plugin,
+        token=outstanding,
+        is_blacklisted=False,
+        is_newly_created=False,
+    )
+    return str(refresh.access_token), outstanding
+
+
+# ---------------------------------------------------------------------------
+# validate_plugin_token unit tests
+# ---------------------------------------------------------------------------
+
+
+class ValidatePluginTokenTests(TestCase):
+    fixtures = ["fixtures/auth.json"]
+
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.creator = User.objects.get(username="creator")
+        self.plugin = _make_plugin(self.creator, package_name="token_test_plugin")
+        self.access_token, self.outstanding = _make_plugin_token(
+            self.creator, self.plugin
+        )
+
+    def _req(self, auth_header=None):
+        request = self.factory.get("/")
+        if auth_header:
+            request.META["HTTP_AUTHORIZATION"] = auth_header
+        return request
+
+    def test_returns_false_without_auth_header(self):
+        self.assertFalse(validate_plugin_token(self._req(), self.plugin))
+
+    def test_returns_false_with_non_bearer_header(self):
+        self.assertFalse(
+            validate_plugin_token(self._req("Token sometoken"), self.plugin)
+        )
+
+    def test_returns_false_with_invalid_token(self):
+        self.assertFalse(
+            validate_plugin_token(self._req("Bearer not.a.valid.jwt"), self.plugin)
+        )
+
+    def test_returns_true_with_valid_token(self):
+        request = self._req(f"Bearer {self.access_token}")
+        self.assertTrue(validate_plugin_token(request, self.plugin))
+
+    def test_sets_plugin_token_on_success(self):
+        request = self._req(f"Bearer {self.access_token}")
+        validate_plugin_token(request, self.plugin)
+        self.assertIsNotNone(getattr(request, "plugin_token", None))
+        self.assertEqual(request.plugin_token.plugin, self.plugin)
+
+    def test_returns_false_for_wrong_plugin(self):
+        other_plugin = _make_plugin(
+            self.creator, package_name="other_token_plugin", name="Other Plugin"
+        )
+        request = self._req(f"Bearer {self.access_token}")
+        # token was issued for self.plugin, not other_plugin
+        self.assertFalse(validate_plugin_token(request, other_plugin))
+
+    def test_returns_false_with_blacklisted_token(self):
+        BlacklistedToken.objects.create(token=self.outstanding)
+        request = self._req(f"Bearer {self.access_token}")
+        self.assertFalse(validate_plugin_token(request, self.plugin))
+
+    def tearDown(self):
+        for pv in PluginVersion.objects.filter(
+            plugin__package_name__startswith="token_test"
+        ):
+            if pv.package:
+                try:
+                    pv.package.delete(save=False)
+                except Exception:
+                    pass
+
+
+# ---------------------------------------------------------------------------
+# Authorized extra fields in the JSON endpoints
+# ---------------------------------------------------------------------------
+
+
+class AuthorizedJsonExtraFieldsTests(TestCase):
+    """
+    Authorized callers (session-authenticated editor or valid Bearer token)
+    receive ``validation_status`` and ``security_scan`` in the JSON responses.
+    Anonymous callers must not see those fields.
+    """
+
+    fixtures = ["fixtures/auth.json"]
+
+    def setUp(self):
+        self.creator = User.objects.get(username="creator")
+        self.plugin = _make_plugin(
+            self.creator, package_name="auth_fields_plugin", name="Auth Fields Plugin"
+        )
+        self.version = _make_version(self.plugin, self.creator, version="1.0.0")
+        self.access_token, _ = _make_plugin_token(self.creator, self.plugin)
+        self.versions_url = reverse("plugin_versions_json", args=["auth_fields_plugin"])
+        self.version_url = reverse(
+            "plugin_version_json", args=["auth_fields_plugin", "1.0.0"]
+        )
+
+    # -- /json (all versions) ------------------------------------------------
+
+    def test_no_extra_fields_without_auth(self):
+        data = self.client.get(self.versions_url).json()
+        v = data["versions"][0]
+        self.assertNotIn("validation_status", v)
+        self.assertNotIn("security_scan", v)
+
+    def test_extra_fields_with_session_auth(self):
+        self.client.force_login(self.creator)
+        data = self.client.get(self.versions_url).json()
+        v = data["versions"][0]
+        self.assertIn("validation_status", v)
+        self.assertIn("security_scan", v)
+
+    def test_extra_fields_with_bearer_token(self):
+        client = Client(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+        data = client.get(self.versions_url).json()
+        v = data["versions"][0]
+        self.assertIn("validation_status", v)
+        self.assertIn("security_scan", v)
+
+    def test_no_extra_fields_with_invalid_bearer_token(self):
+        client = Client(HTTP_AUTHORIZATION="Bearer invalid.token.here")
+        data = client.get(self.versions_url).json()
+        v = data["versions"][0]
+        self.assertNotIn("validation_status", v)
+        self.assertNotIn("security_scan", v)
+
+    # -- /version/<version>/json ----------------------------------------------
+
+    def test_version_no_extra_fields_without_auth(self):
+        data = self.client.get(self.version_url).json()
+        self.assertNotIn("validation_status", data)
+        self.assertNotIn("security_scan", data)
+
+    def test_version_extra_fields_with_session_auth(self):
+        self.client.force_login(self.creator)
+        data = self.client.get(self.version_url).json()
+        self.assertIn("validation_status", data)
+        self.assertIn("security_scan", data)
+
+    def test_version_extra_fields_with_bearer_token(self):
+        client = Client(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+        data = client.get(self.version_url).json()
+        self.assertIn("validation_status", data)
+        self.assertIn("security_scan", data)
+
+    def test_version_security_scan_is_null_when_no_scan(self):
+        """When no scan has run yet the field should be present but null."""
+        self.client.force_login(self.creator)
+        data = self.client.get(self.version_url).json()
+        self.assertIsNone(data["security_scan"])
+
+    def tearDown(self):
+        for pv in PluginVersion.objects.filter(plugin=self.plugin):
+            if pv.package:
+                try:
+                    pv.package.delete(save=False)
+                except Exception:
+                    pass
+
+
+# ---------------------------------------------------------------------------
+# ?latest query-param on the plugin detail page
+# ---------------------------------------------------------------------------
+
+
+class PluginDetailLatestQueryParamTests(TestCase):
+    fixtures = ["fixtures/auth.json"]
+
+    def setUp(self):
+        self.creator = User.objects.get(username="creator")
+        self.plugin = _make_plugin(
+            self.creator, package_name="qp_plugin", name="QP Plugin"
+        )
+        self.v1 = _make_version(self.plugin, self.creator, version="1.0.0")
+        self.v2 = _make_version(self.plugin, self.creator, version="2.0.0")
+        self.detail_url = reverse("plugin_detail", args=["qp_plugin"])
+
+    def test_latest_query_param_redirects(self):
+        response = self.client.get(self.detail_url + "?latest")
+        self.assertEqual(response.status_code, 302)
+
+    def test_latest_query_param_points_to_highest_version(self):
+        response = self.client.get(self.detail_url + "?latest")
+        self.assertIn("2.0.0", response["Location"])
+
+    def test_detail_without_query_param_returns_200(self):
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, 200)
 
     def tearDown(self):
         for pv in PluginVersion.objects.filter(plugin=self.plugin):

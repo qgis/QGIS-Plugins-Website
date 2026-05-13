@@ -34,7 +34,7 @@ from django.views.generic.detail import DetailView
 
 # from sortable_listview import SortableListView
 from django.views.generic.list import ListView
-from plugins.decorators import has_valid_token
+from plugins.decorators import has_valid_token, validate_plugin_token
 from plugins.forms import *
 from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
@@ -726,9 +726,21 @@ def plugin_create_empty(request):
     return render(request, "plugins/plugin_create_empty.html", {"form": form})
 
 
+def _is_authorized_for_plugin(request, plugin):
+    """
+    Return True if the request comes from an authorized editor/staff for this
+    plugin. Accepts both Django session auth and a plugin Bearer token.
+    """
+    if request.user.is_authenticated and check_plugin_access(request.user, plugin):
+        return True
+    return validate_plugin_token(request, plugin)
+
+
 def plugin_versions_json(request, package_name):
     """
     Return plugin metadata and all approved versions as JSON.
+    Authorized editors and token holders additionally receive validation_status
+    and security scan summaries for each version.
 
     GET /plugins/<package_name>/json
     """
@@ -739,7 +751,37 @@ def plugin_versions_json(request, package_name):
     if not approved_versions.exists():
         raise Http404
 
+    authorized = _is_authorized_for_plugin(request, plugin)
     latest = approved_versions.first()
+
+    def _version_entry(v):
+        entry = {
+            "version": str(v.version),
+            "experimental": v.experimental,
+            "qgis_min": str(v.min_qg_version),
+            "qgis_max": str(v.max_qg_version),
+            "downloads": v.downloads,
+            "uploaded_by": v.created_by.username if v.created_by else None,
+            "upload_datetime": v.created_on.isoformat(),
+        }
+        if authorized:
+            entry["validation_status"] = v.validation_status
+            try:
+                scan = v.security_scan
+                entry["security_scan"] = {
+                    "status": scan.overall_status,
+                    "pass_rate": scan.pass_rate,
+                    "total_checks": scan.total_checks,
+                    "passed_checks": scan.passed_checks,
+                    "warning_count": scan.warning_count,
+                    "critical_count": scan.critical_count,
+                    "info_count": scan.info_count,
+                    "scanned_on": scan.scanned_on.isoformat(),
+                }
+            except PluginVersionSecurityScan.DoesNotExist:
+                entry["security_scan"] = None
+        return entry
+
     data = {
         "name": plugin.name,
         "package_name": plugin.package_name,
@@ -752,18 +794,7 @@ def plugin_versions_json(request, package_name):
         "tags": [t.name for t in plugin.tags.all()],
         "downloads": plugin.downloads,
         "latest_version": str(latest.version),
-        "versions": [
-            {
-                "version": str(v.version),
-                "experimental": v.experimental,
-                "qgis_min": str(v.min_qg_version),
-                "qgis_max": str(v.max_qg_version),
-                "downloads": v.downloads,
-                "uploaded_by": v.created_by.username if v.created_by else None,
-                "upload_datetime": v.created_on.isoformat(),
-            }
-            for v in approved_versions
-        ],
+        "versions": [_version_entry(v) for v in approved_versions],
     }
     return JsonResponse(data)
 
@@ -794,6 +825,25 @@ def plugin_version_json(request, package_name, version):
         "external_deps": version_obj.external_deps,
         "download_url": request.build_absolute_uri(version_obj.get_download_url()),
     }
+    if _is_authorized_for_plugin(request, plugin):
+        data["validation_status"] = version_obj.validation_status
+        try:
+            scan = version_obj.security_scan
+            data["security_scan"] = {
+                "status": scan.overall_status,
+                "pass_rate": scan.pass_rate,
+                "total_checks": scan.total_checks,
+                "passed_checks": scan.passed_checks,
+                "warning_count": scan.warning_count,
+                "critical_count": scan.critical_count,
+                "info_count": scan.info_count,
+                "files_scanned": scan.files_scanned,
+                "total_issues": scan.total_issues,
+                "scanned_on": scan.scanned_on.isoformat(),
+                "scan_report": scan.scan_report,
+            }
+        except PluginVersionSecurityScan.DoesNotExist:
+            data["security_scan"] = None
     return JsonResponse(data)
 
 
