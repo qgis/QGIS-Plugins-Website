@@ -59,10 +59,65 @@ def docs_migrate_qgis4(request):
 
 def docs_guidelines(request):
     """
-    Renders the Plugin Publishing Guidelines page
+    Renders the Plugin Publishing Guidelines index page
     """
     return render(
         request,
         "flatpages/docs_guidelines.html",
+        {},
+    )
+
+
+def docs_guidelines_metadata(request):
+    """
+    Renders the Requirements guidelines page
+    """
+    return render(
+        request,
+        "flatpages/docs_guidelines_metadata.html",
+        {},
+    )
+
+
+def docs_guidelines_quality(request):
+    """
+    Renders the Plugin Quality guidelines page
+    """
+    return render(
+        request,
+        "flatpages/docs_guidelines_quality.html",
+        {},
+    )
+
+
+def docs_guidelines_compatibility(request):
+    """
+    Renders the Version Compatibility guidelines page
+    """
+    return render(
+        request,
+        "flatpages/docs_guidelines_compatibility.html",
+        {},
+    )
+
+
+def docs_guidelines_promotion(request):
+    """
+    Renders the Promoting Your Plugin guidelines page
+    """
+    return render(
+        request,
+        "flatpages/docs_guidelines_promotion.html",
+        {},
+    )
+
+
+def docs_guidelines_policy(request):
+    """
+    Renders the Repository Policy guidelines page
+    """
+    return render(
+        request,
+        "flatpages/docs_guidelines_policy.html",
         {},
     )

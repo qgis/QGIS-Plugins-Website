@@ -1,0 +1,238 @@
+{% extends 'flatpages/docs.html' %}
+
+{% block content %}
+<div class="responsive-content">
+  <h1>Plugin Quality</h1>
+  <p>
+    A well-maintained plugin builds user trust and is more likely to pass the approval process
+    quickly. These guidelines cover ongoing maintenance, code organisation, and the automated
+    security scanning applied to all uploaded packages.
+  </p>
+
+  <hr />
+
+  <h2>Maintaining your plugin page</h2>
+  <ul>
+    <li>
+      Keep the version, changelog, and description up to date with each release. Annotate
+      versions with meaningful version numbers and include a changelog so users understand
+      what has changed.
+    </li>
+    <li>
+      Respond to issues raised in your tracker — active maintenance signals to users and
+      approvers that the plugin is supported.
+    </li>
+    <li>
+      Ensure the source repository is publicly accessible and contains both a <code>README</code>
+      and a <code>LICENSE</code> file.
+    </li>
+    <li>
+      Verify that the source code uploaded as a ZIP matches the <strong>Code repository</strong>
+      link declared in <code>metadata.txt</code>.
+    </li>
+  </ul>
+
+  <h2>Security scanning</h2>
+  <p>
+    Every plugin version uploaded to this repository is automatically scanned for security issues
+    and code quality. Review your results after each upload and address any findings before
+    releasing to users. See the <a href="{% url 'docs_security_scanning' %}">Security Scanning</a>
+    page for details.
+  </p>
+
+  <hr />
+
+  <h2>Recommendations</h2>
+  <ul>
+    <li>Write code comments in English to make it easier for others to contribute.</li>
+    <li>Provide a minimal dataset for testing purposes.</li>
+    <li>Place the plugin in the appropriate QGIS menu (Vector, Raster, Web, Database).</li>
+    <li>
+      Before publishing a new plugin, check whether it duplicates existing functionality and
+      explore collaboration possibilities with existing plugin authors.
+    </li>
+    <li>
+      Make the plugin work on all supported platforms (Windows, Linux, macOS). If it only works
+      on selected platforms, state this clearly in the description.
+    </li>
+    <li>
+      Mention any requirements, dependencies, and restrictions in the description. For example:
+      if the plugin requires separately installed software, a user account, or only covers
+      certain countries or regions.
+    </li>
+    <li>
+      If some dependencies are not available in OSGeo4W Python, provide installation instructions
+      for Windows users, e.g. referencing a guide such as
+      <a href="https://landscapearchaeology.org/2018/installing-python-packages-in-qgis-3-for-windows/"
+         target="_blank" rel="noopener">Installing Python packages in QGIS 3 (for Windows)</a>.
+    </li>
+  </ul>
+
+  <hr />
+
+  <h2>Tips and Tricks</h2>
+  <p>
+    The tips below expand on the
+    <a href="https://docs.qgis.org/latest/en/docs/pyqgis_developer_cookbook/plugins/plugins.html#tips-and-tricks"
+       target="_blank" rel="noopener">Tips and Tricks section of the PyQGIS Developer Cookbook ↗</a>.
+  </p>
+
+  <h3>Keep your source repository clean</h3>
+  <ul>
+    <li>
+      No generated files left in the repository (<code>ui_*.py</code>, <code>resources_rc.py</code>,
+      generated help files…).
+    </li>
+    <li>No <code>__MACOSX</code>, <code>.git</code>, <code>__pycache__</code> or other hidden directories.</li>
+    <li>Good code organisation using subfolders.</li>
+    <li>Code comments present throughout.</li>
+    <li>PEP 8 and Python/QGIS guidelines compliance.</li>
+    <li>A <code>README</code> file and a <code>LICENSE</code> file at the root.</li>
+  </ul>
+
+  <h3>Use QGIS network and UI components</h3>
+  <ul>
+    <li>
+      Use
+      <a href="https://qgis.org/pyqgis/latest/core/QgsNetworkAccessManager.html"
+         target="_blank" rel="noopener">QgsNetworkAccessManager</a>
+      instead of <code>urllib2</code>, <code>requests</code>, or similar libraries, which often
+      fail to use the correct proxy settings.
+    </li>
+    <li>
+      Use QGIS widgets such as
+      <a href="https://qgis.org/pyqgis/latest/gui/QgsMapLayerComboBox.html"
+         target="_blank" rel="noopener">QgsMapLayerComboBox</a>
+      for layer selection dropdowns. Check the
+      <a href="https://qgis.org/pyqgis/latest/gui/index.html"
+         target="_blank" rel="noopener">full list of QGIS GUI widgets</a>
+      for available components.
+    </li>
+  </ul>
+
+  <h3>Use a plugin template</h3>
+  <p>Starting from a template ensures a well-structured project from day one:</p>
+  <ul>
+    <li>
+      <a href="/plugins/qgis_plugin_templater_gui/" title="QGIS Plugin Templater GUI">
+        QGIS Plugin Templater GUI</a> — a graphical plugin generator available in the repository.
+    </li>
+    <li>
+      <a href="https://github.com/wonder-sk/qgis-minimal-plugin"
+         title="QGIS Minimal Plugin" target="_blank" rel="noopener">QGIS Minimal Plugin</a>
+      — the simplest possible starting point.
+    </li>
+    <li>
+      For developers familiar with git workflows, consider a
+      <a href="https://cookiecutter.readthedocs.io/" title="Cookiecutter"
+         target="_blank" rel="noopener">Cookiecutter</a> template:
+      <ul>
+        <li>
+          <a href="https://oslandia.gitlab.io/qgis/template-qgis-plugin/"
+             title="QGIS Plugin Templater" target="_blank" rel="noopener">
+            QGIS Plugin Templater</a>
+          (powers the GUI plugin listed above)
+        </li>
+        <li>
+          <a href="https://github.com/GispoCoding/cookiecutter-qgis-plugin"
+             title="Cookiecutter QGIS Plugin" target="_blank" rel="noopener">
+            Cookiecutter QGIS Plugin</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+  <p>
+    For more guidance on setting up a well-structured plugin project, see
+    <a href="https://docs.qgis.org/latest/en/docs/pyqgis_developer_cookbook/plugins/plugins.html#set-up-plugin-file-structure"
+       target="_blank" rel="noopener">Set up plugin file structure ↗</a>
+    in the PyQGIS Developer Cookbook. Use the
+    <a href="https://docs.qgis.org/latest/en/docs/pyqgis_developer_cookbook/plugins/plugins.html#plugin-reloader"
+       target="_blank" rel="noopener">Plugin Reloader ↗</a>
+    during development, and the
+    <a href="https://docs.qgis.org/latest/en/docs/pyqgis_developer_cookbook/plugins/plugins.html#automate-packaging-release-and-translation-with-qgis-plugin-ci"
+       target="_blank" rel="noopener">qgis-plugin-ci tool ↗</a>
+    to automate packaging, releasing, and translating your plugin.
+  </p>
+
+  <hr />
+
+  <h2>Embedded binaries</h2>
+  <p>
+    Pre-compiled binaries introduce security and portability risks and are tightly restricted:
+  </p>
+  <ul>
+    <li>
+      Pre-compiled files (<code>.dll</code>, <code>.so</code>, <code>.dylib</code>,
+      <code>.exe</code>, <code>.pyd</code>) must <strong>not</strong> be included in the plugin
+      ZIP unless they are strictly necessary and cannot reasonably be distributed through a
+      standard package manager.
+    </li>
+    <li>
+      If a binary is genuinely required, the source code for that binary must be publicly
+      available and build instructions must be provided in the repository.
+      Proprietary binary blobs are never accepted.
+    </li>
+    <li>
+      Compiled Python bytecode (<code>.pyc</code>) should not be included — it is generated
+      automatically on import.
+    </li>
+    <li>
+      Declare any compiled component in the <code>about</code> field so users and reviewers are
+      aware of it.
+    </li>
+  </ul>
+
+  <hr />
+
+  <h2>Cross-platform support</h2>
+  <p>
+    QGIS runs on Windows, macOS, and Linux. Plugins should aim to work on all three platforms:
+  </p>
+  <ul>
+    <li>
+      Test your plugin on all supported platforms before each release, or clearly document
+      any known platform limitations in the <code>about</code> field.
+    </li>
+    <li>
+      Use <code>os.path.join()</code> or <code>pathlib.Path</code> for file paths — never
+      hard-code forward or backslashes.
+    </li>
+    <li>
+      Avoid dependencies on platform-specific system libraries or CLI tools unless you provide
+      clear installation instructions for each platform.
+    </li>
+    <li>
+      If a compiled extension or binary dependency is only available for one platform, mark the
+      plugin's supported platforms explicitly in the metadata.
+    </li>
+  </ul>
+
+  <hr />
+
+  <h2>Advertising and data collection</h2>
+  <p>
+    Plugins distributed through this repository must not use their position in the QGIS Plugin
+    Manager as an advertising vehicle:
+  </p>
+  <ul>
+    <li>
+      No in-plugin advertising banners, pop-up promotions, or marketing messages unrelated to
+      the plugin's stated function.
+    </li>
+    <li>
+      No telemetry, usage analytics, error reporting, or any other data collection without
+      <strong>explicit opt-in consent</strong> from the user, with a clear description of what
+      is collected and where it is sent.
+    </li>
+    <li>
+      No automatic update mechanisms that bypass the QGIS Plugin Manager.
+    </li>
+    <li>
+      Commercial integrations (e.g. plugins that connect to a paid service) are permitted, but
+      the commercial nature must be disclosed in the metadata as described in the
+      <a href="{% url 'docs_guidelines_metadata' %}">Requirements</a> guidelines.
+      The plugin itself must remain free to download.
+    </li>
+  </ul>
+</div>
+{% endblock %}

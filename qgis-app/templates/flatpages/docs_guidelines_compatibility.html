@@ -1,0 +1,60 @@
+{% extends 'flatpages/docs.html' %}
+
+{% block content %}
+<div class="responsive-content">
+  <h1>Version Compatibility</h1>
+  <p>
+    QGIS version compatibility is determined by the <code>qgisMinimumVersion</code> and
+    <code>qgisMaximumVersion</code> fields in <code>metadata.txt</code>. Declaring these
+    accurately ensures your plugin appears in the correct filter lists inside the Plugin Manager
+    and avoids compatibility warnings for users.
+    See the
+    <a href="https://docs.qgis.org/latest/en/docs/pyqgis_developer_cookbook/plugins/plugins.html#metadata-txt"
+       target="_blank" rel="noopener">metadata.txt reference ↗</a>
+    for all version-related fields.
+  </p>
+
+  <hr />
+
+  <h2>How version ranges work</h2>
+  <ul>
+    <li>
+      If <code>qgisMaximumVersion</code> is omitted, compatibility is assumed only up to the
+      end of the major version set by <code>qgisMinimumVersion</code>.
+    </li>
+    <li>
+      To mark a QGIS 3 plugin as also supporting QGIS 4, keep
+      <code>qgisMinimumVersion=3.x</code> and add <code>qgisMaximumVersion=4.99</code>.
+      This makes the plugin appear in the
+      <a href="/plugins/new_qgis_ready/">QGIS 4 Ready Plugins</a> list.
+    </li>
+    <li>
+      QGIS 4 uses Qt 6, which requires code changes in plugins. Before declaring QGIS 4
+      compatibility, review the
+      <a href="https://github.com/qgis/QGIS/wiki/Plugin-migration-to-be-compatible-with-Qt5-and-Qt6"
+         target="_blank" rel="noopener">Plugin migration to Qt5 and Qt6</a> guide.
+    </li>
+  </ul>
+
+  <h2>Examples</h2>
+  <ul>
+    <li>
+      <code>qgisMinimumVersion=3.22</code>, <code>qgisMaximumVersion=4.99</code>
+      — listed for QGIS 3.22+ <strong>and</strong> QGIS 4.x
+    </li>
+    <li>
+      <code>qgisMinimumVersion=4.0</code>, <code>qgisMaximumVersion=4.99</code>
+      — listed for QGIS 4.x only
+    </li>
+    <li>
+      <code>qgisMinimumVersion=3.22</code> (no <code>qgisMaximumVersion</code>)
+      — QGIS 3.x only; not listed for QGIS 4
+    </li>
+  </ul>
+
+  <p>
+    For full instructions on migrating your plugin's code to QGIS 4, see the
+    <a href="{% url 'docs_migrate_qgis4' %}">Migrate to QGIS 4</a> page.
+  </p>
+</div>
+{% endblock %}

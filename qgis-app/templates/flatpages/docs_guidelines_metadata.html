@@ -1,0 +1,224 @@
+{% extends 'flatpages/docs.html' %}
+
+{% block content %}
+<div class="responsive-content">
+  <h1>Requirements</h1>
+  <p>
+    Your plugin's metadata is the first — and often only — thing a user reads before deciding
+    whether to install it. It must give an accurate picture of what the plugin does, what it
+    requires, and how to get support.
+  </p>
+
+  <hr />
+
+  <h2>Required metadata fields</h2>
+  <p>
+    All plugins must include the following in <code>metadata.txt</code>:
+  </p>
+  <ul>
+    <li>
+      <strong>description</strong> — a short, one-line English summary of what the plugin does.
+      This is shown directly in the Plugin Manager list.
+    </li>
+    <li>
+      <strong>about</strong> — a fuller explanation of the plugin's purpose, features, and any
+      requirements. If the plugin depends on external software or a service, this must be stated
+      here (see below).
+    </li>
+    <li>
+      <strong>homepage</strong> — a link to a page describing plugin usage (README, wiki, or a
+      dedicated web page). Simple repository root or download links are not acceptable.
+    </li>
+    <li>
+      <strong>repository</strong> — a link to the publicly accessible source code. The repository
+      must not contain zipped copies of the plugin.
+    </li>
+    <li>
+      <strong>tracker</strong> — a link to the issue tracker where users can report bugs and
+      request features.
+    </li>
+    <li>
+      <strong>license</strong> — a recognised open-source license (see below for which licenses
+      are accepted). A <code>LICENSE</code> file must be present in the repository
+      (<a href="http://blog.qgis.org/2016/05/29/licensing-requirements-for-qgis-plugins/"
+         target="_blank" rel="noopener">more information about licensing</a>).
+    </li>
+  </ul>
+  <p>
+    The plugin package size must not exceed <strong>25 MB</strong>.
+  </p>
+  <p>
+    For the complete list of supported fields and their syntax, see the
+    <a href="https://docs.qgis.org/latest/en/docs/pyqgis_developer_cookbook/plugins/plugins.html#metadata-txt"
+       target="_blank" rel="noopener">metadata.txt reference in the PyQGIS Developer Cookbook ↗</a>.
+  </p>
+
+  <hr />
+
+  <h2>Accepted licenses</h2>
+  <p>
+    All plugins in the repository must be published under an
+    <a href="https://opensource.org/licenses" target="_blank" rel="noopener">OSI-approved open-source license</a>.
+    Proprietary, source-available, or "non-commercial" licenses are not accepted.
+    Because QGIS itself is licensed under the
+    <a href="https://www.gnu.org/licenses/gpl-2.0.html" target="_blank" rel="noopener">GPL v2 or later</a>,
+    we strongly recommend using a GPL-compatible license.
+  </p>
+  <p>Commonly used licenses that are accepted:</p>
+  <ul>
+    <li><strong>GPL v2+</strong> and <strong>GPL v3</strong> — recommended; directly compatible with QGIS.</li>
+    <li><strong>LGPL v2.1</strong> and <strong>LGPL v3</strong> — accepted.</li>
+    <li><strong>AGPL v3</strong> — accepted; be aware of its network-use implications.</li>
+    <li><strong>MIT</strong> — accepted; permissive and widely used.</li>
+    <li><strong>BSD 2-Clause</strong> and <strong>BSD 3-Clause</strong> — accepted.</li>
+    <li><strong>Apache 2.0</strong> — accepted.</li>
+  </ul>
+  <p class="alert alert-info">
+    <strong>Note:</strong> Creative Commons licenses (e.g. CC-BY, CC-SA) are designed for
+    creative works, not software. They are not appropriate for plugin code and will not be
+    accepted.
+  </p>
+
+  <hr />
+
+  <h2>Language requirements</h2>
+  <p>
+    The <code>name</code>, <code>description</code>, and <code>about</code> fields in
+    <code>metadata.txt</code> must be written in <strong>English</strong>. This ensures all
+    users can understand what a plugin does before installing it, and allows the approval team
+    to review the content.
+  </p>
+  <p>
+    The plugin's own user interface may be in any language. Providing translations
+    is encouraged but not required. To learn how to add translations to your plugin,
+    see the
+    <a href="https://docs.qgis.org/latest/en/docs/pyqgis_developer_cookbook/plugins/plugins.html#translating-plugins"
+       target="_blank" rel="noopener">Translating plugins section in the PyQGIS Developer Cookbook ↗</a>.
+  </p>
+
+  <hr />
+
+  <h2>Description and About fields</h2>
+  <ul>
+    <li>
+      Keep the <code>description</code> field concise and keyword-rich — it is the first thing
+      users see when browsing the Plugin Manager.
+    </li>
+    <li>
+      Use the <code>about</code> field for a complete explanation including supported platforms,
+      spatial coverage if limited, and any external dependencies. The field supports multiple lines.
+    </li>
+    <li>
+      Respect the licenses of any libraries or resources your plugin uses and mention them in the
+      description if relevant.
+    </li>
+    <li>
+      The plugin and folder name should not repeat the word <em>plugin</em>.
+    </li>
+    <li>
+      Do not rename the plugin title just because it has been upgraded to a newer QGIS version.
+    </li>
+  </ul>
+
+  <hr />
+
+  <h2>Plugins with external software or commercial integrations</h2>
+  <p>
+    Plugins that act as front-ends for commercial software, web services, or proprietary platforms
+    are permitted in the repository, provided:
+  </p>
+  <ul>
+    <li>
+      The dependency is disclosed in the <code>about</code> field of <code>metadata.txt</code>,
+      in the README or homepage, and in the plugin's own UI when the dependency is not detected.
+    </li>
+    <li>
+      Any cost, licensing requirement, or registration step is stated explicitly — not hidden
+      behind a link.
+    </li>
+    <li>
+      The plugin itself remains free of charge to download and install from this repository.
+    </li>
+  </ul>
+  <p>Example of a transparent <code>about</code> entry:</p>
+  <blockquote>
+    <em>
+      "This plugin provides a QGIS interface for district energy modelling workflows.
+      Basic project setup is available without additional software.
+      Running detailed simulations requires IDA Districts (commercial software;
+      a free trial is available at example.com)."
+    </em>
+  </blockquote>
+  <p class="alert alert-info">
+    <strong>Note:</strong> The approval team specifically reviews external-dependency disclosures.
+    Incomplete or misleading descriptions are the most common reason an approval is delayed.
+  </p>
+
+  <hr />
+
+  <h2>Dependency management</h2>
+  <p>
+    If your plugin depends on Python packages not included in a standard QGIS installation,
+    you must declare and manage those dependencies explicitly:
+  </p>
+  <ul>
+    <li>
+      List all required packages clearly in the <code>about</code> field and in the plugin README.
+    </li>
+    <li>
+      Do not bundle large third-party libraries directly inside the plugin ZIP. Instead, prompt
+      the user to install them (e.g. via <code>pip</code>) or use the QGIS Plugin Manager's
+      dependency installer if available for your QGIS version.
+    </li>
+    <li>
+      For Windows users, provide instructions for packages not available through OSGeo4W —
+      see the
+      <a href="https://landscapearchaeology.org/2018/installing-python-packages-in-qgis-3-for-windows/"
+         target="_blank" rel="noopener">Installing Python packages in QGIS 3 guide</a>
+      as an example.
+    </li>
+    <li>
+      If you ship a <code>requirements.txt</code> in the repository, keep it accurate and
+      version-pinned where stability matters.
+    </li>
+    <li>
+      Any system-level dependency (e.g. GDAL version, external CLI tools) must be stated in
+      the <code>about</code> field. The plugin must fail gracefully with a clear error message
+      when a dependency is missing, rather than crashing silently.
+    </li>
+  </ul>
+  <p>
+    The <code>plugin_dependencies</code> field in <code>metadata.txt</code> lets you declare
+    other QGIS plugins that should be installed automatically — see the
+    <a href="https://docs.qgis.org/latest/en/docs/pyqgis_developer_cookbook/plugins/plugins.html#metadata-txt"
+       target="_blank" rel="noopener">metadata.txt reference ↗</a> for the syntax.
+  </p>
+
+  <hr />
+
+  <h2>Tags, icon, and links</h2>
+  <ul>
+    <li>
+      Choose specific <strong>tags</strong> that reflect the plugin's domain and workflow
+      (e.g. <em>energy, urban planning, simulation, hydrology</em>). Tags are the primary way
+      users discover plugins through search in the Plugin Manager.
+    </li>
+    <li>
+      Provide a recognisable <strong>icon</strong> — it appears at small sizes in the Plugin
+      Manager list.
+    </li>
+    <li>
+      Keep the <strong>homepage</strong>, <strong>repository</strong>, and <strong>tracker</strong>
+      links valid and up to date. The homepage should include screenshots and quick-start
+      instructions.
+    </li>
+  </ul>
+  <p>
+    Refer to the
+    <a href="https://docs.qgis.org/latest/en/docs/pyqgis_developer_cookbook/plugins/plugins.html#metadata-txt"
+       target="_blank" rel="noopener">metadata.txt reference ↗</a>
+    for the complete list of accepted field names including <code>tags</code>, <code>icon</code>,
+    and optional link fields.
+  </p>
+</div>
+{% endblock %}

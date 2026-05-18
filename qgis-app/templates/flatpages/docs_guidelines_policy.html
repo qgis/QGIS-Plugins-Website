@@ -1,0 +1,139 @@
+{% extends 'flatpages/docs.html' %}
+
+{% block content %}
+<div class="responsive-content">
+  <h1>Repository Policy</h1>
+  <p>
+    These policies govern the relationship between plugin authors, users, and the QGIS Plugin
+    Repository team. They exist to keep the repository safe, neutral, and trustworthy for the
+    entire QGIS community.
+  </p>
+
+  <hr />
+
+  <h2>Plugin removal and banning</h2>
+  <p>
+    The QGIS Plugin Repository team reserves the right to remove, disable, or ban any plugin at
+    any time if it:
+  </p>
+  <ul>
+    <li>Violates any of the guidelines described in this documentation.</li>
+    <li>Contains malware, spyware, or any code that harms users or their systems.</li>
+    <li>Poses a security risk that the author is unwilling or unable to address promptly.</li>
+    <li>Contains undisclosed data collection or advertising (see
+      <a href="{% url 'docs_guidelines_quality' %}">Plugin Quality</a>).</li>
+    <li>Is clearly abandoned and poses a risk to users running it on newer QGIS versions.</li>
+    <li>Has been published in bad faith or to impersonate another plugin.</li>
+  </ul>
+  <p>
+    Where possible, the team will contact the plugin author before removal and allow reasonable
+    time to resolve the issue. For serious security violations, immediate removal may occur
+    without prior notice.
+  </p>
+  <p>
+    Repeated or severe violations may result in the author's account being suspended from
+    uploading further plugins.
+  </p>
+
+  <hr />
+
+  <h2>Dispute procedure</h2>
+  <p>
+    If you believe your plugin has been incorrectly flagged, removed, or rejected, you can raise
+    a dispute through the following process:
+  </p>
+  <ol>
+    <li>
+      Review the rejection or removal notice carefully. The reason given should point to a
+      specific guideline; re-read that guideline to ensure you understand what is required.
+    </li>
+    <li>
+      If you believe the decision was made in error, open an issue on the
+      <a href="https://github.com/qgis/QGIS-Plugins-Website/issues"
+         target="_blank" rel="noopener">QGIS Plugins Website repository</a>
+      or post to the
+      <a href="https://lists.osgeo.org/mailman/listinfo/qgis-developer"
+         target="_blank" rel="noopener">qgis-developer mailing list</a>.
+      Include your plugin name, the stated reason for removal, and the specific point you are
+      disputing.
+    </li>
+    <li>
+      The team will review your case and respond. Decisions may be revised if new information
+      is provided.
+    </li>
+  </ol>
+  <p class="alert alert-info">
+    <strong>Note:</strong> Disputes about subjective editorial judgements (e.g. whether content
+    is neutral) may take longer to resolve and are decided by the broader QGIS steering community.
+  </p>
+
+  <hr />
+
+  <h2>Renaming plugins</h2>
+  <p>
+    A plugin's internal name (the folder name used in the ZIP, which forms part of the
+    repository URL) is <strong>permanent</strong> and cannot be changed after the first upload.
+    This ensures stable links in documentation, tutorials, and scripts that reference the plugin
+    by name.
+  </p>
+  <p>
+    For information on changing the plugin display name, see the
+    <a href="{% url 'docs_faq' %}#rename">FAQ — How do I rename an existing plugin?</a>
+  </p>
+
+  <hr />
+
+  <h2>Code of conduct</h2>
+  <p>
+    All plugin authors and contributors are expected to follow the
+    <a href="https://qgis.org/conduct/"
+       target="_blank" rel="noopener">QGIS Code of Conduct</a>.
+    This applies to:
+  </p>
+  <ul>
+    <li>Content in the plugin's own repository and issue tracker.</li>
+    <li>Interactions on the QGIS mailing lists, Discourse, and chat channels.</li>
+    <li>Any community space where you represent your plugin or the QGIS project.</li>
+  </ul>
+  <p>
+    Reports of code-of-conduct violations can be submitted to the
+    <a href="mailto:psc@qgis.org">QGIS Project Steering Committee</a>.
+  </p>
+
+  <hr />
+
+  <h2>Politics and contentious topics</h2>
+  <p>
+    The QGIS project is an international community that deliberately avoids taking political,
+    religious, or partisan stances. Plugins in the repository must reflect this neutrality:
+  </p>
+  <ul>
+    <li>
+      Plugins must not promote political parties, electoral campaigns, religious organisations,
+      or partisan advocacy of any kind.
+    </li>
+    <li>
+      Cartographic and analytical tools that handle contested territorial boundaries, place names,
+      or geopolitical situations must present data as neutrally as possible, referencing
+      authoritative international sources (e.g. UN, ISO 3166) rather than adopting a particular
+      national position.
+    </li>
+    <li>
+      Plugins dealing with sensitive socio-economic or environmental data should present results
+      neutrally and let users draw their own conclusions.
+    </li>
+    <li>
+      Plugins with a legitimate professional or research purpose in politically sensitive domains
+      (e.g. conflict mapping, election data tools) are welcome, provided the plugin itself
+      remains a neutral tool and does not advocate a particular position.
+    </li>
+  </ul>
+  <p>
+    If you are uncertain whether your plugin's subject matter is suitable for the repository,
+    open a discussion on the
+    <a href="https://lists.osgeo.org/mailman/listinfo/qgis-developer"
+       target="_blank" rel="noopener">qgis-developer mailing list</a>
+    before uploading.
+  </p>
+</div>
+{% endblock %}
