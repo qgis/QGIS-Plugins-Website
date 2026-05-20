@@ -767,10 +767,13 @@ class Plugin(models.Model):
                     pk=self.pk
                 )
                 if old_email != self.email:
-                    # Remove this plugin from every confirmation that
-                    # was sent to the old address.  If the confirmation has no
-                    # plugins left afterwards, delete it entirely.
-                    for conf in self.email_confirmations.filter(email=old_email):
+                    # Remove this plugin from every *pending* confirmation that
+                    # was sent to the old address.  Confirmed records are
+                    # historical and must not be touched.  If the pending
+                    # confirmation has no plugins left afterwards, delete it.
+                    for conf in self.email_confirmations.filter(
+                        email=old_email, confirmed_at__isnull=True
+                    ):
                         conf.plugins.remove(self)
                         if not conf.plugins.exists():
                             conf.delete()

@@ -513,6 +513,11 @@ urlpatterns += [
 # Plugin detail (keep last)
 urlpatterns += [
     url(
+        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/resend-email-confirmation/$",
+        resend_plugin_email_confirmation,
+        name="plugin_resend_email_confirmation",
+    ),
+    url(
         r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/$",
         PluginDetailView.as_view(
             slug_url_kwarg="package_name",

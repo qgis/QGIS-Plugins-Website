@@ -815,6 +815,11 @@ class PluginDetailView(DetailView):
                 "rating": plugin.rating.get_rating(),
                 "votes": plugin.rating.votes,
                 "title": self.title,
+                "email_confirmation": plugin.email_confirmations.filter(
+                    email=plugin.email
+                )
+                .order_by("-sent_at")
+                .first(),
             }
         )
         return context
@@ -852,6 +857,57 @@ def confirm_plugin_email(request, key):
         }
 
     return render(request, "plugins/email_confirmation_result.html", context)
+
+
+@login_required
+def resend_plugin_email_confirmation(request, package_name):
+    """
+    Staff/superuser-only view that creates or replaces a pending email
+    confirmation for a plugin's author email address.
+
+    Any existing unconfirmed confirmation for the same email is deleted first,
+    then a fresh one is created and the email is sent.  All plugins that share
+    the same email address are included (consistent with the management command).
+    """
+    if not (request.user.is_staff or request.user.is_superuser):
+        return render(request, "plugins/plugin_permission_deny.html", {})
+
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+
+    # Delete any existing *pending* confirmation for this email so we always
+    # send a fresh link.
+    PluginEmailConfirmation.objects.filter(
+        email=plugin.email, confirmed_at__isnull=True
+    ).delete()
+
+    # Only approved, non-deleted plugins are eligible for email confirmation,
+    # consistent with the send_email_confirmation management command.
+    all_plugins = list(
+        Plugin.approved_objects.filter(email=plugin.email, is_deleted=False)
+    )
+    confirmation, _created = PluginEmailConfirmation.create_for_email(
+        plugin.email, all_plugins
+    )
+
+    if confirmation is None:
+        msg = _(
+            "No confirmation needed: the email address is already confirmed for all plugins."
+        )
+        messages.info(request, msg, fail_silently=True)
+    else:
+        try:
+            send_confirmation_email(confirmation)
+            msg = _("A confirmation email has been sent to %(email)s.") % {
+                "email": plugin.email
+            }
+            messages.success(request, msg, fail_silently=True)
+        except Exception as exc:
+            msg = _("Failed to send confirmation email: %(error)s") % {
+                "error": str(exc)
+            }
+            messages.error(request, msg, fail_silently=True)
+
+    return HttpResponseRedirect(reverse("plugin_detail", args=(plugin.package_name,)))
 
 
 @login_required
