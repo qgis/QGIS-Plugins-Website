@@ -1430,3 +1430,29 @@ class PluginEmailConfirmation(models.Model):
         )
         confirmation.plugins.set(valid_plugins)
         return confirmation, True
+
+
+class PluginEmailConfirmationError(models.Model):
+    """
+    Records a failed attempt to send a confirmation email.
+
+    Written by both the management command and the admin action so that
+    errors are queryable and visible in the Django admin without needing
+    to inspect log files or command output.
+    """
+
+    email = models.EmailField(_("Email address"), db_index=True)
+    plugins = models.TextField(
+        _("Plugins"),
+        help_text=_("Comma-separated list of plugin package names."),
+    )
+    error = models.TextField(_("Error message"))
+    occurred_at = models.DateTimeField(_("Occurred at"), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Plugin Email Confirmation Error")
+        verbose_name_plural = _("Plugin Email Confirmation Errors")
+        ordering = ["-occurred_at"]
+
+    def __str__(self):
+        return f"<{self.email}> — {self.occurred_at}"

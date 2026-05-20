@@ -18,17 +18,12 @@ Usage examples:
 
   # Dry run: print what would be sent without actually sending anything
   python manage.py send_email_confirmation --dry-run
-
-  # Write failures to a specific CSV file (default: email_confirmation_errors_<timestamp>.csv)
-  python manage.py send_email_confirmation --log-file /tmp/errors.csv
 """
 
-import csv
 from collections import defaultdict
-from datetime import datetime
 
 from django.core.management.base import BaseCommand
-from plugins.models import Plugin, PluginEmailConfirmation
+from plugins.models import Plugin, PluginEmailConfirmation, PluginEmailConfirmationError
 from plugins.views import send_confirmation_email
 
 
@@ -56,24 +51,11 @@ class Command(BaseCommand):
             default=False,
             help="Print what would happen without actually sending emails.",
         )
-        parser.add_argument(
-            "--log-file",
-            metavar="PATH",
-            default=None,
-            help=(
-                "Write failed sends to this CSV file. "
-                "Defaults to email_confirmation_errors_<timestamp>.csv "
-                "in the current directory."
-            ),
-        )
 
     def handle(self, *args, **options):
         email_filter = options["email"]
         resend = options["resend"]
         dry_run = options["dry_run"]
-        log_file = options["log_file"]
-
-        error_log = []
 
         qs = Plugin.approved_objects.filter(is_deleted=False).exclude(email="")
         if email_filter:
@@ -153,12 +135,10 @@ class Command(BaseCommand):
                 sent += 1
             except Exception as exc:
                 self.stderr.write(self.style.ERROR(f"  ERROR  <{email}>: {exc}"))
-                error_log.append(
-                    {
-                        "email": email,
-                        "plugins": plugin_names,
-                        "error": str(exc),
-                    }
+                PluginEmailConfirmationError.objects.create(
+                    email=email,
+                    plugins=plugin_names,
+                    error=str(exc),
                 )
                 errors += 1
 
@@ -166,13 +146,9 @@ class Command(BaseCommand):
         if dry_run:
             summary = f"\nDry run. Would send: {sent}"
         self.stdout.write(self.style.SUCCESS(summary))
-
-        if error_log:
-            path = log_file or (
-                f"email_confirmation_errors_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        if errors:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"  {errors} error(s) saved to the Plugin Email Confirmation Errors table."
+                )
             )
-            with open(path, "w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=["email", "plugins", "error"])
-                writer.writeheader()
-                writer.writerows(error_log)
-            self.stdout.write(self.style.WARNING(f"Error log written to: {path}"))
