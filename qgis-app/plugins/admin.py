@@ -1,6 +1,8 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from plugins.models import (  # , PluginCrashReport
     Plugin,
+    PluginEmailConfirmation,
     PluginVersion,
     PluginVersionDownload,
     PluginVersionSecurityScan,
@@ -91,8 +93,48 @@ class PluginVersionSecurityScanAdmin(admin.ModelAdmin):
 # pass
 
 
+class PluginEmailConfirmationAdmin(admin.ModelAdmin):
+    list_display = (
+        "email",
+        "plugin_list",
+        "sent_at",
+        "confirmed_at",
+        "expires_at",
+        "confirmation_status",
+    )
+    list_filter = ("confirmed_at",)
+    search_fields = ("email", "plugins__name", "plugins__package_name")
+    readonly_fields = (
+        "email",
+        "plugin_list",
+        "key",
+        "sent_at",
+        "confirmed_at",
+        "expires_at",
+    )
+    actions = ["resend_confirmation_email"]
+
+    @admin.display(description="Plugins")
+    def plugin_list(self, obj):
+        names = ", ".join(obj.plugins.values_list("name", flat=True))
+        return names or "—"
+
+    @admin.display(description="Status")
+    def confirmation_status(self, obj):
+        if obj.is_confirmed:
+            return format_html(
+                '<span style="color:green;font-weight:bold;">&#10003; Confirmed</span>'
+            )
+        if obj.is_expired:
+            return format_html(
+                '<span style="color:orange;font-weight:bold;">&#8987; Expired</span>'
+            )
+        return format_html('<span style="color:gray;">&#8987; Pending</span>')
+
+
 admin.site.register(Plugin, PluginAdmin)
 admin.site.register(PluginVersion, PluginVersionAdmin)
 admin.site.register(PluginVersionDownload, PluginVersionDownloadAdmin)
 admin.site.register(PluginVersionSecurityScan, PluginVersionSecurityScanAdmin)
+admin.site.register(PluginEmailConfirmation, PluginEmailConfirmationAdmin)
 # admin.site.register(PluginCrashReport, PluginCrashReportAdmin)

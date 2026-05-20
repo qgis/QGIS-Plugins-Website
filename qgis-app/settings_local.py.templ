@@ -8,6 +8,10 @@ EMAIL_HOST_PASSWORD = ""
 EMAIL_SUBJECT_PREFIX = '[QGIS Plugins] '
 DEFAULT_FROM_EMAIL = 'no-reply-plugins@qgis.org'
 
+# Developer emails for testing email sending in debug mode
+# Comma-separated list of email addresses to receive emails when DEBUG=True. If empty, no emails will be sent in debug mode.
+DEVELOPER_EMAILS = ''
+
 # -----------------------------------------------------------------------------
 # Social authentication — provider overrides
 # Only add the sections for providers you are configuring.
@@ -47,4 +51,3 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     },
 }
-

@@ -13,13 +13,14 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.geoip2 import GeoIP2
 from django.contrib.sites.models import Site
 from django.core.exceptions import FieldDoesNotExist
-from django.core.mail import EmailMessage, send_mail
+from django.core.mail import EmailMessage, EmailMultiAlternatives, send_mail
 from django.db import IntegrityError, connection, transaction
 from django.db.models import Q
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Lower
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -40,6 +41,7 @@ from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_VALIDATING,
     Plugin,
+    PluginEmailConfirmation,
     PluginOutstandingToken,
     PluginVersion,
     PluginVersionDownload,
@@ -111,7 +113,9 @@ def send_upload_confirmation_email(plugin_version):
         "docs_url": docs_url,
     }
 
-    send_mail_wrapper(str(subject), str(message), mail_from, recipients, fail_silently=True)
+    send_mail_wrapper(
+        str(subject), str(message), mail_from, recipients, fail_silently=True
+    )
 
 
 def send_mail_wrapper(subject, message, mail_from, recipients, fail_silently=True):
@@ -119,6 +123,55 @@ def send_mail_wrapper(subject, message, mail_from, recipients, fail_silently=Tru
         logging.debug("Mail not sent (DEBUG=True)")
     else:
         send_mail(subject, message, mail_from, recipients, fail_silently)
+
+
+def send_confirmation_email(confirmation):
+    """
+    Send one HTML+plaintext confirmation email for a PluginEmailConfirmation.
+    Builds the plugin list from the M2M relation.
+    """
+    domain = Site.objects.get_current().domain
+    confirmation_url = f"https://{domain}/plugins/confirm-email/{confirmation.key}/"
+    expires_at = confirmation.expires_at.strftime("%Y-%m-%d")
+    plugins = list(confirmation.plugins.all())
+    plugin_list = [
+        {"name": p.name, "url": f"https://{domain}{p.get_absolute_url()}"}
+        for p in plugins
+    ]
+    context = {
+        "email": confirmation.email,
+        "plugins": plugin_list,
+        "confirmation_url": confirmation_url,
+        "expires_at": expires_at,
+        "site_domain": domain,
+    }
+
+    if len(plugins) == 1:
+        subject = f"[QGIS Plugins] Please confirm your email for: {plugins[0].name}"
+    else:
+        subject = (
+            f"[QGIS Plugins] Please confirm your email address ({len(plugins)} plugins)"
+        )
+
+    text_body = render_to_string("plugins/email_confirmation.txt", context)
+    html_body = render_to_string("plugins/email_confirmation.html", context)
+
+    recipients = confirmation.email
+    if settings.DEBUG:
+        if not settings.DEVELOPER_EMAILS:
+            return
+        recipients = settings.DEVELOPER_EMAILS
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=recipients.split(
+            ","
+        ),  # There are some cases where a plugin's email contains multiple comma-separated emails
+    )
+    msg.attach_alternative(html_body, "text/html")
+    msg.send()
 
 
 def send_mail_with_attachments(
@@ -614,7 +667,9 @@ def plugin_upload(request):
 
                 new_version = PluginVersion(**version_data)
                 new_version.save()
-                msg = _("The Plugin has been successfully uploaded. Security and quality checks are now running asynchronously.")
+                msg = _(
+                    "The Plugin has been successfully uploaded. Security and quality checks are now running asynchronously."
+                )
                 messages.success(request, msg, fail_silently=True)
 
                 # Send Stage 1: Upload confirmation email
@@ -763,6 +818,40 @@ class PluginDetailView(DetailView):
             }
         )
         return context
+
+
+def confirm_plugin_email(request, key):
+    """
+    Handles the one-time email confirmation link sent to a plugin's author email.
+
+    A single click confirms the address for every plugin in the M2M set.
+    No login is required — possession of the token is sufficient proof.
+    """
+    confirmation = get_object_or_404(PluginEmailConfirmation, key=key)
+    plugin_names = list(confirmation.plugins.values_list("name", flat=True))
+
+    if confirmation.is_confirmed:
+        context = {
+            "status": "already_confirmed",
+            "email": confirmation.email,
+            "plugin_names": plugin_names,
+            "confirmed_at": confirmation.confirmed_at,
+        }
+    elif confirmation.is_expired:
+        context = {
+            "status": "expired",
+            "email": confirmation.email,
+            "plugin_names": plugin_names,
+        }
+    else:
+        confirmation.confirm()
+        context = {
+            "status": "confirmed",
+            "email": confirmation.email,
+            "plugin_names": plugin_names,
+        }
+
+    return render(request, "plugins/email_confirmation_result.html", context)
 
 
 @login_required
@@ -2382,7 +2471,9 @@ def version_rescan(request, package_name, version):
     version_obj = get_object_or_404(PluginVersion, plugin=plugin, version=version)
 
     if not check_plugin_access(request.user, plugin):
-        msg = _("You do not have permission to trigger a security scan for this plugin.")
+        msg = _(
+            "You do not have permission to trigger a security scan for this plugin."
+        )
         messages.error(request, msg, fail_silently=True)
         return HttpResponseRedirect(version_obj.get_absolute_url())
 
@@ -2401,9 +2492,7 @@ def version_rescan(request, package_name, version):
         ),
         fail_silently=True,
     )
-    return HttpResponseRedirect(
-        version_obj.get_absolute_url() + "#security-tab"
-    )
+    return HttpResponseRedirect(version_obj.get_absolute_url() + "#security-tab")
 
 
 ###############################################
@@ -2474,11 +2563,7 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         filters.update(
-            {
-                "pluginversion__max_qg_version__gte": _add_patch_version(
-                    qg_version, "0"
-                )
-            }
+            {"pluginversion__max_qg_version__gte": _add_patch_version(qg_version, "0")}
         )
         version_filters.update(
             {"max_qg_version__gte": _add_patch_version(qg_version, "0")}
@@ -2602,11 +2687,7 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         filters.update(
-            {
-                "pluginversion__max_qg_version__gte": _add_patch_version(
-                    qg_version, "0"
-                )
-            }
+            {"pluginversion__max_qg_version__gte": _add_patch_version(qg_version, "0")}
         )
         version_filters.update(
             {"max_qg_version__gte": _add_patch_version(qg_version, "0")}

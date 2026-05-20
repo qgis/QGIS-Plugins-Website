@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Address Confirmation — QGIS Plugins Repository</title>
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings>
+    <o:PixelsPerInch>96</o:PixelsPerInch>
+  </o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
+</head>
+<!--
+  Background image: hegobg1.webp (same as the website login page).
+  The card uses rgba(255,255,255,0.91) over the image to approximate the
+  site's backdrop-filter:blur(8px) frosted-glass effect — which email clients
+  do not support natively.
+-->
+<body style="margin:0;padding:0;
+             font-family:'Trueno',Arial,Helvetica,sans-serif;
+             color:#002033;
+             background-color:#395c6b;">
+
+  <!-- ═══ Full-bleed background wrapper ═══ -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="background-color:#395c6b;
+                background-image:url('https://{{ site_domain }}/static/images/hegobg1.webp');
+                background-size:cover;
+                background-position:center center;
+                min-height:100%;
+                padding:40px 16px;">
+    <tr>
+      <td align="center" valign="middle">
+
+        <!-- ─── Soft dark overlay row (simulates the page's dark hero tint) ─── -->
+        <!-- A translucent cell behind the card gives depth without blur -->
+        <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0"
+               style="max-width:640px;width:100%;
+                      background-color:rgba(0,32,51,0.30);
+                      border-radius:24px;
+                      padding:8px;">
+          <tr>
+            <td>
+
+              <!-- ═══ Card (frosted-glass approximation) ═══ -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                     style="background-color:rgba(255,255,255,0.91);
+                            border-radius:20px;
+                            border:1px solid rgba(255,255,255,0.28);
+                            overflow:hidden;
+                            box-shadow:0 8px 32px rgba(0,32,51,0.22);">
+
+                <!-- ── Header: QGIS dark-blue solid ── -->
+                <tr>
+                  <td style="background-color:#002033;padding:20px 32px;
+                             text-align:center;">
+                    <table role="presentation" cellpadding="0" cellspacing="0"
+                           border="0" style="display:inline-table;">
+                      <tr>
+                        <td style="vertical-align:middle;padding-right:16px;">
+                          <img src="https://{{ site_domain }}/static/images/qgis-icon128.png"
+                               alt="QGIS" width="52" height="52"
+                               style="display:block;">
+                        </td>
+                        <td style="vertical-align:middle;text-align:left;">
+                          <p style="margin:0 0 4px;
+                                     font-size:11px;color:rgba(255,255,255,0.65);
+                                     letter-spacing:2px;text-transform:uppercase;
+                                     font-weight:700;">
+                            QGIS Plugins Repository
+                          </p>
+                          <h1 style="margin:0;font-size:21px;color:#ffffff;
+                                     font-weight:700;letter-spacing:0.3px;">
+                            Email Address Confirmation
+                          </h1>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- ── Body ── -->
+                <tr>
+                  <td style="padding:36px 40px 28px;">
+
+                    <p style="margin:0 0 18px;font-size:15px;line-height:1.7;
+                               color:#002033;">
+                      Dear Plugin Author,
+                    </p>
+
+                    <p style="margin:0 0 22px;font-size:15px;line-height:1.7;
+                               color:#4D6370;">
+                      Our records indicate that the address below is registered as the
+                      <strong style="color:#002033;font-weight:600;">author contact
+                      email</strong> for {% if plugins|length == 1 %}a plugin{% else %}<strong style="color:#002033;">{{ plugins|length }} plugins</strong>{% endif %} hosted on the QGIS Plugins Repository:
+                    </p>
+
+                    <!-- Details block — teal left-border, very light teal tint -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                           border="0"
+                           style="background-color:rgba(85,130,139,0.08);
+                                  border-left:4px solid #55828b;
+                                  border-radius:6px;margin:0 0 28px;">
+                      <tr>
+                        <td style="padding:16px 20px;">
+                          <table role="presentation" width="100%" cellpadding="5"
+                                 cellspacing="0" border="0">
+                            <tr>
+                              <td style="font-size:12px;color:#55828b;width:120px;
+                                         font-weight:700;text-transform:uppercase;
+                                         letter-spacing:0.5px;white-space:nowrap;
+                                         vertical-align:top;">
+                                Email
+                              </td>
+                              <td style="font-size:14px;color:#002033;
+                                         font-family:monospace;vertical-align:top;">
+                                {{ email }}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="font-size:12px;color:#55828b;
+                                         font-weight:700;text-transform:uppercase;
+                                         letter-spacing:0.5px;white-space:nowrap;
+                                         vertical-align:top;padding-top:10px;">
+                                Plugin(s)
+                              </td>
+                              <td style="font-size:14px;color:#002033;vertical-align:top;
+                                         padding-top:10px;">
+                                {% for p in plugins %}
+                                <p style="margin:0{% if not forloop.last %} 0 8px{% endif %};line-height:1.5;">
+                                  <strong style="color:#002033;font-weight:600;">{{ p.name }}</strong><br>
+                                  <a href="{{ p.url }}"
+                                     style="color:#3A9800;text-decoration:none;
+                                            font-size:12px;word-break:break-all;">{{ p.url }}</a>
+                                </p>
+                                {% endfor %}
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Section heading -->
+                    <p style="margin:0 0 10px;font-size:13px;font-weight:700;
+                               color:#55828b;text-transform:uppercase;
+                               letter-spacing:1px;">
+                      Action required
+                    </p>
+
+                    <p style="margin:0 0 24px;font-size:15px;line-height:1.7;
+                               color:#4D6370;">
+                      To confirm that this address is still active and that you are
+                      associated with the plugin(s) listed above, please click the
+                      button below. One click confirms your address for
+                      <strong style="color:#002033;">all {{ plugins|length }}
+                      plugin(s)</strong> at once:
+                    </p>
+
+                    <!-- CTA button -->
+                    <table role="presentation" width="100%" cellpadding="0"
+                           cellspacing="0" border="0" style="margin:0 0 20px;">
+                      <tr>
+                        <td align="center">
+                          <a href="{{ confirmation_url }}"
+                             style="display:inline-block;
+                                    background:linear-gradient(to right,#589732,#93b022);
+                                    color:#ffffff;font-size:15px;font-weight:700;
+                                    text-decoration:none;padding:14px 40px;
+                                    border-radius:8px;letter-spacing:0.4px;
+                                    box-shadow:0 4px 14px rgba(88,150,50,0.35);">
+                            &#10003;&nbsp; Confirm My Email Address
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Fallback URL -->
+                    <p style="margin:0 0 24px;font-size:12px;color:#808080;
+                               line-height:1.6;text-align:center;">
+                      If the button does not work, copy and paste this link:<br>
+                      <a href="{{ confirmation_url }}"
+                         style="color:#3A9800;word-break:break-all;">
+                        {{ confirmation_url }}
+                      </a>
+                    </p>
+
+                    <!-- Expiry notice — warm amber tint -->
+                    <table role="presentation" width="100%" cellpadding="0"
+                           cellspacing="0" border="0" style="margin:0 0 28px;">
+                      <tr>
+                        <td style="background-color:rgba(238,121,19,0.08);
+                                   border-left:4px solid #ee7913;border-radius:6px;
+                                   padding:12px 18px;font-size:14px;
+                                   color:#002033;line-height:1.6;">
+                          <strong style="color:#ee7913;">&#9888;&nbsp;
+                            This link expires on {{ expires_at }}.</strong>
+                          After that date a new confirmation request will be required.
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Why section -->
+                    <p style="margin:0 0 10px;font-size:13px;font-weight:700;
+                               color:#55828b;text-transform:uppercase;
+                               letter-spacing:1px;">
+                      Why am I receiving this?
+                    </p>
+
+                    <p style="margin:0 0 14px;font-size:14px;line-height:1.7;
+                               color:#4D6370;">
+                      The QGIS Plugins Repository periodically verifies that author
+                      contact addresses are still responsive. Confirming your address
+                      helps us reach you with important notifications about your plugin,
+                      such as <em>security alerts</em> or <em>policy updates</em>.
+                    </p>
+
+                    <p style="margin:0;font-size:14px;line-height:1.7;color:#4D6370;">
+                      If you did not expect this message, or if you are no longer
+                      associated with the plugin(s) named above, please
+                      <strong style="color:#002033;">ignore this email</strong>.
+                      No changes will be made to your plugin(s) unless you click the
+                      confirmation link.
+                    </p>
+
+                  </td>
+                </tr>
+
+                <!-- ── Footer ── -->
+                <tr>
+                  <td style="background-color:rgba(0,32,51,0.04);
+                             border-top:1px solid rgba(0,32,51,0.08);
+                             padding:18px 40px;text-align:center;">
+                    <p style="margin:0;font-size:12px;color:#808080;line-height:1.7;">
+                      This is an automated message — please do not reply.<br>
+                      <a href="https://{{ site_domain }}"
+                         style="color:#3A9800;text-decoration:none;font-weight:600;">
+                        QGIS Plugins Repository
+                      </a>
+                      &nbsp;·&nbsp; https://{{ site_domain }}
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+              <!-- /Card -->
+
+            </td>
+          </tr>
+        </table>
+        <!-- /overlay row -->
+
+      </td>
+    </tr>
+  </table>
+  <!-- /background wrapper -->
+
+</body>
+</html>
