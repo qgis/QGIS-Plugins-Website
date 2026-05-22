@@ -177,7 +177,8 @@ curl \
   https://plugins.qgis.org/plugins/api/<package_name>/latest/json
 ```
 
-> **Note**: These enpoints are also available from public view (if the token is not specified or incorrect), but without security checks results.
+> [!NOTE]
+> These endpoints are also available from public view (if the token is not specified or incorrect), but without security checks results.
 
 ![-----------------------------------------------------](./img/green-gradient.png)
 
