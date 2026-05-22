@@ -1417,7 +1417,7 @@ def plugin_manage(request, package_name):
     if request.POST.get("delete"):
         return plugin_delete(request, package_name)
 
-    return HttpResponseRedirect(reverse("user_details", args=[username]))
+    return HttpResponseRedirect(reverse("plugin_detail", args=[package_name]))
 
 
 ###############################################
