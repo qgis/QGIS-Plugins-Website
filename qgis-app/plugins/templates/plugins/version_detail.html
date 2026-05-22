@@ -113,7 +113,7 @@
                 <span>{% trans "Security Scan" %}</span>
                 {% if version.validation_status == 'validating' %}
                 <span class="tag ml-2 is-info">{% trans "Validating" %}</span>
-                {% elif version.validation_status == 'blocked' %}
+                {% elif version.validation_status == 'blocked' and not version.approved %}
                 <span class="tag ml-2 is-danger">{% trans "Blocked" %}</span>
                 {% elif security_scan %}
                 <span class="tag ml-2 {{ scan_badge.class }}">
@@ -221,7 +221,7 @@
                         <h3>{% trans "Important Information" %}</h3>
                         <p>
                             <ul>
-                                {% if version.validation_status == 'blocked' %}
+                                {% if version.validation_status == 'blocked' and not version.approved %}
                                 <li class="has-text-danger has-text-weight-bold">{% trans "This plugin version is BLOCKED due to critical security issues and is not available for approval or download." %}</li>
                                 {% else %}
                                 <li>{% trans "Warnings and issues should be reviewed and addressed when possible to ensure plugin security and quality." %}</li>

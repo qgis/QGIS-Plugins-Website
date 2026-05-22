@@ -5,12 +5,13 @@ Tests for creating empty plugins (without versions)
 import os
 from unittest.mock import patch
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, User
+from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from plugins.forms import PluginCreateForm
-from plugins.models import Plugin, PluginVersion
+from plugins.models import VALIDATION_STATUS_VALIDATING, Plugin, PluginVersion
 
 
 def do_nothing(*args, **kwargs):
@@ -206,7 +207,9 @@ class PluginCreateEmptyTestCase(TestCase):
     @patch("plugins.views.plugin_notify", new=do_nothing)
     @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
     @patch("plugins.validator._check_url_link", new=do_nothing)
-    @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay", new=do_nothing)
+    @patch(
+        "plugins.tasks.run_security_scan.run_security_scan_task.delay", new=do_nothing
+    )
     def test_upload_version_after_creating_empty_plugin(self):
         """Test that a version can be uploaded after creating an empty plugin"""
         self.client.login(username="testuser", password="testpassword")
@@ -290,6 +293,99 @@ class PluginCreateEmptyTestCase(TestCase):
         plugin = Plugin.objects.get(package_name="NoNamePlugin")
         # Should use username as author
         self.assertEqual(plugin.author, "noname")
+
+    @patch("plugins.views.plugin_notify", new=do_nothing)
+    @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
+    @patch("plugins.validator._check_url_link", new=do_nothing)
+    @patch("plugins.security_utils.run_security_scan", new=do_nothing)
+    def test_version_create_not_auto_approved_for_untrusted_user_on_approved_plugin(
+        self,
+    ):
+        """
+        Security: uploading a new version via the web form must NOT be auto-approved
+        because the plugin already has an approved version. Only the user's
+        can_approve permission should grant approval.
+        """
+        self.client.login(username="testuser", password="testpassword")
+
+        # Create empty plugin then upload first version
+        create_data = {"package_name": "test_modul", "name": "Test Module Plugin"}
+        self.client.post(self.url, create_data)
+        plugin = Plugin.objects.get(package_name="test_modul")
+
+        valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin.zip_")
+        with open(valid_plugin, "rb") as file:
+            uploaded_file = SimpleUploadedFile(
+                "valid_plugin.zip_", file.read(), content_type="application/zip"
+            )
+        upload_url = reverse("version_create", args=[plugin.package_name])
+        self.client.post(upload_url, {"package": uploaded_file})
+
+        # Simulate staff approval of the first version
+        first_version = plugin.pluginversion_set.get(version="0.0.1")
+        first_version.approved = True
+        first_version.save()
+
+        # Upload a second version as the same untrusted user
+        valid_plugin_v2 = os.path.join(TESTFILE_DIR, "valid_plugin_0.0.2.zip_")
+        with open(valid_plugin_v2, "rb") as file:
+            uploaded_file_v2 = SimpleUploadedFile(
+                "valid_plugin_0.0.2.zip_", file.read(), content_type="application/zip"
+            )
+        self.client.post(upload_url, {"package": uploaded_file_v2})
+
+        second_version = plugin.pluginversion_set.get(version="0.0.2")
+        self.assertFalse(
+            second_version.approved,
+            "New version must NOT be auto-approved just because the plugin is approved; "
+            "only user trust (can_approve) should grant approval.",
+        )
+
+    @patch("plugins.views.plugin_notify", new=do_nothing)
+    @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
+    @patch("plugins.validator._check_url_link", new=do_nothing)
+    @patch("plugins.security_utils.run_security_scan", new=do_nothing)
+    @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay")
+    def test_version_create_queued_for_scan_for_trusted_user(self, mock_scan_delay):
+        """
+        A trusted user's upload starts async security validation, NOT immediate
+        approval. The version is created with approved=False and
+        validation_status=VALIDATING, and the security scan task is queued.
+        Approval happens asynchronously after the scan passes.
+        """
+
+        ct = ContentType.objects.get_for_model(Plugin)
+        perm = Permission.objects.get(codename="can_approve", content_type=ct)
+        self.user.user_permissions.add(perm)
+        # Refresh to bust Django's permission cache
+        self.user = self.user.__class__.objects.get(pk=self.user.pk)
+
+        self.client.login(username="testuser", password="testpassword")
+
+        # Create empty plugin then upload first version
+        create_data = {"package_name": "test_modul", "name": "Test Module Plugin"}
+        self.client.post(self.url, create_data)
+        plugin = Plugin.objects.get(package_name="test_modul")
+
+        valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin.zip_")
+        with open(valid_plugin, "rb") as file:
+            uploaded_file = SimpleUploadedFile(
+                "valid_plugin.zip_", file.read(), content_type="application/zip"
+            )
+        upload_url = reverse("version_create", args=[plugin.package_name])
+        self.client.post(upload_url, {"package": uploaded_file})
+
+        version = plugin.pluginversion_set.get(version="0.0.1")
+        self.assertFalse(
+            version.approved,
+            "Upload always starts unapproved; approval is deferred to the async security scan.",
+        )
+        self.assertEqual(
+            version.validation_status,
+            VALIDATION_STATUS_VALIDATING,
+            "New version should be in VALIDATING state immediately after upload.",
+        )
+        mock_scan_delay.assert_any_call(version.pk, auto_approve=False)
 
     def tearDown(self):
         self.client.logout()
