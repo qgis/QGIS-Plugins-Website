@@ -35,7 +35,13 @@ from django.views.generic.detail import DetailView
 # from sortable_listview import SortableListView
 from django.views.generic.list import ListView
 from plugins.decorators import has_valid_token, validate_plugin_token
-from plugins.forms import *
+from plugins.forms import (
+    PackageUploadForm,
+    PluginForm,
+    PluginVersionForm,
+    ValidationError,
+    VersionFeedbackForm,
+)
 from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_VALIDATING,
