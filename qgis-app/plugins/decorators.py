@@ -1,7 +1,7 @@
 import datetime
 from functools import wraps
 
-from django.http import HttpResponseForbidden
+from django.http import HttpRequest, HttpResponseForbidden
 from plugins.models import Plugin, PluginOutstandingToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -11,7 +11,7 @@ from rest_framework_simplejwt.token_blacklist.models import (
 )
 
 
-def validate_plugin_token(request, plugin):
+def validate_plugin_token(request: HttpRequest, plugin: Plugin) -> bool:
     """
     Validate the Bearer JWT in the request against the given plugin.
 

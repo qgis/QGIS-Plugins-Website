@@ -744,7 +744,12 @@ class Plugin(models.Model):
                 % qs.all()[0].package_name
             )
 
-    def to_json(self, authorized=False, latest_version=None, approved_versions=None):
+    def to_json(
+        self,
+        authorized: bool = False,
+        latest_version: "PluginVersion | None" = None,
+        approved_versions: "models.QuerySet | list | None" = None,
+    ) -> dict:
         """
         Returns a dict representation of the plugin for JSON serialization.
         Pass approved_versions as a queryset/list of PluginVersion objects.
@@ -1129,7 +1134,12 @@ class PluginVersion(models.Model):
     def __str__(self):
         return self.__unicode__()
 
-    def to_json(self, authorized=False, include_detail=False, download_url=None):
+    def to_json(
+        self,
+        authorized: bool = False,
+        include_detail: bool = False,
+        download_url: str | None = None,
+    ) -> dict:
         """
         Returns a dict representation of this version for JSON serialization.
 
@@ -1347,7 +1357,7 @@ class PluginVersionSecurityScan(models.Model):
             return 0
         return round((self.passed_checks / self.total_checks) * 100, 1)
 
-    def to_json(self, full=False):
+    def to_json(self, full: bool = False) -> dict:
         """
         Returns a dict representation of this scan for JSON serialization.
         full=True includes files_scanned, total_issues, and scan_report.

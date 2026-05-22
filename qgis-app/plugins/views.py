@@ -18,7 +18,13 @@ from django.db import IntegrityError, connection, transaction
 from django.db.models import Q
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Lower
-from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import (
+    Http404,
+    HttpRequest,
+    HttpResponse,
+    HttpResponseRedirect,
+    JsonResponse,
+)
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -37,7 +43,9 @@ from django.views.generic.list import ListView
 from plugins.decorators import has_valid_token, validate_plugin_token
 from plugins.forms import (
     PackageUploadForm,
+    PluginCreateForm,
     PluginForm,
+    PluginTokenForm,
     PluginVersionForm,
     ValidationError,
     VersionFeedbackForm,
@@ -732,7 +740,7 @@ def plugin_create_empty(request):
     return render(request, "plugins/plugin_create_empty.html", {"form": form})
 
 
-def _is_authorized_for_plugin(request, plugin):
+def _is_authorized_for_plugin(request: HttpRequest, plugin: Plugin) -> bool:
     """
     Return True if the request comes from an authorized editor/staff for this
     plugin. Accepts both Django session auth and a plugin Bearer token.
@@ -742,7 +750,7 @@ def _is_authorized_for_plugin(request, plugin):
     return validate_plugin_token(request, plugin)
 
 
-def plugin_versions_json(request, package_name):
+def plugin_versions_json(request: HttpRequest, package_name: str) -> JsonResponse:
     """
     Return plugin metadata and all approved versions as JSON.
     Authorized editors and token holders additionally receive validation_status
@@ -767,7 +775,9 @@ def plugin_versions_json(request, package_name):
     return JsonResponse(data)
 
 
-def plugin_version_json(request, package_name, version):
+def plugin_version_json(
+    request: HttpRequest, package_name: str, version: str
+) -> JsonResponse:
     """
     Return metadata for a specific approved plugin version as JSON.
 
@@ -791,7 +801,9 @@ def plugin_version_json(request, package_name, version):
     return JsonResponse(data)
 
 
-def plugin_latest_redirect(request, package_name):
+def plugin_latest_redirect(
+    request: HttpRequest, package_name: str
+) -> HttpResponseRedirect:
     """
     Redirect to the detail page of the latest approved plugin version.
 
@@ -804,7 +816,9 @@ def plugin_latest_redirect(request, package_name):
     return HttpResponseRedirect(latest.get_absolute_url())
 
 
-def plugin_latest_json_redirect(request, package_name):
+def plugin_latest_json_redirect(
+    request: HttpRequest, package_name: str
+) -> HttpResponseRedirect:
     """
     Redirect to the JSON endpoint of the latest approved plugin version.
 
