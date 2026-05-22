@@ -759,49 +759,11 @@ def plugin_versions_json(request, package_name):
 
     authorized = _is_authorized_for_plugin(request, plugin)
     latest = approved_versions.first()
-
-    def _version_entry(v):
-        entry = {
-            "version": str(v.version),
-            "experimental": v.experimental,
-            "qgis_min": str(v.min_qg_version),
-            "qgis_max": str(v.max_qg_version),
-            "downloads": v.downloads,
-            "uploaded_by": v.created_by.username if v.created_by else None,
-            "upload_datetime": v.created_on.isoformat(),
-        }
-        if authorized:
-            entry["validation_status"] = v.validation_status
-            try:
-                scan = v.security_scan
-                entry["security_scan"] = {
-                    "status": scan.overall_status,
-                    "pass_rate": scan.pass_rate,
-                    "total_checks": scan.total_checks,
-                    "passed_checks": scan.passed_checks,
-                    "warning_count": scan.warning_count,
-                    "critical_count": scan.critical_count,
-                    "info_count": scan.info_count,
-                    "scanned_on": scan.scanned_on.isoformat(),
-                }
-            except PluginVersionSecurityScan.DoesNotExist:
-                entry["security_scan"] = None
-        return entry
-
-    data = {
-        "name": plugin.name,
-        "package_name": plugin.package_name,
-        "description": plugin.description,
-        "about": plugin.about,
-        "homepage": plugin.homepage,
-        "repository": plugin.repository,
-        "tracker": plugin.tracker,
-        "author": plugin.author,
-        "tags": [t.name for t in plugin.tags.all()],
-        "downloads": plugin.downloads,
-        "latest_version": str(latest.version),
-        "versions": [_version_entry(v) for v in approved_versions],
-    }
+    data = plugin.to_json(
+        authorized=authorized,
+        latest_version=latest,
+        approved_versions=approved_versions,
+    )
     return JsonResponse(data)
 
 
@@ -815,41 +777,17 @@ def plugin_version_json(request, package_name, version):
     version_obj = get_object_or_404(
         PluginVersion, plugin=plugin, version=version, approved=True
     )
+    authorized = _is_authorized_for_plugin(request, plugin)
+    download_url = request.build_absolute_uri(version_obj.get_download_url())
     data = {
         "name": plugin.name,
         "package_name": plugin.package_name,
-        "version": str(version_obj.version),
-        "experimental": version_obj.experimental,
-        "qgis_min": str(version_obj.min_qg_version),
-        "qgis_max": str(version_obj.max_qg_version),
-        "downloads": version_obj.downloads,
-        "uploaded_by": (
-            version_obj.created_by.username if version_obj.created_by else None
+        **version_obj.to_json(
+            authorized=authorized,
+            include_detail=True,
+            download_url=download_url,
         ),
-        "upload_datetime": version_obj.created_on.isoformat(),
-        "changelog": version_obj.changelog,
-        "external_deps": version_obj.external_deps,
-        "download_url": request.build_absolute_uri(version_obj.get_download_url()),
     }
-    if _is_authorized_for_plugin(request, plugin):
-        data["validation_status"] = version_obj.validation_status
-        try:
-            scan = version_obj.security_scan
-            data["security_scan"] = {
-                "status": scan.overall_status,
-                "pass_rate": scan.pass_rate,
-                "total_checks": scan.total_checks,
-                "passed_checks": scan.passed_checks,
-                "warning_count": scan.warning_count,
-                "critical_count": scan.critical_count,
-                "info_count": scan.info_count,
-                "files_scanned": scan.files_scanned,
-                "total_issues": scan.total_issues,
-                "scanned_on": scan.scanned_on.isoformat(),
-                "scan_report": scan.scan_report,
-            }
-        except PluginVersionSecurityScan.DoesNotExist:
-            data["security_scan"] = None
     return JsonResponse(data)
 
 

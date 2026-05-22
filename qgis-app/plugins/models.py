@@ -109,7 +109,7 @@ class NewQgisMajorVersionReadyPlugins(BasePluginManager):
     """
     Shows only public plugins: i.e. those with "approved" flag set
     and with one version that is compatible with the new QGIS major version.
-    This is determined by checking if the max_qg_version is greater 
+    This is determined by checking if the max_qg_version is greater
     than or equal to the new QGIS major version.
     This manager filters out deprecated plugins as well.
     """
@@ -441,9 +441,11 @@ class FeedbackPendingPlugins(models.Manager):
     """
 
     def get_queryset(self):
-        latest_version = PluginVersion.objects.filter(
-            plugin=OuterRef("pk")
-        ).order_by("-created_on").values("approved")[:1]
+        latest_version = (
+            PluginVersion.objects.filter(plugin=OuterRef("pk"))
+            .order_by("-created_on")
+            .values("approved")[:1]
+        )
 
         return (
             super(FeedbackPendingPlugins, self)
@@ -741,6 +743,28 @@ class Plugin(models.Model):
                 )
                 % qs.all()[0].package_name
             )
+
+    def to_json(self, authorized=False, latest_version=None, approved_versions=None):
+        """
+        Returns a dict representation of the plugin for JSON serialization.
+        Pass approved_versions as a queryset/list of PluginVersion objects.
+        """
+        return {
+            "name": self.name,
+            "package_name": self.package_name,
+            "description": self.description,
+            "about": self.about,
+            "homepage": self.homepage,
+            "repository": self.repository,
+            "tracker": self.tracker,
+            "author": self.author,
+            "tags": [t.name for t in self.tags.all()],
+            "downloads": self.downloads,
+            "latest_version": str(latest_version.version) if latest_version else None,
+            "versions": [
+                v.to_json(authorized=authorized) for v in (approved_versions or [])
+            ],
+        }
 
     def save(self, keep_date=False, *args, **kwargs):
         """
@@ -1105,6 +1129,39 @@ class PluginVersion(models.Model):
     def __str__(self):
         return self.__unicode__()
 
+    def to_json(self, authorized=False, include_detail=False, download_url=None):
+        """
+        Returns a dict representation of this version for JSON serialization.
+
+        authorized     -- include validation_status and security scan info.
+        include_detail -- include changelog, external_deps, download_url, and
+                          the full security scan report (files_scanned,
+                          total_issues, scan_report).
+        download_url   -- absolute download URL string (only used when
+                          include_detail=True).
+        """
+        data = {
+            "version": str(self.version),
+            "experimental": self.experimental,
+            "qgis_min": str(self.min_qg_version),
+            "qgis_max": str(self.max_qg_version),
+            "downloads": self.downloads,
+            "uploaded_by": self.created_by.username if self.created_by else None,
+            "upload_datetime": self.created_on.isoformat(),
+        }
+        if include_detail:
+            data["changelog"] = self.changelog
+            data["external_deps"] = self.external_deps
+            if download_url is not None:
+                data["download_url"] = download_url
+        if authorized:
+            data["validation_status"] = self.validation_status
+            try:
+                data["security_scan"] = self.security_scan.to_json(full=include_detail)
+            except PluginVersionSecurityScan.DoesNotExist:
+                data["security_scan"] = None
+        return data
+
 
 class PluginVersionFeedback(models.Model):
     """Feedback for a plugin version."""
@@ -1289,6 +1346,27 @@ class PluginVersionSecurityScan(models.Model):
         if self.total_checks == 0:
             return 0
         return round((self.passed_checks / self.total_checks) * 100, 1)
+
+    def to_json(self, full=False):
+        """
+        Returns a dict representation of this scan for JSON serialization.
+        full=True includes files_scanned, total_issues, and scan_report.
+        """
+        data = {
+            "status": self.overall_status,
+            "pass_rate": self.pass_rate,
+            "total_checks": self.total_checks,
+            "passed_checks": self.passed_checks,
+            "warning_count": self.warning_count,
+            "critical_count": self.critical_count,
+            "info_count": self.info_count,
+            "scanned_on": self.scanned_on.isoformat(),
+        }
+        if full:
+            data["files_scanned"] = self.files_scanned
+            data["total_issues"] = self.total_issues
+            data["scan_report"] = self.scan_report
+        return data
 
 
 models.signals.post_delete.connect(delete_version_package, sender=PluginVersion)
