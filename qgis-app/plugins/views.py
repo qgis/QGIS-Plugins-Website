@@ -18,7 +18,13 @@ from django.db import IntegrityError, connection, transaction
 from django.db.models import Q
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Lower
-from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import (
+    Http404,
+    HttpRequest,
+    HttpResponse,
+    HttpResponseRedirect,
+    JsonResponse,
+)
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -34,8 +40,16 @@ from django.views.generic.detail import DetailView
 
 # from sortable_listview import SortableListView
 from django.views.generic.list import ListView
-from plugins.decorators import has_valid_token
-from plugins.forms import *
+from plugins.decorators import has_valid_token, validate_plugin_token
+from plugins.forms import (
+    PackageUploadForm,
+    PluginCreateForm,
+    PluginForm,
+    PluginTokenForm,
+    PluginVersionForm,
+    ValidationError,
+    VersionFeedbackForm,
+)
 from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_VALIDATING,
@@ -730,6 +744,99 @@ def plugin_create_empty(request):
         form = PluginCreateForm()
 
     return render(request, "plugins/plugin_create_empty.html", {"form": form})
+
+
+def _is_authorized_for_plugin(request: HttpRequest, plugin: Plugin) -> bool:
+    """
+    Return True if the request comes from an authorized editor/staff for this
+    plugin. Accepts both Django session auth and a plugin Bearer token.
+    """
+    if request.user.is_authenticated and check_plugin_access(request.user, plugin):
+        return True
+    return validate_plugin_token(request, plugin)
+
+
+def plugin_versions_json(request: HttpRequest, package_name: str) -> JsonResponse:
+    """
+    Return plugin metadata and all approved versions as JSON.
+    Authorized editors and token holders additionally receive validation_status
+    and security scan summaries for each version.
+
+    GET /plugins/<package_name>/json
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    approved_versions = plugin.pluginversion_set.filter(approved=True).order_by(
+        "-version"
+    )
+    if not approved_versions.exists():
+        raise Http404
+
+    authorized = _is_authorized_for_plugin(request, plugin)
+    latest = approved_versions.first()
+    data = plugin.to_json(
+        authorized=authorized,
+        latest_version=latest,
+        approved_versions=approved_versions,
+    )
+    return JsonResponse(data)
+
+
+def plugin_version_json(
+    request: HttpRequest, package_name: str, version: str
+) -> JsonResponse:
+    """
+    Return metadata for a specific approved plugin version as JSON.
+
+    GET /plugins/<package_name>/version/<version_name>/json
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    version_obj = get_object_or_404(
+        PluginVersion, plugin=plugin, version=version, approved=True
+    )
+    authorized = _is_authorized_for_plugin(request, plugin)
+    download_url = request.build_absolute_uri(version_obj.get_download_url())
+    data = {
+        "name": plugin.name,
+        "package_name": plugin.package_name,
+        **version_obj.to_json(
+            authorized=authorized,
+            include_detail=True,
+            download_url=download_url,
+        ),
+    }
+    return JsonResponse(data)
+
+
+def plugin_latest_redirect(
+    request: HttpRequest, package_name: str
+) -> HttpResponseRedirect:
+    """
+    Redirect to the detail page of the latest approved plugin version.
+
+    GET /plugins/<package_name>/latest/
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    latest = plugin.pluginversion_set.filter(approved=True).order_by("-version").first()
+    if latest is None:
+        raise Http404
+    return HttpResponseRedirect(latest.get_absolute_url())
+
+
+def plugin_latest_json_redirect(
+    request: HttpRequest, package_name: str
+) -> HttpResponseRedirect:
+    """
+    Redirect to the JSON endpoint of the latest approved plugin version.
+
+    GET /plugins/<package_name>/latest/json
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    latest = plugin.pluginversion_set.filter(approved=True).order_by("-version").first()
+    if latest is None:
+        raise Http404
+    return HttpResponseRedirect(
+        reverse("plugin_version_json", args=(plugin.package_name, latest.version))
+    )
 
 
 class PluginDetailView(DetailView):

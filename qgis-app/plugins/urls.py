@@ -27,9 +27,19 @@ urlpatterns = [
     url(r"^add/$", plugin_upload, {}, name="plugin_upload"),
     url(r"^add-empty/$", plugin_create_empty, {}, name="plugin_create_empty"),
     url(r"^user/(?P<username>[\w.@+-]+)/block/$", user_block, {}, name="user_block"),
-    url(r"^user/(?P<username>[\w.@+-]+)/unblock/$", user_unblock, {}, name="user_unblock"),
+    url(
+        r"^user/(?P<username>[\w.@+-]+)/unblock/$",
+        user_unblock,
+        {},
+        name="user_unblock",
+    ),
     url(r"^user/(?P<username>[\w.@+-]+)/trust/$", user_trust, {}, name="user_trust"),
-    url(r"^user/(?P<username>[\w.@+-]+)/untrust/$", user_untrust, {}, name="user_untrust"),
+    url(
+        r"^user/(?P<username>[\w.@+-]+)/untrust/$",
+        user_untrust,
+        {},
+        name="user_untrust",
+    ),
     url(
         r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/manage/$",
         plugin_manage,
@@ -142,7 +152,11 @@ urlpatterns = [
     #     ),
     #     name="featured_plugins",
     # ),
-    url(r"^user/(?P<username>[\w.@+-]+)/$", UserPluginsList.as_view(), name="user_plugins"),
+    url(
+        r"^user/(?P<username>[\w.@+-]+)/$",
+        UserPluginsList.as_view(),
+        name="user_plugins",
+    ),
     url(
         r"^server/$",
         PluginsList.as_view(
@@ -489,6 +503,34 @@ urlpatterns += [
     ),
 ]
 
+
+# JSON endpoints
+urlpatterns += [
+    url(
+        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/json$",
+        plugin_versions_json,
+        {},
+        name="plugin_versions_json",
+    ),
+    url(
+        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/version/(?P<version>[^\/]+)/json$",
+        plugin_version_json,
+        {},
+        name="plugin_version_json",
+    ),
+    url(
+        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/latest/$",
+        plugin_latest_redirect,
+        {},
+        name="plugin_latest_redirect",
+    ),
+    url(
+        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/latest/json$",
+        plugin_latest_json_redirect,
+        {},
+        name="plugin_latest_json_redirect",
+    ),
+]
 
 # Plugin detail (keep last)
 urlpatterns += [
