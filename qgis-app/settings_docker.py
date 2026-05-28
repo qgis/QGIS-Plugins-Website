@@ -245,12 +245,18 @@ SENTRY_RATE = os.environ.get("SENTRY_RATE", 1.0)
 
 if SENTRY_DSN and SENTRY_DSN != "":
     import sentry_sdk
+    from sentry_sdk.types import Event, Hint
+
+    def before_send(event: Event, hint: Hint):
+        exc = hint.get("exc_info", (None,))[1]
+        if isinstance(exc, OSError) and "write error" in str(exc):
+            return None  # Drop the event
+        return event
 
     sentry_sdk.init(
         dsn=SENTRY_DSN,
-        # Set traces_sample_rate to 1.0 to capture 100%
-        # of transactions for performance monitoring.
         traces_sample_rate=SENTRY_RATE,
+        before_send=before_send,
     )
 
 # Webpack

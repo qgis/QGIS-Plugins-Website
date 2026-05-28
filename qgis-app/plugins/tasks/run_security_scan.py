@@ -35,7 +35,11 @@ logger = get_task_logger(__name__)
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def run_security_scan_task(
-    self, plugin_version_pk, is_manual=False, skipped_rule_ids=None
+    self,
+    plugin_version_pk,
+    is_manual=False,
+    auto_approve=False,
+    skipped_rule_ids=None
 ):
     """
     Run security scan on a plugin version asynchronously.
@@ -45,6 +49,11 @@ def run_security_scan_task(
         is_manual: If True, this is a manual re-scan on an existing version.
                    Manual scans are informational only and do not change
                    the plugin's approval or validation status.
+        auto_approve: If True, approve the version automatically once all
+                      security checks pass. This is only set when a trusted
+                      user explicitly opts in via the "Publish immediately"
+                      checkbox on the upload form. Defaults to False so that
+                      the normal two-step approval flow applies to everyone.
         skipped_rule_ids: List of SecurityRule IDs that the developer chose to skip (optional)
     """
     try:
@@ -72,7 +81,12 @@ def run_security_scan_task(
         )
         if not is_manual:
             plugin_version.validation_status = VALIDATION_STATUS_VALIDATED
-            _auto_approve_if_trusted(plugin_version)
+            if auto_approve:
+                plugin_version.approved = True
+                logger.info(
+                    f"Auto-approving {plugin.package_name} v{plugin_version.version} "
+                    "(scan tool error, uploader opted in)"
+                )
             plugin_version.save()
             _send_validation_results_email(plugin_version, security_scan=None)
             if not plugin_version.approved:
@@ -108,7 +122,15 @@ def run_security_scan_task(
             logger.info(
                 f"Plugin {plugin.package_name} v{plugin_version.version} validated successfully"
             )
-        _auto_approve_if_trusted(plugin_version)
+        if auto_approve:
+            plugin_version.approved = True
+            logger.info(
+                f"Auto-approving {plugin.package_name} v{plugin_version.version} "
+                "(uploader opted in, scan passed)"
+            )
+        logger.info(
+            f"Plugin {plugin.package_name} v{plugin_version.version} validated successfully"
+        )
 
     plugin_version.save()
 
@@ -125,23 +147,6 @@ def run_security_scan_task(
         and not plugin_version.approved
     ):
         _notify_staff_for_review(plugin_version)
-
-
-def _auto_approve_if_trusted(plugin_version):
-    """
-    Auto-approve the version if the uploader is trusted or the plugin
-    already has at least one approved version.
-    """
-    created_by = plugin_version.created_by
-    plugin = plugin_version.plugin
-
-    if created_by and (created_by.has_perm("plugins.can_approve") or plugin.approved):
-        plugin_version.approved = True
-        logger.info(
-            f"Auto-approving {plugin.package_name} v{plugin_version.version} "
-            f"(trusted={created_by.has_perm('plugins.can_approve')}, "
-            f"plugin_approved={plugin.approved})"
-        )
 
 
 def _send_validation_results_email(plugin_version, security_scan):

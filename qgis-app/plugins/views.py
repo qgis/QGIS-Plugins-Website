@@ -18,7 +18,13 @@ from django.db import IntegrityError, connection, transaction
 from django.db.models import F, Q
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Lower
-from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import (
+    Http404,
+    HttpRequest,
+    HttpResponse,
+    HttpResponseRedirect,
+    JsonResponse,
+)
 from django.shortcuts import get_object_or_404, render
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -34,8 +40,16 @@ from django.views.generic.detail import DetailView
 
 # from sortable_listview import SortableListView
 from django.views.generic.list import ListView
-from plugins.decorators import has_valid_token
-from plugins.forms import *
+from plugins.decorators import has_valid_token, validate_plugin_token
+from plugins.forms import (
+    PackageUploadForm,
+    PluginCreateForm,
+    PluginForm,
+    PluginTokenForm,
+    PluginVersionForm,
+    ValidationError,
+    VersionFeedbackForm,
+)
 from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_VALIDATING,
@@ -112,7 +126,9 @@ def send_upload_confirmation_email(plugin_version):
         "docs_url": docs_url,
     }
 
-    send_mail_wrapper(str(subject), str(message), mail_from, recipients, fail_silently=True)
+    send_mail_wrapper(
+        str(subject), str(message), mail_from, recipients, fail_silently=True
+    )
 
 
 def send_mail_wrapper(subject, message, mail_from, recipients, fail_silently=True):
@@ -505,8 +521,9 @@ def plugin_upload(request):
     uploads a package and creates a new Plugin with a new PluginVersion
     can also update an existing plugin
     """
+    is_trusted = request.user.has_perm("plugins.can_approve")
     if request.method == "POST":
-        form = PackageUploadForm(request.POST, request.FILES)
+        form = PackageUploadForm(request.POST, request.FILES, is_trusted=is_trusted)
         if form.is_valid():
             try:
                 plugin_data = {
@@ -615,7 +632,9 @@ def plugin_upload(request):
 
                 new_version = PluginVersion(**version_data)
                 new_version.save()
-                msg = _("The Plugin has been successfully uploaded. Security and quality checks are now running asynchronously.")
+                msg = _(
+                    "The Plugin has been successfully uploaded. Security and quality checks are now running asynchronously."
+                )
                 messages.success(request, msg, fail_silently=True)
 
                 # Send Stage 1: Upload confirmation email
@@ -633,8 +652,17 @@ def plugin_upload(request):
                 else:
                     skipped_rule_ids = []
 
-                # Queue async security scan task
-                run_security_scan_task.delay(new_version.pk, skipped_rule_ids=skipped_rule_ids)
+                # Queue async security scan task.
+                # auto_approve=True only when a trusted user explicitly opts in via
+                # the "Publish immediately" checkbox on the upload form.
+                auto_approve = is_trusted and form.cleaned_data.get(
+                    "auto_approve_after_scan", False
+                )
+                run_security_scan_task.delay(
+                    new_version.pk,
+                    auto_approve=auto_approve,
+                    skipped_rule_ids=skipped_rule_ids
+                )
 
                 # Update plugins cached xml
                 generate_plugins_xml.delay()
@@ -707,7 +735,7 @@ def plugin_upload(request):
                     })
             return HttpResponseRedirect(plugin.get_absolute_url())
     else:
-        form = PackageUploadForm()
+        form = PackageUploadForm(is_trusted=is_trusted)
 
     security_rules_grouped = get_security_rules_grouped()
     total_enabled_rules = sum(g["enabled_count"] for g in security_rules_grouped)
@@ -750,6 +778,99 @@ def plugin_create_empty(request):
         form = PluginCreateForm()
 
     return render(request, "plugins/plugin_create_empty.html", {"form": form})
+
+
+def _is_authorized_for_plugin(request: HttpRequest, plugin: Plugin) -> bool:
+    """
+    Return True if the request comes from an authorized editor/staff for this
+    plugin. Accepts both Django session auth and a plugin Bearer token.
+    """
+    if request.user.is_authenticated and check_plugin_access(request.user, plugin):
+        return True
+    return validate_plugin_token(request, plugin)
+
+
+def plugin_versions_json(request: HttpRequest, package_name: str) -> JsonResponse:
+    """
+    Return plugin metadata and all approved versions as JSON.
+    Authorized editors and token holders additionally receive validation_status
+    and security scan summaries for each version.
+
+    GET /plugins/<package_name>/json
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    approved_versions = plugin.pluginversion_set.filter(approved=True).order_by(
+        "-version"
+    )
+    if not approved_versions.exists():
+        raise Http404
+
+    authorized = _is_authorized_for_plugin(request, plugin)
+    latest = approved_versions.first()
+    data = plugin.to_json(
+        authorized=authorized,
+        latest_version=latest,
+        approved_versions=approved_versions,
+    )
+    return JsonResponse(data)
+
+
+def plugin_version_json(
+    request: HttpRequest, package_name: str, version: str
+) -> JsonResponse:
+    """
+    Return metadata for a specific approved plugin version as JSON.
+
+    GET /plugins/<package_name>/version/<version_name>/json
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    version_obj = get_object_or_404(
+        PluginVersion, plugin=plugin, version=version, approved=True
+    )
+    authorized = _is_authorized_for_plugin(request, plugin)
+    download_url = request.build_absolute_uri(version_obj.get_download_url())
+    data = {
+        "name": plugin.name,
+        "package_name": plugin.package_name,
+        **version_obj.to_json(
+            authorized=authorized,
+            include_detail=True,
+            download_url=download_url,
+        ),
+    }
+    return JsonResponse(data)
+
+
+def plugin_latest_redirect(
+    request: HttpRequest, package_name: str
+) -> HttpResponseRedirect:
+    """
+    Redirect to the detail page of the latest approved plugin version.
+
+    GET /plugins/<package_name>/latest/
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    latest = plugin.pluginversion_set.filter(approved=True).order_by("-version").first()
+    if latest is None:
+        raise Http404
+    return HttpResponseRedirect(latest.get_absolute_url())
+
+
+def plugin_latest_json_redirect(
+    request: HttpRequest, package_name: str
+) -> HttpResponseRedirect:
+    """
+    Redirect to the JSON endpoint of the latest approved plugin version.
+
+    GET /plugins/<package_name>/latest/json
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    latest = plugin.pluginversion_set.filter(approved=True).order_by("-version").first()
+    if latest is None:
+        raise Http404
+    return HttpResponseRedirect(
+        reverse("plugin_version_json", args=(plugin.package_name, latest.version))
+    )
 
 
 class PluginDetailView(DetailView):
@@ -1437,7 +1558,7 @@ def plugin_manage(request, package_name):
     if request.POST.get("delete"):
         return plugin_delete(request, package_name)
 
-    return HttpResponseRedirect(reverse("user_details", args=[username]))
+    return HttpResponseRedirect(reverse("plugin_detail", args=[package_name]))
 
 
 ###############################################
@@ -1618,7 +1739,14 @@ def _version_create(request, plugin, version):
     contained in the package metadata
     """
     is_api_request = getattr(version, "is_from_token", False)
-    is_trusted = request.user.has_perm("plugins.can_approve") or plugin.approved
+    if is_api_request:
+        # For token-based uploads, resolve the token owner and check their permissions.
+        # request.user is AnonymousUser in this path since authentication is via JWT token,
+        # not Django session.
+        token_user = request.plugin_token.token.user
+        is_trusted = token_user.has_perm("plugins.can_approve")
+    else:
+        is_trusted = request.user.has_perm("plugins.can_approve")
     if request.method == "POST":
 
         form = PluginVersionForm(
@@ -1660,8 +1788,18 @@ def _version_create(request, plugin, version):
                 else:
                     skipped_rule_ids = []
 
-                # Queue async security scan task
-                run_security_scan_task.delay(new_object.pk, skipped_rule_ids=skipped_rule_ids)
+                # Queue async security scan task.
+                # auto_approve=True only when a trusted user explicitly opts in:
+                # web form users tick "Publish immediately"; token/API users
+                # pass auto_approve_after_scan=true in their POST body.
+                auto_approve = is_trusted and form.cleaned_data.get(
+                    "auto_approve_after_scan", False
+                )
+                run_security_scan_task.delay(
+                    new_object.pk,
+                    auto_approve=auto_approve,
+                    skipped_rule_ids=skipped_rule_ids
+                )
 
                 scan_url = f"{new_object.get_absolute_url()}#security-tab"
                 response_data["validation_status"] = VALIDATION_STATUS_VALIDATING
@@ -2432,7 +2570,9 @@ def version_rescan(request, package_name, version):
     version_obj = get_object_or_404(PluginVersion, plugin=plugin, version=version)
 
     if not check_plugin_access(request.user, plugin):
-        msg = _("You do not have permission to trigger a security scan for this plugin.")
+        msg = _(
+            "You do not have permission to trigger a security scan for this plugin."
+        )
         messages.error(request, msg, fail_silently=True)
         return HttpResponseRedirect(version_obj.get_absolute_url())
 
@@ -2451,9 +2591,7 @@ def version_rescan(request, package_name, version):
         ),
         fail_silently=True,
     )
-    return HttpResponseRedirect(
-        version_obj.get_absolute_url() + "#security-tab"
-    )
+    return HttpResponseRedirect(version_obj.get_absolute_url() + "#security-tab")
 
 
 ###############################################
@@ -2524,11 +2662,7 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         filters.update(
-            {
-                "pluginversion__max_qg_version__gte": _add_patch_version(
-                    qg_version, "0"
-                )
-            }
+            {"pluginversion__max_qg_version__gte": _add_patch_version(qg_version, "0")}
         )
         version_filters.update(
             {"max_qg_version__gte": _add_patch_version(qg_version, "0")}
@@ -2652,11 +2786,7 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         filters.update(
-            {
-                "pluginversion__max_qg_version__gte": _add_patch_version(
-                    qg_version, "0"
-                )
-            }
+            {"pluginversion__max_qg_version__gte": _add_patch_version(qg_version, "0")}
         )
         version_filters.update(
             {"max_qg_version__gte": _add_patch_version(qg_version, "0")}

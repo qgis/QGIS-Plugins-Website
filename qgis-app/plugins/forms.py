@@ -126,15 +126,19 @@ class PluginVersionForm(ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        kwargs.pop("is_trusted")
+        is_trusted = kwargs.pop("is_trusted", False)
         super(PluginVersionForm, self).__init__(*args, **kwargs)
-        # FIXME: check why this is not working correctly anymore
-        #        now "approved" is removed from the form (see Meta)
-        # instance = getattr(self, 'instance', None)
-        # if instance and not is_trusted:
-        #    self.fields['approved'].initial = False
-        #    self.fields['approved'].widget.attrs = {'disabled':'disabled'}
-        #    instance.approved = False
+        if is_trusted:
+            self.fields["auto_approve_after_scan"] = forms.BooleanField(
+                required=False,
+                initial=False,
+                label=_("Publish immediately after security scan passes"),
+                help_text=_(
+                    "If checked and all automated security checks pass, your plugin "
+                    "will be published automatically without waiting for manual review. "
+                    "Leave unchecked to follow the normal two-step approval process."
+                ),
+            )
 
         # Populate skip_security_rules choices with enabled and skippable rules
         skippable_rules = SecurityRule.objects.filter(
@@ -312,6 +316,21 @@ class PackageUploadForm(forms.Form):
             choices.append((rule.check_code, label))
 
         self.fields["skip_security_rules"].choices = choices
+
+    def __init__(self, *args, **kwargs):
+        is_trusted = kwargs.pop("is_trusted", False)
+        super(PackageUploadForm, self).__init__(*args, **kwargs)
+        if is_trusted:
+            self.fields["auto_approve_after_scan"] = forms.BooleanField(
+                required=False,
+                initial=False,
+                label=_("Publish immediately after security scan passes"),
+                help_text=_(
+                    "If checked and all automated security checks pass, your plugin "
+                    "will be published automatically without waiting for manual review. "
+                    "Leave unchecked to follow the normal two-step approval process."
+                ),
+            )
 
     def clean(self):
         clean_data = super(PackageUploadForm, self).clean()

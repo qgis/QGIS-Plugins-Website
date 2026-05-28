@@ -39,7 +39,6 @@ from plugins.models import (
 from plugins.security_scanner import SECURITY_CONFIG_FILES, PluginSecurityScanner
 from plugins.security_utils import run_security_scan
 from plugins.tasks.run_security_scan import (
-    _auto_approve_if_trusted,
     _send_validation_results_email,
     run_security_scan_task,
 )
@@ -230,59 +229,6 @@ class RunSecurityScanTaskTest(TestCase):
 
         self.version.refresh_from_db()
         self.assertEqual(self.version.validation_status, VALIDATION_STATUS_VALIDATED)
-
-
-# ---------------------------------------------------------------------------
-# Auto-approve helper tests
-# ---------------------------------------------------------------------------
-
-
-class MaybeAutoApproveTest(TestCase):
-    """Tests for the _auto_approve_if_trusted helper."""
-
-    def setUp(self):
-        self.user = User.objects.create_user(
-            username="approveuser", password="pass", email="approve@test.com"
-        )
-        self.plugin, self.version = _make_plugin_version(self.user)
-
-    def test_auto_approve_for_trusted_user(self):
-        """Users with 'can_approve' permission are auto-approved."""
-        permission = Permission.objects.get(codename="can_approve")
-        self.user.user_permissions.add(permission)
-        # Refresh from DB to pick up new permissions
-        self.user = User.objects.get(pk=self.user.pk)
-        self.version.created_by = self.user
-
-        _auto_approve_if_trusted(self.version)
-
-        self.assertTrue(self.version.approved)
-
-    def test_auto_approve_when_plugin_already_approved(self):
-        """Versions of already-approved plugins are auto-approved."""
-        # Approve the plugin by approving an older version
-        self.plugin.latest_approved_version = self.version
-        old_version = PluginVersion.objects.create(
-            plugin=self.plugin,
-            version="0.9.0",
-            downloads=0,
-            created_by=self.user,
-            approved=True,
-            package=SimpleUploadedFile("t2.zip", b"PK\x05\x06" + b"\x00" * 18),
-            min_qg_version="3.0.0",
-            max_qg_version="3.99.0",
-        )
-        # Plugin.approved returns True when any version is approved
-        self.assertTrue(self.plugin.approved)
-
-        _auto_approve_if_trusted(self.version)
-
-        self.assertTrue(self.version.approved)
-
-    def test_no_auto_approve_for_untrusted_user(self):
-        """Regular users without 'can_approve' are NOT auto-approved."""
-        _auto_approve_if_trusted(self.version)
-        self.assertFalse(self.version.approved)
 
 
 # ---------------------------------------------------------------------------
