@@ -19,13 +19,25 @@ ACTION REQUIRED
 ----------------------------------------------------------------
 
 To confirm that this address is still active and that you are
-associated with the plugin(s) listed above, please click the
-link below (or copy and paste it into your browser):
+associated with the plugin(s) listed above, you have two options:
+
+OPTION 1 — Confirm via the website (recommended):
+
+  1. Log in to your account at https://{{ site_domain }}
+  2. Navigate to your plugin page and click the yellow
+     "Email confirmation pending" button
+  3. When prompted, enter the following token:
+
+       {{ token }}
+
+OPTION 2 — Confirm directly via link:
+
+  Copy and paste the link below into your browser:
 
   {{ confirmation_url }}
 
-Clicking this link will confirm your address for ALL of the
-plugin(s) listed above at once.
+Confirming will apply to ALL of the plugin(s) listed above
+at once.
 
 This confirmation link will remain valid until {{ expires_at }}.
 After that date the link will expire and a new request will be

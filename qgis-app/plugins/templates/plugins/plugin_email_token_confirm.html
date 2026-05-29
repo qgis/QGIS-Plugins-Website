@@ -1,0 +1,76 @@
+{% extends 'plugins/plugin_base.html' %}
+{% load i18n %}
+{% block content %}
+    <h2 class="title is-4">{% trans "Confirm Email Address" %} &mdash; {{ plugin.name }}</h2>
+
+    {% if email_confirmation and not email_confirmation.is_expired and not email_confirmation.is_confirmed %}
+
+        {% if error %}
+            <div class="notification is-danger">{{ error }}</div>
+        {% endif %}
+
+        <div class="container rich mb-4">
+            <div class="cont coloring-1">
+                <p>
+                    {% blocktrans trimmed %}
+                        Enter the confirmation token from the email you received.
+                        The token is the long code shown in the email — you can find it
+                        listed separately or at the end of the confirmation link.
+                    {% endblocktrans %}
+                </p>
+                <p class="mt-2">
+                    {% blocktrans trimmed %}
+                        If you have not received a confirmation email, please contact
+                        the site administrator.
+                    {% endblocktrans %}
+                </p>
+            </div>
+        </div>
+
+        <form action="" method="post">
+            {% csrf_token %}
+            <div class="field">
+                <label class="label" for="id_token">{% trans "Confirmation token" %}</label>
+                <div class="control">
+                    <input id="id_token" class="input" type="text" name="token"
+                           placeholder="{% trans 'Paste your token here' %}"
+                           autocomplete="off" autofocus>
+                </div>
+            </div>
+            <div class="field is-grouped">
+                <p class="control">
+                    <button type="submit" class="button is-success">
+                        <span class="icon"><i class="fas fa-check"></i></span>
+                        <span>{% trans "Confirm" %}</span>
+                    </button>
+                </p>
+                <p class="control">
+                    <a class="button is-light" href="{% url 'plugin_detail' plugin.package_name %}">
+                        <span class="icon"><i class="fas fa-arrow-left"></i></span>
+                        <span>{% trans "Cancel" %}</span>
+                    </a>
+                </p>
+            </div>
+        </form>
+
+    {% else %}
+
+        <div class="container rich mb-4">
+            <div class="cont coloring-1">
+                {% if email_confirmation and email_confirmation.is_confirmed %}
+                    <p>{% trans "This plugin's email address has already been confirmed. No further action is needed." %}</p>
+                {% elif email_confirmation and email_confirmation.is_expired %}
+                    <p>{% trans "The confirmation request has expired. Please contact the site administrator to send a new one." %}</p>
+                {% else %}
+                    <p>{% trans "No pending email confirmation was found for this plugin. Please contact the site administrator." %}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <a class="button is-light" href="{% url 'plugin_detail' plugin.package_name %}">
+            <span class="icon"><i class="fas fa-arrow-left"></i></span>
+            <span>{% trans "Back to plugin" %}</span>
+        </a>
+
+    {% endif %}
+{% endblock %}

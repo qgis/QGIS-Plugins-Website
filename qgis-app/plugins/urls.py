@@ -513,6 +513,11 @@ urlpatterns += [
 # Plugin detail (keep last)
 urlpatterns += [
     url(
+        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/confirm-email-token/$",
+        plugin_email_token_confirm,
+        name="plugin_email_token_confirm",
+    ),
+    url(
         r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/resend-email-confirmation/$",
         resend_plugin_email_confirmation,
         name="plugin_resend_email_confirmation",

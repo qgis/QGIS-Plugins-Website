@@ -716,3 +716,135 @@ class TestResendPluginEmailConfirmationView(SetupMixin, TestCase):
         self.assertTrue(
             PluginEmailConfirmation.objects.filter(pk=confirmed.pk).exists()
         )
+
+
+# ---------------------------------------------------------------------------
+# plugin_email_token_confirm view
+# ---------------------------------------------------------------------------
+
+
+class TestPluginEmailTokenConfirmView(SetupMixin, TestCase):
+
+    def _url(self, package_name):
+        return reverse("plugin_email_token_confirm", args=[package_name])
+
+    def setUp(self):
+        super().setUp()
+        self.creator = User.objects.get(id=2)  # editor / non-staff
+        self.staff_user = User.objects.get(id=3)
+        self.other_user = User.objects.create_user(
+            username="other_token_user", password="pass"
+        )
+
+    # ---- access control ---------------------------------------------------
+
+    def test_anonymous_redirected_to_login(self):
+        self.client.logout()
+        response = self.client.get(self._url(self.plugin_a.package_name))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/", response["Location"])
+
+    def test_non_editor_gets_permission_deny(self):
+        """A logged-in user who is not an editor/staff is denied."""
+        self.client.force_login(self.other_user)
+        response = self.client.get(self._url(self.plugin_a.package_name))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "plugins/plugin_permission_deny.html")
+
+    def test_editor_can_see_form(self):
+        make_pending_confirmation(
+            "author@example.com", [self.plugin_a], key="tok-pending"
+        )
+        self.client.force_login(self.creator)
+        response = self.client.get(self._url(self.plugin_a.package_name))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "plugins/plugin_email_token_confirm.html")
+        self.assertContains(response, 'name="token"')
+
+    def test_staff_can_see_form(self):
+        make_pending_confirmation(
+            "author@example.com", [self.plugin_a], key="tok-staff-pending"
+        )
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self._url(self.plugin_a.package_name))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "plugins/plugin_email_token_confirm.html")
+        self.assertContains(response, 'name="token"')
+
+    def test_no_confirmation_shows_info_not_form(self):
+        """Without any confirmation record the form is not shown."""
+        self.client.force_login(self.creator)
+        response = self.client.get(self._url(self.plugin_a.package_name))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'name="token"')
+
+    def test_expired_confirmation_shows_info_not_form(self):
+        """An expired confirmation hides the form and shows an expiry message."""
+        make_expired_confirmation(
+            "author@example.com", [self.plugin_a], key="tok-expired"
+        )
+        self.client.force_login(self.creator)
+        response = self.client.get(self._url(self.plugin_a.package_name))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'name="token"')
+
+    def test_confirmed_shows_info_not_form(self):
+        """An already-confirmed record hides the form."""
+        make_confirmed_confirmation(
+            "author@example.com", [self.plugin_a], key="tok-confirmed"
+        )
+        self.client.force_login(self.creator)
+        response = self.client.get(self._url(self.plugin_a.package_name))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'name="token"')
+
+    def test_unknown_package_name_returns_404(self):
+        self.client.force_login(self.creator)
+        response = self.client.get(self._url("no-such-plugin"))
+        self.assertEqual(response.status_code, 404)
+
+    # ---- POST behaviour ---------------------------------------------------
+
+    def test_post_with_valid_token_redirects_to_confirm_view(self):
+        """Submitting a token redirects to the confirm_plugin_email URL."""
+        self.client.force_login(self.creator)
+        token = "somesecrettoken"
+        response = self.client.post(
+            self._url(self.plugin_a.package_name),
+            {"token": token},
+        )
+        expected_url = reverse("confirm_plugin_email", args=[token])
+        self.assertRedirects(response, expected_url, fetch_redirect_response=False)
+
+    def test_post_with_token_leading_trailing_whitespace_is_stripped(self):
+        """Tokens with surrounding whitespace are stripped before redirect."""
+        self.client.force_login(self.creator)
+        token = "  cleantoken  "
+        response = self.client.post(
+            self._url(self.plugin_a.package_name),
+            {"token": token},
+        )
+        expected_url = reverse("confirm_plugin_email", args=["cleantoken"])
+        self.assertRedirects(response, expected_url, fetch_redirect_response=False)
+
+    def test_post_with_empty_token_re_renders_form_with_error(self):
+        """Submitting an empty token stays on the form and shows an error."""
+        self.client.force_login(self.creator)
+        response = self.client.post(
+            self._url(self.plugin_a.package_name),
+            {"token": ""},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "plugins/plugin_email_token_confirm.html")
+        self.assertIn("error", response.context)
+
+    def test_post_with_whitespace_only_token_re_renders_form_with_error(self):
+        """Whitespace-only token is treated as empty."""
+        self.client.force_login(self.creator)
+        response = self.client.post(
+            self._url(self.plugin_a.package_name),
+            {"token": "   "},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "plugins/plugin_email_token_confirm.html")
+        self.assertIn("error", response.context)

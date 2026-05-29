@@ -148,41 +148,67 @@
                       Action required
                     </p>
 
-                    <p style="margin:0 0 24px;font-size:15px;line-height:1.7;
+                    <p style="margin:0 0 20px;font-size:15px;line-height:1.7;
                                color:#4D6370;">
                       To confirm that this address is still active and that you are
-                      associated with the plugin(s) listed above, please click the
-                      button below. One click confirms your address for
+                      associated with the plugin(s) listed above, choose one of the
+                      options below. Confirming applies to
                       <strong style="color:#002033;">all {{ plugins|length }}
-                      plugin(s)</strong> at once:
+                      plugin(s)</strong> at once.
                     </p>
 
-                    <!-- CTA button -->
+                    <!-- Option 1 — via the website -->
+                    <p style="margin:0 0 10px;font-size:13px;font-weight:700;
+                               color:#55828b;text-transform:uppercase;
+                               letter-spacing:1px;">
+                      Option 1 &mdash; Confirm via the website
+                    </p>
+
+                    <ol style="margin:0 0 16px;padding-left:20px;font-size:14px;
+                                color:#4D6370;line-height:1.9;">
+                      <li>Log in to your account at
+                        <a href="https://{{ site_domain }}"
+                           style="color:#3A9800;text-decoration:none;">{{ site_domain }}</a>
+                      </li>
+                      <li>Navigate to your plugin page and click the yellow
+                        <strong style="color:#002033;">&#8220;Email confirmation pending&#8221;</strong> button
+                      </li>
+                      <li>Enter the following token when prompted:</li>
+                    </ol>
+
+                    <!-- Token display box -->
                     <table role="presentation" width="100%" cellpadding="0"
-                           cellspacing="0" border="0" style="margin:0 0 20px;">
+                           cellspacing="0" border="0" style="margin:0 0 28px;">
                       <tr>
-                        <td align="center">
-                          <a href="{{ confirmation_url }}"
-                             style="display:inline-block;
-                                    background:linear-gradient(to right,#589732,#93b022);
-                                    color:#ffffff;font-size:15px;font-weight:700;
-                                    text-decoration:none;padding:14px 40px;
-                                    border-radius:8px;letter-spacing:0.4px;
-                                    box-shadow:0 4px 14px rgba(88,150,50,0.35);">
-                            &#10003;&nbsp; Confirm My Email Address
-                          </a>
+                        <td style="background-color:rgba(0,32,51,0.04);
+                                   border:1px solid rgba(0,32,51,0.12);
+                                   border-radius:6px;padding:14px 20px;
+                                   text-align:center;">
+                          <p style="margin:0 0 6px;font-size:11px;color:#55828b;
+                                     font-weight:700;text-transform:uppercase;
+                                     letter-spacing:1px;">Your confirmation token</p>
+                          <code style="font-size:13px;color:#002033;
+                                       word-break:break-all;letter-spacing:0.5px;">{{ token }}</code>
                         </td>
                       </tr>
                     </table>
 
-                    <!-- Fallback URL -->
-                    <p style="margin:0 0 24px;font-size:12px;color:#808080;
-                               line-height:1.6;text-align:center;">
-                      If the button does not work, copy and paste this link:<br>
+                    <!-- Option 2 — direct link -->
+                    <p style="margin:0 0 10px;font-size:13px;font-weight:700;
+                               color:#55828b;text-transform:uppercase;
+                               letter-spacing:1px;">
+                      Option 2 &mdash; Confirm directly via link
+                    </p>
+
+                    <p style="margin:0 0 8px;font-size:14px;line-height:1.7;
+                               color:#4D6370;">
+                      Alternatively, copy and paste this link into your browser:
+                    </p>
+
+                    <p style="margin:0 0 28px;font-size:14px;color:#3A9800;
+                               word-break:break-all;line-height:1.6;">
                       <a href="{{ confirmation_url }}"
-                         style="color:#3A9800;word-break:break-all;">
-                        {{ confirmation_url }}
-                      </a>
+                         style="color:#3A9800;">{{ confirmation_url }}</a>
                     </p>
 
                     <!-- Expiry notice — warm amber tint -->

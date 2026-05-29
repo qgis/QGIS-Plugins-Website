@@ -143,6 +143,7 @@ def send_confirmation_email(confirmation):
         "plugins": plugin_list,
         "confirmation_url": confirmation_url,
         "expires_at": expires_at,
+        "token": confirmation.key,
         "site_domain": domain,
     }
 
@@ -857,6 +858,46 @@ def confirm_plugin_email(request, key):
         }
 
     return render(request, "plugins/email_confirmation_result.html", context)
+
+
+@login_required
+def plugin_email_token_confirm(request, package_name):
+    """
+    Presents a form where a logged-in plugin editor can paste the confirmation
+    token from the email they received.  On submit, redirects to the existing
+    confirm_plugin_email view which handles the actual confirmation logic.
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    if request.user not in plugin.editors and not (
+        request.user.is_staff or request.user.is_superuser
+    ):
+        return render(request, "plugins/plugin_permission_deny.html", {})
+
+    email_confirmation = (
+        plugin.email_confirmations.filter(email=plugin.email)
+        .order_by("-sent_at")
+        .first()
+    )
+
+    if request.method == "POST":
+        token = request.POST.get("token", "").strip()
+        if token:
+            return HttpResponseRedirect(reverse("confirm_plugin_email", args=[token]))
+        return render(
+            request,
+            "plugins/plugin_email_token_confirm.html",
+            {
+                "plugin": plugin,
+                "email_confirmation": email_confirmation,
+                "error": _("Please enter a confirmation token."),
+            },
+        )
+
+    return render(
+        request,
+        "plugins/plugin_email_token_confirm.html",
+        {"plugin": plugin, "email_confirmation": email_confirmation},
+    )
 
 
 @login_required
