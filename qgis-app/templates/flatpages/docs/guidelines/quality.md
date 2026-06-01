@@ -104,7 +104,7 @@ Plugins that contain binaries will not be approved:
 - If you believe your plugin genuinely cannot function without a compiled binary, you must
   post to the
   [qgis-developer mailing list](https://lists.osgeo.org/mailman/listinfo/qgis-developer)
-  or contact the [QGIS PSC](mailto:psc@qgis.org) to state your case before uploading.
+  to state your case before uploading.
   An exception can only be granted after explicit approval through that process.
 - If an exception is granted, the full source code for the binary must be publicly available
   and build instructions must be provided in the repository.
