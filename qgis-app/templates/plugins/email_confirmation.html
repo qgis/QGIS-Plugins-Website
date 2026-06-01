@@ -4,84 +4,44 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Email Address Confirmation — QGIS Plugins Repository</title>
-  <!--[if mso]>
-  <noscript><xml><o:OfficeDocumentSettings>
-    <o:PixelsPerInch>96</o:PixelsPerInch>
-  </o:OfficeDocumentSettings></xml></noscript>
-  <![endif]-->
 </head>
-<!--
-  Background image: hegobg1.webp (same as the website login page).
-  The card uses rgba(255,255,255,0.91) over the image to approximate the
-  site's backdrop-filter:blur(8px) frosted-glass effect — which email clients
-  do not support natively.
--->
 <body style="margin:0;padding:0;
-             font-family:'Trueno',Arial,Helvetica,sans-serif;
+             font-family:Arial,Helvetica,sans-serif;
              color:#002033;
              background-color:#395c6b;">
 
-  <!-- ═══ Full-bleed background wrapper ═══ -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-         style="background-color:#395c6b;
-                background-image:url('https://{{ site_domain }}/static/images/hegobg1.webp');
-                background-size:cover;
-                background-position:center center;
-                min-height:100%;
-                padding:40px 16px;">
+         style="background-color:#395c6b;padding:40px 16px;">
     <tr>
       <td align="center" valign="middle">
 
-        <!-- ─── Soft dark overlay row (simulates the page's dark hero tint) ─── -->
-        <!-- A translucent cell behind the card gives depth without blur -->
+        <!-- ═══ Card ═══ -->
         <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0"
                style="max-width:640px;width:100%;
-                      background-color:rgba(0,32,51,0.30);
-                      border-radius:24px;
-                      padding:8px;">
+                      background-color:#ffffff;
+                      border-radius:8px;
+                      border:1px solid #c8d8e0;
+                      overflow:hidden;">
+
+          <!-- ── Header ── -->
           <tr>
-            <td>
+            <td style="background-color:#002033;padding:20px 32px;text-align:center;">
+              <p style="margin:0 0 4px;
+                         font-size:11px;color:rgba(255,255,255,0.65);
+                         letter-spacing:2px;text-transform:uppercase;
+                         font-weight:700;">
+                QGIS Plugins Repository
+              </p>
+              <h1 style="margin:0;font-size:21px;color:#ffffff;
+                         font-weight:700;letter-spacing:0.3px;">
+                Email Address Confirmation
+              </h1>
+            </td>
+          </tr>
 
-              <!-- ═══ Card (frosted-glass approximation) ═══ -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-                     style="background-color:rgba(255,255,255,0.91);
-                            border-radius:20px;
-                            border:1px solid rgba(255,255,255,0.28);
-                            overflow:hidden;
-                            box-shadow:0 8px 32px rgba(0,32,51,0.22);">
-
-                <!-- ── Header: QGIS dark-blue solid ── -->
-                <tr>
-                  <td style="background-color:#002033;padding:20px 32px;
-                             text-align:center;">
-                    <table role="presentation" cellpadding="0" cellspacing="0"
-                           border="0" style="display:inline-table;">
-                      <tr>
-                        <td style="vertical-align:middle;padding-right:16px;">
-                          <img src="https://{{ site_domain }}/static/images/qgis-icon128.png"
-                               alt="QGIS" width="52" height="52"
-                               style="display:block;">
-                        </td>
-                        <td style="vertical-align:middle;text-align:left;">
-                          <p style="margin:0 0 4px;
-                                     font-size:11px;color:rgba(255,255,255,0.65);
-                                     letter-spacing:2px;text-transform:uppercase;
-                                     font-weight:700;">
-                            QGIS Plugins Repository
-                          </p>
-                          <h1 style="margin:0;font-size:21px;color:#ffffff;
-                                     font-weight:700;letter-spacing:0.3px;">
-                            Email Address Confirmation
-                          </h1>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-
-                <!-- ── Body ── -->
-                <tr>
-                  <td style="padding:36px 40px 28px;">
+          <!-- ── Body ── -->
+          <tr>
+            <td style="padding:36px 40px 28px;">
 
                     <p style="margin:0 0 18px;font-size:15px;line-height:1.7;
                                color:#002033;">
@@ -252,34 +212,28 @@
                   </td>
                 </tr>
 
-                <!-- ── Footer ── -->
-                <tr>
-                  <td style="background-color:rgba(0,32,51,0.04);
-                             border-top:1px solid rgba(0,32,51,0.08);
-                             padding:18px 40px;text-align:center;">
-                    <p style="margin:0;font-size:12px;color:#808080;line-height:1.7;">
-                      This is an automated message — please do not reply.<br>
-                      <a href="https://{{ site_domain }}"
-                         style="color:#3A9800;text-decoration:none;font-weight:600;">
-                        QGIS Plugins Repository
-                      </a>
-                      &nbsp;·&nbsp; https://{{ site_domain }}
-                    </p>
-                  </td>
-                </tr>
-
-              </table>
-              <!-- /Card -->
-
+          <!-- ── Footer ── -->
+          <tr>
+            <td style="background-color:#f0f4f6;
+                       border-top:1px solid #c8d8e0;
+                       padding:18px 40px;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#808080;line-height:1.7;">
+                This is an automated message — please do not reply.<br>
+                <a href="https://{{ site_domain }}"
+                   style="color:#3A9800;text-decoration:none;font-weight:600;">
+                  QGIS Plugins Repository
+                </a>
+                &nbsp;·&nbsp; https://{{ site_domain }}
+              </p>
             </td>
           </tr>
+
         </table>
-        <!-- /overlay row -->
+        <!-- /Card -->
 
       </td>
     </tr>
   </table>
-  <!-- /background wrapper -->
 
 </body>
 </html>
