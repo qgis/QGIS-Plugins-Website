@@ -13,6 +13,10 @@ any time if it:
 
 - Violates any of the guidelines described in this documentation.
 - Contains malware, spyware, or any code that harms users or their systems.
+- Causes exfiltration of user data — including files, credentials, or location information —
+  whether intentionally or through negligence.
+- Causes corruption or deletion of user data or project files outside the plugin's
+  explicitly documented scope, whether intentionally or through negligence.
 - Poses a security risk that the author is unwilling or unable to address promptly.
 - Contains undisclosed data collection or advertising (see [Plugin Quality](/docs/guidelines/quality)).
 - Is clearly abandoned and poses a risk to users running it on newer QGIS versions.
@@ -47,6 +51,39 @@ a dispute through the following process:
   <strong>Note:</strong> Disputes about subjective editorial judgements (e.g. whether content
   is neutral) may take longer to resolve and are decided by the broader QGIS steering community.
 </p>
+
+---
+
+## Author contact and responsiveness
+
+Plugin authors are expected to maintain an active contact point:
+
+- The email address associated with your account must be monitored. The repository team may
+  contact you about security issues, policy concerns, or other matters requiring your
+  attention.
+- If the team is unable to reach you within **30 days** of making contact, the plugin may be
+  unpublished until a working contact address is established.
+- A plugin unpublished solely due to unreachable contact will be reinstated promptly once the
+  author makes contact and confirms the situation has been resolved.
+
+---
+
+## Plugin ownership transfer
+
+The current plugin owner can transfer maintainership directly through the website:
+
+1. Go to the plugin's details page and click **Edit**.
+2. In the **Collaborators** field, add the new owner's account. Click **Save**.
+3. Click **Edit** again, change the **Maintainer** field to the new collaborator, and click
+   **Save**.
+
+The original author's name remains recorded in the plugin history. The new maintainer will
+be able to upload new versions and manage the plugin page. The new owner must have an account registered on this repository before being added as a collaborator.
+
+Disputed ownership — for example, seeking to take over an abandoned plugin — should be
+raised on the
+[qgis-developer mailing list](https://lists.osgeo.org/mailman/listinfo/qgis-developer)
+with supporting context. The team will review on a case-by-case basis.
 
 ---
 

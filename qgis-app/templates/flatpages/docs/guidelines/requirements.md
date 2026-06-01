@@ -113,8 +113,20 @@ you must declare and manage those dependencies explicitly:
 
 - List all required packages clearly in the `about` field and in the plugin README.
 - Do not bundle large third-party libraries directly inside the plugin ZIP. Instead, prompt
-  the user to install them (e.g. via `pip`) or use the QGIS Plugin Manager's dependency
-  installer if available for your QGIS version.
+  the user to install them or use the QGIS Plugin Manager's dependency installer if available
+  for your QGIS version.
+- **Never install packages by shelling out to `pip` via `subprocess` or `os.system`.** This
+  runs pip against the user's system Python environment (or the QGIS embedded environment)
+  and can silently upgrade or downgrade shared libraries — for example, installing a version
+  of `pyproj` built against a different PROJ version than QGIS expects, which can break QGIS
+  entirely. This is both dangerous and inconsiderate to users. If programmatic first-run
+  installation is genuinely needed, use `sys.executable` with the `-m pip` flag and restrict
+  upgrades to the user scheme (`--user --upgrade-strategy only-if-needed`), or follow the
+  approach used by well-maintained plugins that integrate with QGIS's own pip wrapper.
+- **Compiled CPython extension modules** (`.pyd` / `.so`) require a C compiler toolchain
+  that most users do not have. If your dependency includes such a module, document this
+  clearly and provide pre-built wheels or point to a package repository (e.g. conda-forge,
+  OSGeo4W) where users can obtain them without building from source.
 - For Windows users, provide instructions for packages not available through OSGeo4W — see the
   [Installing Python packages in QGIS 3 guide](https://landscapearchaeology.org/2018/installing-python-packages-in-qgis-3-for-windows/)
   as an example.

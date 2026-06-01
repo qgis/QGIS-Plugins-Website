@@ -95,14 +95,20 @@ to automate packaging, releasing, and translating your plugin.
 
 ## Embedded binaries
 
-Pre-compiled binaries introduce security and portability risks and are tightly restricted:
+Pre-compiled binaries are **explicitly prohibited** in plugins submitted to this repository.
+Plugins that contain binaries will not be approved:
 
 - Pre-compiled files (`.dll`, `.so`, `.dylib`, `.exe`, `.pyd`) must **not** be included in the
-  plugin ZIP unless they are strictly necessary and cannot reasonably be distributed through a
-  standard package manager.
-- If a binary is genuinely required, the source code for that binary must be publicly available
+  plugin ZIP. There are no exceptions based on necessity or convenience — if it cannot be
+  distributed through a standard package manager, it cannot be bundled in the plugin ZIP.
+- If you believe your plugin genuinely cannot function without a compiled binary, you must
+  post to the
+  [qgis-developer mailing list](https://lists.osgeo.org/mailman/listinfo/qgis-developer)
+  or contact the [QGIS PSC](mailto:psc@qgis.org) to state your case before uploading.
+  An exception can only be granted after explicit approval through that process.
+- If an exception is granted, the full source code for the binary must be publicly available
   and build instructions must be provided in the repository.
-  Proprietary binary blobs are never accepted.
+  Proprietary binary blobs are never accepted under any circumstances.
 - Compiled Python bytecode (`.pyc`) should not be included — it is generated automatically
   on import.
 - Declare any compiled component in the `about` field so users and reviewers are aware of it.
@@ -137,5 +143,5 @@ Manager as an advertising vehicle:
 - No automatic update mechanisms that bypass the QGIS Plugin Manager.
 - Commercial integrations (e.g. plugins that connect to a paid service) are permitted, but
   the commercial nature must be disclosed in the metadata as described in the
-  [Requirements](/docs/guidelines/metadata) guidelines.
+  [Requirements](/docs/guidelines/requirements) guidelines.
   The plugin itself must remain free to download.

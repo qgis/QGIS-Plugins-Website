@@ -92,11 +92,11 @@ def docs_guidelines(request):
     )
 
 
-def docs_guidelines_metadata(request):
+def docs_guidelines_requirements(request):
     """
     Renders the Requirements guidelines page
     """
-    return _render_guideline(request, "metadata.md")
+    return _render_guideline(request, "requirements.md")
 
 
 def docs_guidelines_quality(request):
