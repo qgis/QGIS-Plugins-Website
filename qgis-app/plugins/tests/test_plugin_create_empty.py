@@ -385,7 +385,9 @@ class PluginCreateEmptyTestCase(TestCase):
             VALIDATION_STATUS_VALIDATING,
             "New version should be in VALIDATING state immediately after upload.",
         )
-        mock_scan_delay.assert_any_call(version.pk, auto_approve=False)
+        mock_scan_delay.assert_any_call(
+            version.pk, auto_approve=False, skipped_rule_ids=[]
+        )
 
     def tearDown(self):
         self.client.logout()

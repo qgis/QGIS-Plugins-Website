@@ -7,7 +7,12 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from plugins.forms import PackageUploadForm
-from plugins.models import VALIDATION_STATUS_VALIDATING, Plugin, PluginVersion, SecurityRule
+from plugins.models import (
+    VALIDATION_STATUS_VALIDATING,
+    Plugin,
+    PluginVersion,
+    SecurityRule,
+)
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -331,7 +336,9 @@ class UploadWithTokenTestCase(TestCase):
         )
         self.assertEqual(new_version.validation_status, VALIDATION_STATUS_VALIDATING)
         self.assertFalse(data.get("approved"))
-        mock_scan_delay.assert_called_once_with(new_version.pk, auto_approve=False)
+        mock_scan_delay.assert_called_once_with(
+            new_version.pk, auto_approve=False, skipped_rule_ids=[]
+        )
 
     @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay")
     def test_new_version_publish_immediately_opt_in_for_trusted_token_user(
@@ -370,7 +377,9 @@ class UploadWithTokenTestCase(TestCase):
 
         self.assertEqual(response.status_code, 201)
         version = PluginVersion.objects.get(plugin__name="Test Plugin", version="0.0.2")
-        mock_scan_delay.assert_called_once_with(version.pk, auto_approve=True)
+        mock_scan_delay.assert_called_once_with(
+            version.pk, auto_approve=True, skipped_rule_ids=[]
+        )
 
 
 class APIResponseTestCase(TestCase):
@@ -828,6 +837,7 @@ class EmptyPluginWithTokenTestCase(TestCase):
 # Security rule skipping via token API
 # ---------------------------------------------------------------------------
 
+
 class TokenAPISkipSecurityRulesTest(TestCase):
     """Tests for passing skip_security_rules via the token-based REST API."""
 
@@ -841,7 +851,9 @@ class TokenAPISkipSecurityRulesTest(TestCase):
         self.url_upload = reverse("plugin_upload")
 
         self.user = User.objects.create_user(
-            username="skiptoken_user", password="testpassword", email="skiptoken@example.com"
+            username="skiptoken_user",
+            password="testpassword",
+            email="skiptoken@example.com",
         )
         self.client.login(username="skiptoken_user", password="testpassword")
 

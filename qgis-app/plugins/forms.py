@@ -300,26 +300,9 @@ class PackageUploadForm(forms.Form):
     )
 
     def __init__(self, *args, **kwargs):
-        super(PackageUploadForm, self).__init__(*args, **kwargs)
-
-        # Populate skip_security_rules choices with enabled and skippable rules
-        skippable_rules = SecurityRule.objects.filter(
-            enabled=True, can_be_skipped=True
-        ).order_by("check_category", "check_code")
-
-        # Group choices by category for better UX
-        choices = []
-        for rule in skippable_rules:
-            label = (
-                f"{rule.check_code}: {rule.check_name} ({rule.get_severity_display()})"
-            )
-            choices.append((rule.check_code, label))
-
-        self.fields["skip_security_rules"].choices = choices
-
-    def __init__(self, *args, **kwargs):
         is_trusted = kwargs.pop("is_trusted", False)
         super(PackageUploadForm, self).__init__(*args, **kwargs)
+
         if is_trusted:
             self.fields["auto_approve_after_scan"] = forms.BooleanField(
                 required=False,
@@ -331,6 +314,20 @@ class PackageUploadForm(forms.Form):
                     "Leave unchecked to follow the normal two-step approval process."
                 ),
             )
+
+        # Populate skip_security_rules choices with enabled and skippable rules
+        skippable_rules = SecurityRule.objects.filter(
+            enabled=True, can_be_skipped=True
+        ).order_by("check_category", "check_code")
+
+        choices = []
+        for rule in skippable_rules:
+            label = (
+                f"{rule.check_code}: {rule.check_name} ({rule.get_severity_display()})"
+            )
+            choices.append((rule.check_code, label))
+
+        self.fields["skip_security_rules"].choices = choices
 
     def clean(self):
         clean_data = super(PackageUploadForm, self).clean()
