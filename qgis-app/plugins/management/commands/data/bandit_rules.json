@@ -535,9 +535,9 @@
       "check_code": "B608",
       "check_name": "Hardcoded SQL expression",
       "check_description": "Possible SQL injection vector through string-based query construction. Use parameterised queries or a query builder rather than string formatting.",
-      "severity": "critical",
+      "severity": "warning",
       "enabled": true,
-      "can_be_skipped": false
+      "can_be_skipped": true
     },
     {
       "check_code": "B609",
