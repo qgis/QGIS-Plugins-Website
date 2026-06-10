@@ -132,7 +132,7 @@ def send_confirmation_email(confirmation):
     """
     domain = Site.objects.get_current().domain
     confirmation_url = f"https://{domain}/plugins/confirm-email/{confirmation.key}/"
-    expires_at = confirmation.expires_at.strftime("%Y-%m-%d")
+    expires_at = confirmation.expires_at.strftime("%Y-%m-%d %H:%M %Z")
     plugins = list(confirmation.plugins.all())
     plugin_list = [
         {"name": p.name, "url": f"https://{domain}{p.get_absolute_url()}"}
