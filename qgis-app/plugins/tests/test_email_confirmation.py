@@ -430,6 +430,117 @@ class TestSendConfirmationEmailHelper(SetupMixin, TestCase):
         content_types = [ct for _, ct in alternatives]
         self.assertIn("text/html", content_types)
 
+    def test_expiry_includes_timezone_label(self):
+        # Regression: strftime("%Z") is blank for naive datetimes (USE_TZ=False),
+        # which rendered "expires on 2026-07-10 02:37 " with no zone.
+        self._send([self.plugin_a])
+        self.assertRegex(mail.outbox[0].body, r"\d{4}-\d{2}-\d{2} \d{2}:\d{2} [A-Za-z]")
+
+
+# ---------------------------------------------------------------------------
+# Helper: notify_editors_of_pending_confirmation (editor-notification backstop)
+# ---------------------------------------------------------------------------
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class TestEditorNotificationBackstop(SetupMixin, TestCase):
+    """
+    The tokenless heads-up sent to plugin editors alongside the confirmation
+    email so a shared/unmonitored contact mailbox doesn't silently stall.
+    """
+
+    def setUp(self):
+        super().setUp()
+        mail.outbox = []
+
+    def _send(self, plugins, address="author@example.com"):
+        from plugins.views import send_confirmation_email
+
+        conf, _ = PluginEmailConfirmation.create_for_email(address, plugins)
+        send_confirmation_email(conf)
+        return conf
+
+    def _editor_messages(self):
+        """Messages other than the token email (which goes to the metadata address)."""
+        return [m for m in mail.outbox if "author@example.com" not in m.to]
+
+    def test_no_extra_email_when_only_editor_has_empty_email(self):
+        # The fixture creator (id=2) has an empty email and is the sole editor,
+        # so the backstop is a no-op — only the token email is sent.
+        self._send([self.plugin_a])
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(self._editor_messages(), [])
+
+    def test_notifies_editor_with_distinct_email(self):
+        alice = User.objects.create_user("alice", "alice@org.com", "pw")
+        self.plugin_a.owners.add(alice)
+        self._send([self.plugin_a])
+        editor_msgs = self._editor_messages()
+        self.assertEqual(len(editor_msgs), 1)
+        self.assertEqual(editor_msgs[0].to, ["alice@org.com"])
+
+    def test_notification_is_tokenless(self):
+        alice = User.objects.create_user("alice", "alice@org.com", "pw")
+        self.plugin_a.owners.add(alice)
+        conf = self._send([self.plugin_a])
+        msg = self._editor_messages()[0]
+        haystack = msg.body + " ".join(body for body, _ in msg.alternatives)
+        # Neither the token nor the direct confirmation link may appear.
+        self.assertNotIn(conf.key, haystack)
+        self.assertIn("text/html", [ct for _, ct in msg.alternatives])
+
+    def test_editor_whose_email_matches_metadata_is_not_pinged(self):
+        # An editor whose account email equals the address being verified already
+        # received the token email — no redundant heads-up.
+        same = User.objects.create_user("same", "author@example.com", "pw")
+        self.plugin_a.owners.add(same)
+        self._send([self.plugin_a])
+        self.assertEqual(self._editor_messages(), [])
+
+    def test_per_editor_scoping_across_shared_address(self):
+        # plugin_a (Alice) and plugin_b (Carol) share author@example.com, but
+        # each editor must only hear about the plugin they actually manage.
+        alice = User.objects.create_user("alice", "alice@org.com", "pw")
+        carol = User.objects.create_user("carol", "carol@org.com", "pw")
+        self.plugin_a.owners.add(alice)
+        self.plugin_b.owners.add(carol)
+        self._send([self.plugin_a, self.plugin_b])
+
+        by_addr = {m.to[0]: m for m in self._editor_messages()}
+        self.assertEqual(set(by_addr), {"alice@org.com", "carol@org.com"})
+
+        self.assertIn(self.plugin_a.name, by_addr["alice@org.com"].body)
+        self.assertNotIn(self.plugin_b.name, by_addr["alice@org.com"].body)
+
+        self.assertIn(self.plugin_b.name, by_addr["carol@org.com"].body)
+        self.assertNotIn(self.plugin_a.name, by_addr["carol@org.com"].body)
+
+    def test_editor_of_multiple_plugins_gets_single_email(self):
+        bob = User.objects.create_user("bob", "bob@org.com", "pw")
+        self.plugin_a.owners.add(bob)
+        self.plugin_b.owners.add(bob)
+        self._send([self.plugin_a, self.plugin_b])
+        bob_msgs = [m for m in self._editor_messages() if m.to == ["bob@org.com"]]
+        self.assertEqual(len(bob_msgs), 1)
+        self.assertIn(self.plugin_a.name, bob_msgs[0].body)
+        self.assertIn(self.plugin_b.name, bob_msgs[0].body)
+
+    def test_backstop_failure_does_not_break_primary_email(self):
+        from plugins.views import send_confirmation_email
+
+        conf, _ = PluginEmailConfirmation.create_for_email(
+            "author@example.com", [self.plugin_a]
+        )
+        with patch(
+            "plugins.views.notify_editors_of_pending_confirmation",
+            side_effect=Exception("boom"),
+        ):
+            send_confirmation_email(conf)  # must not raise
+
+        # The primary confirmation email still went out.
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("author@example.com", mail.outbox[0].to)
+
 
 # ---------------------------------------------------------------------------
 # Management command: send_email_confirmation

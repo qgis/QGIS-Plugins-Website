@@ -1,0 +1,58 @@
+================================================================
+  QGIS Plugins Repository — Email Confirmation Pending
+================================================================
+
+Dear Plugin Editor,
+
+A confirmation request was recently sent to the author contact
+address below, which is used by {% if plugins|length == 1 %}a plugin{% else %}{{ plugins|length }} plugins{% endif %} you manage
+on the QGIS Plugins Repository:
+
+  Contact address : {{ email }}
+
+  Your plugin(s):
+{% for p in plugins %}    • {{ p.name }}
+      {{ p.url }}
+{% endfor %}
+----------------------------------------------------------------
+WHY YOU ARE RECEIVING THIS
+----------------------------------------------------------------
+
+The address above may be a shared or unmonitored mailbox. We are
+notifying you directly, as one of the people responsible for the
+plugin(s) listed, so that the request is not missed.
+
+----------------------------------------------------------------
+WHAT TO DO
+----------------------------------------------------------------
+
+Make sure someone with access to {{ email }} opens the
+confirmation email sent to that address and clicks the link it
+contains. Confirming applies to all plugins registered under that
+address at once.
+
+If you have access to that mailbox, you can also confirm from the
+website while logged in:
+
+  1. Log in to your account at https://{{ site_domain }}
+  2. Open your plugin page and click the yellow
+     "Email confirmation pending" button:
+{% for p in plugins %}
+       {{ p.name }}
+       {{ p.confirm_url }}
+{% endfor %}
+  3. Enter the token from the confirmation email when prompted.
+
+For security, this notification does NOT contain the confirmation
+token or link — only the email sent to {{ email }} does.
+
+This confirmation request is valid until {{ expires_at }}. After
+that date a new request will be required.
+
+----------------------------------------------------------------
+
+This is an automated message. Please do not reply directly to
+this email.
+
+QGIS Plugins Repository
+https://{{ site_domain }}
