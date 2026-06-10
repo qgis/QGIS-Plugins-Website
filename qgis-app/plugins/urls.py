@@ -27,9 +27,19 @@ urlpatterns = [
     url(r"^add/$", plugin_upload, {}, name="plugin_upload"),
     url(r"^add-empty/$", plugin_create_empty, {}, name="plugin_create_empty"),
     url(r"^user/(?P<username>[\w.@+-]+)/block/$", user_block, {}, name="user_block"),
-    url(r"^user/(?P<username>[\w.@+-]+)/unblock/$", user_unblock, {}, name="user_unblock"),
+    url(
+        r"^user/(?P<username>[\w.@+-]+)/unblock/$",
+        user_unblock,
+        {},
+        name="user_unblock",
+    ),
     url(r"^user/(?P<username>[\w.@+-]+)/trust/$", user_trust, {}, name="user_trust"),
-    url(r"^user/(?P<username>[\w.@+-]+)/untrust/$", user_untrust, {}, name="user_untrust"),
+    url(
+        r"^user/(?P<username>[\w.@+-]+)/untrust/$",
+        user_untrust,
+        {},
+        name="user_untrust",
+    ),
     url(
         r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/manage/$",
         plugin_manage,
@@ -88,6 +98,12 @@ urlpatterns = [
         {},
         name="plugin_token_delete",
     ),
+    url(
+        r"^confirm-email/(?P<key>[A-Za-z0-9_-]+)/$",
+        confirm_plugin_email,
+        {},
+        name="confirm_plugin_email",
+    ),
     # Uncomment the following lines when ready to use featured plugins
     # url(
     #     r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/set_featured/$",
@@ -142,7 +158,11 @@ urlpatterns = [
     #     ),
     #     name="featured_plugins",
     # ),
-    url(r"^user/(?P<username>[\w.@+-]+)/$", UserPluginsList.as_view(), name="user_plugins"),
+    url(
+        r"^user/(?P<username>[\w.@+-]+)/$",
+        UserPluginsList.as_view(),
+        name="user_plugins",
+    ),
     url(
         r"^server/$",
         PluginsList.as_view(
@@ -492,6 +512,16 @@ urlpatterns += [
 
 # Plugin detail (keep last)
 urlpatterns += [
+    url(
+        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/confirm-email-token/$",
+        plugin_email_token_confirm,
+        name="plugin_email_token_confirm",
+    ),
+    url(
+        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/resend-email-confirmation/$",
+        resend_plugin_email_confirmation,
+        name="plugin_resend_email_confirmation",
+    ),
     url(
         r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/$",
         PluginDetailView.as_view(

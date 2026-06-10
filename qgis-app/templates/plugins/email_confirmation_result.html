@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block extratitle %}{% trans "Email Confirmation" %}{% endblock %}
+
+
+{% block pagetitle %}
+<section class="hero is-dark is-medium has-bg-img" style="background: url({% static 'images/hegobg1.webp' %});
+background-position: 50%;
+background-size: cover;">
+  <div class="hero-body" style="min-height: 100dvh; display: flex; align-items: center;">
+    <div class="columns is-vcentered is-centered" style="width: 100%;">
+      <div class="column is-5-tablet is-4-desktop p-0">
+        <div class="login-container p-6 has-text-centered">
+          <figure class="image is-64x64 is-inline-block mb-4">
+            <img src="{% static 'images/qgis-icon128.png' %}" alt="QGIS" style="border-radius: 12px;">
+          </figure>
+
+          {% if status == "confirmed" %}
+          <h3 class="title">{% trans "Email Confirmed" %}</h3>
+          <p class="subtitle">
+            {% blocktrans with email=email %}
+              The address <strong>{{ email }}</strong> has been confirmed.
+            {% endblocktrans %}
+          </p>
+          {% elif status == "already_confirmed" %}
+          <h3 class="title">{% trans "Email Confirmed" %}</h3>
+          <p class="subtitle">
+            {% blocktrans with email=email confirmed_at=confirmed_at %}
+              The address <strong>{{ email }}</strong> was already confirmed on
+              {{ confirmed_at }}
+            {% endblocktrans %}
+          </p>
+          {% elif status == "expired" %}
+          <h3 class="title">{% trans "Link Expired" %}</h3>
+          <p class="subtitle">
+            {% blocktrans with email=email %}
+              The confirmation link for <strong>{{ email }}</strong> has expired.
+            {% endblocktrans %}
+          </p>
+          <p class="mt-3">
+            {% trans "Please contact the site administrators to request a new confirmation email." %}
+          </p>
+          {% else %}
+          <h3 class="title">{% trans "Invalid Link" %}</h3>
+          <p class="subtitle">{% trans "This confirmation link is not valid." %}</p>
+          {% endif %}
+
+
+          <div class="buttons is-centered">
+            <a href="/" class="button is-light is-medium">
+              <span>{% trans "Back to plugins" %}</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

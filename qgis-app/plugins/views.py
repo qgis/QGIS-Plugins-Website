@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 import time
+from collections import defaultdict
 
 from django.conf import settings
 from django.contrib import messages
@@ -13,15 +14,17 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.geoip2 import GeoIP2
 from django.contrib.sites.models import Site
 from django.core.exceptions import FieldDoesNotExist
-from django.core.mail import EmailMessage, send_mail
+from django.core.mail import EmailMessage, EmailMultiAlternatives, send_mail
 from django.db import IntegrityError, connection, transaction
 from django.db.models import Q
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Lower
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.encoding import DjangoUnicodeDecodeError
 from django.utils.html import mark_safe
@@ -40,6 +43,7 @@ from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_VALIDATING,
     Plugin,
+    PluginEmailConfirmation,
     PluginOutstandingToken,
     PluginVersion,
     PluginVersionDownload,
@@ -111,7 +115,9 @@ def send_upload_confirmation_email(plugin_version):
         "docs_url": docs_url,
     }
 
-    send_mail_wrapper(str(subject), str(message), mail_from, recipients, fail_silently=True)
+    send_mail_wrapper(
+        str(subject), str(message), mail_from, recipients, fail_silently=True
+    )
 
 
 def send_mail_wrapper(subject, message, mail_from, recipients, fail_silently=True):
@@ -119,6 +125,176 @@ def send_mail_wrapper(subject, message, mail_from, recipients, fail_silently=Tru
         logging.debug("Mail not sent (DEBUG=True)")
     else:
         send_mail(subject, message, mail_from, recipients, fail_silently)
+
+
+def _format_expiry(value):
+    """
+    Format a confirmation-expiry datetime in UTC with an explicit zone label.
+
+    The project runs with ``USE_TZ = False`` and stores naive datetimes in the
+    configured ``TIME_ZONE``; ``strftime("%Z")`` is blank for naive values.  We
+    make the value aware, then convert to UTC so plugin authors worldwide see a
+    single unambiguous reference (e.g. "2026-07-10 07:46 UTC").
+    """
+    if timezone.is_naive(value):
+        value = timezone.make_aware(value)
+    return value.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M %Z")
+
+
+def send_confirmation_email(confirmation):
+    """
+    Send one HTML+plaintext confirmation email for a PluginEmailConfirmation.
+    Builds the plugin list from the M2M relation.
+    """
+    domain = Site.objects.get_current().domain
+    confirmation_url = f"https://{domain}/plugins/confirm-email/{confirmation.key}/"
+    expires_at = _format_expiry(confirmation.expires_at)
+    plugins = list(confirmation.plugins.all())
+    plugin_list = [
+        {"name": p.name, "url": f"https://{domain}{p.get_absolute_url()}"}
+        for p in plugins
+    ]
+    context = {
+        "email": confirmation.email,
+        "plugins": plugin_list,
+        "confirmation_url": confirmation_url,
+        "expires_at": expires_at,
+        "token": confirmation.key,
+        "site_domain": domain,
+    }
+
+    if len(plugins) == 1:
+        subject = f"[QGIS Plugins] Please confirm your email for: {plugins[0].name}"
+    else:
+        subject = (
+            f"[QGIS Plugins] Please confirm your email address ({len(plugins)} plugins)"
+        )
+
+    text_body = render_to_string("plugins/email_confirmation.txt", context)
+    html_body = render_to_string("plugins/email_confirmation.html", context)
+
+    recipients = confirmation.email
+    if settings.DEBUG:
+        if not settings.DEVELOPER_EMAILS:
+            return
+        recipients = settings.DEVELOPER_EMAILS
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=recipients.split(
+            ","
+        ),  # There are some cases where a plugin's email contains multiple comma-separated emails
+    )
+    msg.attach_alternative(html_body, "text/html")
+    msg.send()
+
+    # Tokenless heads-up to the responsible account holders so that a shared or
+    # unmonitored contact mailbox does not silently stall confirmation.  A
+    # failure here must never affect the primary confirmation email above (and
+    # must not propagate to callers, which record PluginEmailConfirmationError).
+    try:
+        notify_editors_of_pending_confirmation(confirmation)
+    except Exception:
+        logging.exception(
+            "Failed to notify editors of pending confirmation for %s",
+            confirmation.email,
+        )
+
+
+def notify_editors_of_pending_confirmation(confirmation):
+    """
+    Send a tokenless heads-up to the account holders responsible for the
+    plugins in *confirmation* (``plugin.editors`` — owners + creator).
+
+    The metadata ``email`` may be a shared organisation mailbox that nobody
+    monitors; this alerts the real, logged-in editors that a confirmation is
+    pending so a human can act on it.  It deliberately carries **no token and
+    no direct confirmation link** — possession of the token remains the only
+    proof of mailbox control — and points editors to the login-gated "Email
+    confirmation pending" button instead.
+
+    One personalised email is sent per editor, scoped to only the plugins that
+    editor actually manages: a single shared address can cover plugins with
+    different editor sets, and the token-entry page is gated on ``editors``.
+    """
+    domain = Site.objects.get_current().domain
+    expires_at = _format_expiry(confirmation.expires_at)
+
+    if settings.DEBUG and not settings.DEVELOPER_EMAILS:
+        return
+
+    # Addresses that already received the token email — don't ping them again.
+    confirmed_addresses = {
+        part.strip().lower() for part in confirmation.email.split(",") if part.strip()
+    }
+
+    # Build editor -> [plugins in this confirmation they can edit].  set() dedupes
+    # editors per plugin (created_by may also be an owner); each plugin is visited
+    # once, so an editor accumulates only the distinct plugins they manage.
+    editor_plugins = defaultdict(list)
+    for plugin in confirmation.plugins.all():
+        for editor in set(plugin.editors):
+            editor_plugins[editor].append(plugin)
+
+    for editor, plugins in editor_plugins.items():
+        email = (editor.email or "").strip()
+        if not email or email.lower() in confirmed_addresses:
+            continue
+
+        plugin_list = [
+            {
+                "name": p.name,
+                "url": f"https://{domain}{p.get_absolute_url()}",
+                "confirm_url": (
+                    f"https://{domain}/plugins/{p.package_name}/confirm-email-token/"
+                ),
+            }
+            for p in plugins
+        ]
+        context = {
+            "email": confirmation.email,
+            "plugins": plugin_list,
+            "expires_at": expires_at,
+            "site_domain": domain,
+        }
+
+        if len(plugins) == 1:
+            subject = (
+                "[QGIS Plugins] Action may be needed: email confirmation pending "
+                f"for {plugins[0].name}"
+            )
+        else:
+            subject = (
+                "[QGIS Plugins] Action may be needed: email confirmation pending "
+                f"for {len(plugins)} plugins you manage"
+            )
+
+        text_body = render_to_string("plugins/email_editor_notification.txt", context)
+        html_body = render_to_string("plugins/email_editor_notification.html", context)
+
+        recipients = [email]
+        if settings.DEBUG:
+            recipients = [
+                part.strip()
+                for part in settings.DEVELOPER_EMAILS.split(",")
+                if part.strip()
+            ]
+
+        try:
+            msg = EmailMultiAlternatives(
+                subject=subject,
+                body=text_body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=recipients,
+            )
+            msg.attach_alternative(html_body, "text/html")
+            msg.send()
+        except Exception:
+            logging.exception(
+                "Failed to send editor confirmation notification to %s", email
+            )
 
 
 def send_mail_with_attachments(
@@ -614,7 +790,9 @@ def plugin_upload(request):
 
                 new_version = PluginVersion(**version_data)
                 new_version.save()
-                msg = _("The Plugin has been successfully uploaded. Security and quality checks are now running asynchronously.")
+                msg = _(
+                    "The Plugin has been successfully uploaded. Security and quality checks are now running asynchronously."
+                )
                 messages.success(request, msg, fail_silently=True)
 
                 # Send Stage 1: Upload confirmation email
@@ -760,9 +938,139 @@ class PluginDetailView(DetailView):
                 "rating": plugin.rating.get_rating(),
                 "votes": plugin.rating.votes,
                 "title": self.title,
+                "email_confirmation": plugin.email_confirmations.filter(
+                    email=plugin.email
+                )
+                .order_by("-sent_at")
+                .first(),
             }
         )
         return context
+
+
+def confirm_plugin_email(request, key):
+    """
+    Handles the one-time email confirmation link sent to a plugin's author email.
+
+    A single click confirms the address for every plugin in the M2M set.
+    No login is required — possession of the token is sufficient proof.
+    """
+    confirmation = get_object_or_404(PluginEmailConfirmation, key=key)
+    plugin_names = list(confirmation.plugins.values_list("name", flat=True))
+
+    if confirmation.is_confirmed:
+        context = {
+            "status": "already_confirmed",
+            "email": confirmation.email,
+            "plugin_names": plugin_names,
+            "confirmed_at": confirmation.confirmed_at,
+        }
+    elif confirmation.is_expired:
+        context = {
+            "status": "expired",
+            "email": confirmation.email,
+            "plugin_names": plugin_names,
+        }
+    else:
+        confirmation.confirm()
+        context = {
+            "status": "confirmed",
+            "email": confirmation.email,
+            "plugin_names": plugin_names,
+        }
+
+    return render(request, "plugins/email_confirmation_result.html", context)
+
+
+@login_required
+def plugin_email_token_confirm(request, package_name):
+    """
+    Presents a form where a logged-in plugin editor can paste the confirmation
+    token from the email they received.  On submit, redirects to the existing
+    confirm_plugin_email view which handles the actual confirmation logic.
+    """
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    if request.user not in plugin.editors and not (
+        request.user.is_staff or request.user.is_superuser
+    ):
+        return render(request, "plugins/plugin_permission_deny.html", {})
+
+    email_confirmation = (
+        plugin.email_confirmations.filter(email=plugin.email)
+        .order_by("-sent_at")
+        .first()
+    )
+
+    if request.method == "POST":
+        token = request.POST.get("token", "").strip()
+        if token:
+            return HttpResponseRedirect(reverse("confirm_plugin_email", args=[token]))
+        return render(
+            request,
+            "plugins/plugin_email_token_confirm.html",
+            {
+                "plugin": plugin,
+                "email_confirmation": email_confirmation,
+                "error": _("Please enter a confirmation token."),
+            },
+        )
+
+    return render(
+        request,
+        "plugins/plugin_email_token_confirm.html",
+        {"plugin": plugin, "email_confirmation": email_confirmation},
+    )
+
+
+@login_required
+def resend_plugin_email_confirmation(request, package_name):
+    """
+    Staff/superuser-only view that creates or replaces a pending email
+    confirmation for a plugin's author email address.
+
+    Any existing unconfirmed confirmation for the same email is deleted first,
+    then a fresh one is created and the email is sent.  All plugins that share
+    the same email address are included (consistent with the management command).
+    """
+    if not (request.user.is_staff or request.user.is_superuser):
+        return render(request, "plugins/plugin_permission_deny.html", {})
+
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+
+    # Delete any existing *pending* confirmation for this email so we always
+    # send a fresh link.
+    PluginEmailConfirmation.objects.filter(
+        email=plugin.email, confirmed_at__isnull=True
+    ).delete()
+
+    # Only approved, non-deleted plugins are eligible for email confirmation,
+    # consistent with the send_email_confirmation management command.
+    all_plugins = list(
+        Plugin.approved_objects.filter(email=plugin.email, is_deleted=False)
+    )
+    confirmation, _created = PluginEmailConfirmation.create_for_email(
+        plugin.email, all_plugins
+    )
+
+    if confirmation is None:
+        msg = _(
+            "No confirmation needed: the email address is already confirmed for all plugins."
+        )
+        messages.info(request, msg, fail_silently=True)
+    else:
+        try:
+            send_confirmation_email(confirmation)
+            msg = _("A confirmation email has been sent to %(email)s.") % {
+                "email": plugin.email
+            }
+            messages.success(request, msg, fail_silently=True)
+        except Exception as exc:
+            msg = _("Failed to send confirmation email: %(error)s") % {
+                "error": str(exc)
+            }
+            messages.error(request, msg, fail_silently=True)
+
+    return HttpResponseRedirect(reverse("plugin_detail", args=(plugin.package_name,)))
 
 
 @login_required
@@ -2382,7 +2690,9 @@ def version_rescan(request, package_name, version):
     version_obj = get_object_or_404(PluginVersion, plugin=plugin, version=version)
 
     if not check_plugin_access(request.user, plugin):
-        msg = _("You do not have permission to trigger a security scan for this plugin.")
+        msg = _(
+            "You do not have permission to trigger a security scan for this plugin."
+        )
         messages.error(request, msg, fail_silently=True)
         return HttpResponseRedirect(version_obj.get_absolute_url())
 
@@ -2401,9 +2711,7 @@ def version_rescan(request, package_name, version):
         ),
         fail_silently=True,
     )
-    return HttpResponseRedirect(
-        version_obj.get_absolute_url() + "#security-tab"
-    )
+    return HttpResponseRedirect(version_obj.get_absolute_url() + "#security-tab")
 
 
 ###############################################
@@ -2474,11 +2782,7 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         filters.update(
-            {
-                "pluginversion__max_qg_version__gte": _add_patch_version(
-                    qg_version, "0"
-                )
-            }
+            {"pluginversion__max_qg_version__gte": _add_patch_version(qg_version, "0")}
         )
         version_filters.update(
             {"max_qg_version__gte": _add_patch_version(qg_version, "0")}
@@ -2602,11 +2906,7 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
             {"min_qg_version__lte": _add_patch_version(qg_version, "99")}
         )
         filters.update(
-            {
-                "pluginversion__max_qg_version__gte": _add_patch_version(
-                    qg_version, "0"
-                )
-            }
+            {"pluginversion__max_qg_version__gte": _add_patch_version(qg_version, "0")}
         )
         version_filters.update(
             {"max_qg_version__gte": _add_patch_version(qg_version, "0")}

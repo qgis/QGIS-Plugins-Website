@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Confirmation Pending — QGIS Plugins Repository</title>
+</head>
+<body style="margin:0;padding:0;
+             font-family:Arial,Helvetica,sans-serif;
+             color:#002033;
+             background-color:#395c6b;">
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="background-color:#395c6b;padding:40px 16px;">
+    <tr>
+      <td align="center" valign="middle">
+
+        <!-- ═══ Card ═══ -->
+        <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0"
+               style="max-width:640px;width:100%;
+                      background-color:#ffffff;
+                      border-radius:8px;
+                      border:1px solid #c8d8e0;
+                      overflow:hidden;">
+
+          <!-- ── Header ── -->
+          <tr>
+            <td style="background-color:#002033;padding:20px 32px;text-align:center;">
+              <p style="margin:0 0 4px;
+                         font-size:11px;color:rgba(255,255,255,0.65);
+                         letter-spacing:2px;text-transform:uppercase;
+                         font-weight:700;">
+                QGIS Plugins Repository
+              </p>
+              <h1 style="margin:0;font-size:21px;color:#ffffff;
+                         font-weight:700;letter-spacing:0.3px;">
+                Email Confirmation Pending
+              </h1>
+            </td>
+          </tr>
+
+          <!-- ── Body ── -->
+          <tr>
+            <td style="padding:36px 40px 28px;">
+
+                    <p style="margin:0 0 18px;font-size:15px;line-height:1.7;
+                               color:#002033;">
+                      Dear Plugin Editor,
+                    </p>
+
+                    <p style="margin:0 0 22px;font-size:15px;line-height:1.7;
+                               color:#4D6370;">
+                      A confirmation request was recently sent to the
+                      <strong style="color:#002033;font-weight:600;">author contact
+                      address</strong> below, which is used by {% if plugins|length == 1 %}a plugin{% else %}<strong style="color:#002033;">{{ plugins|length }} plugins</strong>{% endif %} you manage on the QGIS Plugins Repository:
+                    </p>
+
+                    <!-- Details block — teal left-border, very light teal tint -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                           border="0"
+                           style="background-color:rgba(85,130,139,0.08);
+                                  border-left:4px solid #55828b;
+                                  border-radius:6px;margin:0 0 28px;">
+                      <tr>
+                        <td style="padding:16px 20px;">
+                          <table role="presentation" width="100%" cellpadding="5"
+                                 cellspacing="0" border="0">
+                            <tr>
+                              <td style="font-size:12px;color:#55828b;width:120px;
+                                         font-weight:700;text-transform:uppercase;
+                                         letter-spacing:0.5px;white-space:nowrap;
+                                         vertical-align:top;">
+                                Contact address
+                              </td>
+                              <td style="font-size:14px;color:#002033;
+                                         font-family:monospace;vertical-align:top;">
+                                {{ email }}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="font-size:12px;color:#55828b;
+                                         font-weight:700;text-transform:uppercase;
+                                         letter-spacing:0.5px;white-space:nowrap;
+                                         vertical-align:top;padding-top:10px;">
+                                Your plugin(s)
+                              </td>
+                              <td style="font-size:14px;color:#002033;vertical-align:top;
+                                         padding-top:10px;">
+                                {% for p in plugins %}
+                                <p style="margin:0{% if not forloop.last %} 0 8px{% endif %};line-height:1.5;">
+                                  <strong style="color:#002033;font-weight:600;">{{ p.name }}</strong><br>
+                                  <a href="{{ p.url }}"
+                                     style="color:#3A9800;text-decoration:none;
+                                            font-size:12px;word-break:break-all;">{{ p.url }}</a>
+                                </p>
+                                {% endfor %}
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Why section -->
+                    <p style="margin:0 0 10px;font-size:13px;font-weight:700;
+                               color:#55828b;text-transform:uppercase;
+                               letter-spacing:1px;">
+                      Why am I receiving this?
+                    </p>
+
+                    <p style="margin:0 0 22px;font-size:14px;line-height:1.7;
+                               color:#4D6370;">
+                      The address above may be a <strong style="color:#002033;">shared or
+                      unmonitored mailbox</strong>. We are notifying you directly, as one
+                      of the people responsible for the plugin(s) listed, so that the
+                      request is not missed.
+                    </p>
+
+                    <!-- What to do -->
+                    <p style="margin:0 0 10px;font-size:13px;font-weight:700;
+                               color:#55828b;text-transform:uppercase;
+                               letter-spacing:1px;">
+                      What to do
+                    </p>
+
+                    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;
+                               color:#4D6370;">
+                      Make sure someone with access to
+                      <strong style="color:#002033;">{{ email }}</strong> opens the
+                      confirmation email sent to that address and clicks the link it
+                      contains. Confirming applies to all plugins registered under that
+                      address at once.
+                    </p>
+
+                    <p style="margin:0 0 12px;font-size:15px;line-height:1.7;
+                               color:#4D6370;">
+                      If you have access to that mailbox, you can also confirm from the
+                      website while logged in &mdash; open your plugin page and click the
+                      yellow <strong style="color:#002033;">&#8220;Email confirmation
+                      pending&#8221;</strong> button:
+                    </p>
+
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                           border="0" style="margin:0 0 20px;">
+                      {% for p in plugins %}
+                      <tr>
+                        <td style="padding:0 0 8px;font-size:14px;line-height:1.5;">
+                          <strong style="color:#002033;font-weight:600;">{{ p.name }}</strong><br>
+                          <a href="{{ p.confirm_url }}"
+                             style="color:#3A9800;text-decoration:none;
+                                    font-size:12px;word-break:break-all;">{{ p.confirm_url }}</a>
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </table>
+
+                    <!-- Security note — neutral tint -->
+                    <table role="presentation" width="100%" cellpadding="0"
+                           cellspacing="0" border="0" style="margin:0 0 28px;">
+                      <tr>
+                        <td style="background-color:rgba(0,32,51,0.04);
+                                   border:1px solid rgba(0,32,51,0.12);
+                                   border-radius:6px;padding:12px 18px;font-size:13px;
+                                   color:#4D6370;line-height:1.6;">
+                          For security, this notification does <strong style="color:#002033;">not</strong>
+                          contain the confirmation token or link &mdash; only the email
+                          sent to {{ email }} does.
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Expiry notice — warm amber tint -->
+                    <table role="presentation" width="100%" cellpadding="0"
+                           cellspacing="0" border="0" style="margin:0 0 8px;">
+                      <tr>
+                        <td style="background-color:rgba(238,121,19,0.08);
+                                   border-left:4px solid #ee7913;border-radius:6px;
+                                   padding:12px 18px;font-size:14px;
+                                   color:#002033;line-height:1.6;">
+                          <strong style="color:#ee7913;">&#9888;&nbsp;
+                            This confirmation request is valid until {{ expires_at }}.</strong>
+                          After that date a new request will be required.
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+
+          <!-- ── Footer ── -->
+          <tr>
+            <td style="background-color:#f0f4f6;
+                       border-top:1px solid #c8d8e0;
+                       padding:18px 40px;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#808080;line-height:1.7;">
+                This is an automated message — please do not reply.<br>
+                <a href="https://{{ site_domain }}"
+                   style="color:#3A9800;text-decoration:none;font-weight:600;">
+                  QGIS Plugins Repository
+                </a>
+                &nbsp;·&nbsp; https://{{ site_domain }}
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Card -->
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

@@ -3,6 +3,7 @@
 import datetime
 import os
 import re
+import secrets
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -109,7 +110,7 @@ class NewQgisMajorVersionReadyPlugins(BasePluginManager):
     """
     Shows only public plugins: i.e. those with "approved" flag set
     and with one version that is compatible with the new QGIS major version.
-    This is determined by checking if the max_qg_version is greater 
+    This is determined by checking if the max_qg_version is greater
     than or equal to the new QGIS major version.
     This manager filters out deprecated plugins as well.
     """
@@ -441,9 +442,11 @@ class FeedbackPendingPlugins(models.Manager):
     """
 
     def get_queryset(self):
-        latest_version = PluginVersion.objects.filter(
-            plugin=OuterRef("pk")
-        ).order_by("-created_on").values("approved")[:1]
+        latest_version = (
+            PluginVersion.objects.filter(plugin=OuterRef("pk"))
+            .order_by("-created_on")
+            .values("approved")[:1]
+        )
 
         return (
             super(FeedbackPendingPlugins, self)
@@ -747,6 +750,7 @@ class Plugin(models.Model):
         Soft triggers:
         * updates modified_on if keep_date is not set
         * set maintainer to the plugin creator when not specified
+        * invalidates unconfirmed email confirmations when email changes
         """
         if self.pk and not keep_date:
             import logging
@@ -757,6 +761,24 @@ class Plugin(models.Model):
             self.modified_on = datetime.datetime.now()
         if not self.maintainer:
             self.maintainer = self.created_by
+        if self.pk:
+            try:
+                old_email = Plugin.objects.values_list("email", flat=True).get(
+                    pk=self.pk
+                )
+                if old_email != self.email:
+                    # Remove this plugin from every *pending* confirmation that
+                    # was sent to the old address.  Confirmed records are
+                    # historical and must not be touched.  If the pending
+                    # confirmation has no plugins left afterwards, delete it.
+                    for conf in self.email_confirmations.filter(
+                        email=old_email, confirmed_at__isnull=True
+                    ):
+                        conf.plugins.remove(self)
+                        if not conf.plugins.exists():
+                            conf.delete()
+            except Plugin.DoesNotExist:
+                pass
         super(Plugin, self).save(*args, **kwargs)
 
 
@@ -1296,3 +1318,144 @@ models.signals.post_delete.connect(delete_plugin_icon, sender=Plugin)
 models.signals.post_delete.connect(
     delete_feedback_attachment, sender=PluginVersionFeedbackAttachment
 )
+
+
+PLUGIN_EMAIL_CONFIRMATION_EXPIRY_DAYS = getattr(
+    settings, "PLUGIN_EMAIL_CONFIRMATION_EXPIRY_DAYS", 30
+)
+
+
+class PluginEmailConfirmation(models.Model):
+    """
+    One record per email address per confirmation round.
+
+    ``plugins`` (M2M) lists every plugin whose author email matches this
+    address at the time the confirmation was sent.  When a plugin's email
+    changes, it is removed from the M2M; if no plugins remain, the record
+    is deleted.
+
+    A single ``key`` is the confirmation token — clicking the link in the
+    email confirms the address for all plugins in the M2M at once.
+    """
+
+    email = models.EmailField(
+        _("Email address"),
+        db_index=True,
+        help_text=_("The address being confirmed."),
+    )
+    plugins = models.ManyToManyField(
+        Plugin,
+        related_name="email_confirmations",
+        verbose_name=_("Plugins"),
+    )
+    key = models.CharField(
+        _("Confirmation key"),
+        max_length=64,
+        unique=True,
+        editable=False,
+    )
+    sent_at = models.DateTimeField(_("Sent at"), auto_now_add=True)
+    confirmed_at = models.DateTimeField(_("Confirmed at"), null=True, blank=True)
+    expires_at = models.DateTimeField(_("Expires at"))
+
+    class Meta:
+        verbose_name = _("Plugin Email Confirmation")
+        verbose_name_plural = _("Plugin Email Confirmations")
+        ordering = ["-sent_at"]
+
+    def __str__(self):
+        status = (
+            "confirmed"
+            if self.is_confirmed
+            else ("expired" if self.is_expired else "pending")
+        )
+        count = self.plugins.count()
+        return f"<{self.email}> [{count} plugin(s)] [{status}]"
+
+    @property
+    def is_confirmed(self):
+        return self.confirmed_at is not None
+
+    @property
+    def is_expired(self):
+        return not self.is_confirmed and timezone.now() > self.expires_at
+
+    def confirm(self):
+        """Mark this confirmation as done."""
+        self.confirmed_at = timezone.now()
+        self.save(update_fields=["confirmed_at"])
+
+    @classmethod
+    def create_for_email(cls, email, plugins):
+        """
+        Create (or reuse) a pending confirmation for *email* covering *plugins*.
+
+        Only plugins whose current ``email`` field still matches are included.
+        Returns ``(confirmation, created)``.  If no valid plugins remain,
+        returns ``(None, False)``.  If all valid plugins are already confirmed
+        for this address, also returns ``(None, False)``.
+        """
+        now = timezone.now()
+        expiry = now + datetime.timedelta(days=PLUGIN_EMAIL_CONFIRMATION_EXPIRY_DAYS)
+
+        # Only include plugins whose email still matches what we're confirming.
+        valid_plugins = [p for p in plugins if p.email == email]
+        if not valid_plugins:
+            return None, False
+
+        # If every valid plugin already has a confirmed record for this email, skip.
+        all_confirmed = all(
+            cls.objects.filter(
+                email=email,
+                confirmed_at__isnull=False,
+                plugins=plugin,
+            ).exists()
+            for plugin in valid_plugins
+        )
+        if all_confirmed:
+            return None, False
+
+        # Reuse an existing unexpired pending confirmation for this email.
+        existing = cls.objects.filter(
+            email=email,
+            confirmed_at__isnull=True,
+            expires_at__gt=now,
+        ).first()
+        if existing:
+            existing.plugins.set(valid_plugins)
+            return existing, False
+
+        # Create a fresh confirmation.
+        confirmation = cls.objects.create(
+            email=email,
+            key=secrets.token_urlsafe(48),
+            expires_at=expiry,
+        )
+        confirmation.plugins.set(valid_plugins)
+        return confirmation, True
+
+
+class PluginEmailConfirmationError(models.Model):
+    """
+    Records a failed attempt to send a confirmation email.
+
+    Written by both the management command and the admin action so that
+    errors are queryable and visible in the Django admin without needing
+    to inspect log files or command output.
+    """
+
+    email = models.EmailField(_("Email address"), db_index=True)
+    plugins = models.TextField(
+        _("Plugins"),
+        help_text=_("Comma-separated list of plugin package names."),
+    )
+    error = models.TextField(_("Error message"))
+    occurred_at = models.DateTimeField(_("Occurred at"), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Plugin Email Confirmation Error")
+        verbose_name_plural = _("Plugin Email Confirmation Errors")
+        ordering = ["-occurred_at"]
+
+    def __str__(self):
+        return f"<{self.email}> — {self.occurred_at}"

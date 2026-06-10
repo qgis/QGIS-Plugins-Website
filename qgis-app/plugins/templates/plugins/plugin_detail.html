@@ -223,7 +223,7 @@
                 </div>
                 <p class="plugin-details-description">{{ object.description|linebreaksbr }}</p>
                 <div id="rating"> (<span id="votes">{% firstof votes '0' %}</span>) {% trans "votes" %}&nbsp;<span id="loading" style="display:none">Loading...</span><span id="vote-message" style="display:none"></span></div>
-                <div>
+                <div class="is-flex" style="gap: 0.5rem;">
                         {% with release=object.stable|default:object.experimental %}
                             {% if user.is_staff or user in object.editors %}
                             {% if release %}
@@ -269,7 +269,8 @@
                             {% endif %}
 
                         {% endwith %}
-                    </div>
+                    {% include "plugins/includes/email_confirmation_badge.html" %}
+                </div>
                 <a class="button mt-3" href="{% if object.stable %}{{ object.stable.get_download_url }}{% else %}{{ object.experimental.get_download_url }}{% endif %}">
                     <i class="fas fa-download" style="vertical-align: middle;"></i>&nbsp;{% trans "Download latest" %}
                 </a>
@@ -435,6 +436,7 @@
                         <div class="column is-6">
                             <div class="field">
                                 <label class="label">{% trans "Author's email" %}:</label>
+                                <div>{% include "plugins/includes/email_confirmation_badge.html" %}</div>
                                 <div class="control truncate">
                                     <a href="mailto:{{ object.email }}">{{ object.email }}</a>
                                 </div>
@@ -619,7 +621,7 @@
                                             {% if user.is_staff or user in object.editors %}
                                                 {% with security_scan=version.security_scan %}
                                                     {% if security_scan.overall_status == 'passed' %}
-                                                        <a 
+                                                        <a
                                                             href="{{ version.get_absolute_url }}#security-tab"
                                                             title="{% trans "Security scan passed (latest)" %}"
                                                             class="button is-small is-success">
@@ -628,7 +630,7 @@
                                                             </span>
                                                         </a>
                                                     {% elif security_scan.overall_status == 'critical' %}
-                                                        <a 
+                                                        <a
                                                             href="{{ version.get_absolute_url }}#security-tab"
                                                             title="{% trans "Critical security issues found (latest)" %}"
                                                             class="button is-small is-danger">
@@ -637,7 +639,7 @@
                                                             </span>
                                                         </a>
                                                     {% elif security_scan.overall_status == 'warning' %}
-                                                        <a 
+                                                        <a
                                                             href="{{ version.get_absolute_url }}#security-tab"
                                                             title="{% trans "Potential security issues found (latest)" %}"
                                                             class="button is-small is-warning">
@@ -646,7 +648,7 @@
                                                             </span>
                                                         </a>
                                                     {% elif security_scan.overall_status == 'info' %}
-                                                        <a 
+                                                        <a
                                                             href="{{ version.get_absolute_url }}#security-tab"
                                                             title="{% trans "Scanned with informational items (latest)" %}"
                                                             class="button is-small is-info">
@@ -655,7 +657,7 @@
                                                             </span>
                                                         </a>
                                                     {% else %}
-                                                        <a 
+                                                        <a
                                                             href="{{ version.get_absolute_url }}#security-tab"
                                                             title="{% trans "Security status unknown (latest)" %}"
                                                             class="button is-small is-outlined">
