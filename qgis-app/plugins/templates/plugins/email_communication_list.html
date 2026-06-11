@@ -59,11 +59,6 @@
                     </a>
                 </th>
                 <th>
-                    <a href="?sort=recipient_count&amp;order={% if sort == 'recipient_count' and order == 'asc' %}desc{% else %}asc{% endif %}{% if base_query %}&amp;{{ base_query }}{% endif %}">
-                        {% trans "Recipients" %}{% if sort == 'recipient_count' %} <i class="fas fa-caret-{% if order == 'asc' %}up{% else %}down{% endif %}"></i>{% endif %}
-                    </a>
-                </th>
-                <th>
                     <a href="?sort=status&amp;order={% if sort == 'status' and order == 'asc' %}desc{% else %}asc{% endif %}{% if base_query %}&amp;{{ base_query }}{% endif %}">
                         {% trans "Status" %}{% if sort == 'status' %} <i class="fas fa-caret-{% if order == 'asc' %}up{% else %}down{% endif %}"></i>{% endif %}
                     </a>
@@ -76,7 +71,6 @@
                 <td><a href="{% url 'plugin_email_communication_detail' c.pk %}">{{ c.subject }}</a></td>
                 <td>{% if c.created_by %}{{ c.created_by.get_full_name|default:c.created_by.username }}{% else %}&mdash;{% endif %}</td>
                 <td>{{ c.sent_at|default:c.created_at }}</td>
-                <td>{{ c.recipient_count }}</td>
                 <td>{{ c.get_status_display }}</td>
             </tr>
             {% endfor %}
