@@ -7,6 +7,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from plugins.models import (
     Plugin,
+    PluginEmailCommunication,
     PluginOutstandingToken,
     PluginVersion,
 )
@@ -373,3 +374,18 @@ class PluginTokenForm(ModelForm):
     class Meta:
         model = PluginOutstandingToken
         fields = ("description",)
+
+
+class EmailCommunicationForm(ModelForm):
+    """
+    Superuser-composed news/announcement to broadcast to confirmed plugin
+    contacts and their collaborators.
+    """
+
+    class Meta:
+        model = PluginEmailCommunication
+        fields = ("subject", "body")
+        widgets = {
+            "subject": forms.TextInput(attrs={"class": "input"}),
+            "body": forms.Textarea(attrs={"class": "textarea", "rows": 12}),
+        }

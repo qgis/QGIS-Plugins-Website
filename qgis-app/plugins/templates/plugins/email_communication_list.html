@@ -1,0 +1,91 @@
+{% extends 'plugins/plugin_base.html' %}
+{% load i18n %}
+{% block content %}
+<div class="box-content">
+    <div class="level">
+        <div class="level-left">
+            <div class="level-item">
+                <h2 class="title is-4">{% trans "Email communications" %}</h2>
+            </div>
+        </div>
+        <div class="level-right">
+            <div class="level-item">
+                <a class="button is-success" href="{% url 'plugin_email_communicate' %}">
+                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                    <span>{% trans "Compose new" %}</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <form method="get" class="mb-4">
+        <div class="field has-addons">
+            <div class="control is-expanded">
+                <input class="input" type="text" name="q" value="{{ q }}"
+                       placeholder="{% trans 'Search subject, message or author' %}">
+            </div>
+            <div class="control">
+                <div class="select">
+                    <select name="status">
+                        <option value="">{% trans "All statuses" %}</option>
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="control">
+                <button class="button is-info" type="submit">
+                    <span class="icon"><i class="fas fa-search"></i></span>
+                    <span>{% trans "Search" %}</span>
+                </button>
+            </div>
+        </div>
+    </form>
+
+    {% if page_obj.object_list %}
+    <table class="table is-fullwidth is-striped is-hoverable">
+        <thead>
+            <tr>
+                <th>
+                    <a href="?sort=subject&amp;order={% if sort == 'subject' and order == 'asc' %}desc{% else %}asc{% endif %}{% if base_query %}&amp;{{ base_query }}{% endif %}">
+                        {% trans "Subject" %}{% if sort == 'subject' %} <i class="fas fa-caret-{% if order == 'asc' %}up{% else %}down{% endif %}"></i>{% endif %}
+                    </a>
+                </th>
+                <th>{% trans "Author" %}</th>
+                <th>
+                    <a href="?sort=created_at&amp;order={% if sort == 'created_at' and order == 'asc' %}desc{% else %}asc{% endif %}{% if base_query %}&amp;{{ base_query }}{% endif %}">
+                        {% trans "Date" %}{% if sort == 'created_at' %} <i class="fas fa-caret-{% if order == 'asc' %}up{% else %}down{% endif %}"></i>{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort=recipient_count&amp;order={% if sort == 'recipient_count' and order == 'asc' %}desc{% else %}asc{% endif %}{% if base_query %}&amp;{{ base_query }}{% endif %}">
+                        {% trans "Recipients" %}{% if sort == 'recipient_count' %} <i class="fas fa-caret-{% if order == 'asc' %}up{% else %}down{% endif %}"></i>{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort=status&amp;order={% if sort == 'status' and order == 'asc' %}desc{% else %}asc{% endif %}{% if base_query %}&amp;{{ base_query }}{% endif %}">
+                        {% trans "Status" %}{% if sort == 'status' %} <i class="fas fa-caret-{% if order == 'asc' %}up{% else %}down{% endif %}"></i>{% endif %}
+                    </a>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in page_obj %}
+            <tr>
+                <td><a href="{% url 'plugin_email_communication_detail' c.pk %}">{{ c.subject }}</a></td>
+                <td>{% if c.created_by %}{{ c.created_by.get_full_name|default:c.created_by.username }}{% else %}&mdash;{% endif %}</td>
+                <td>{{ c.sent_at|default:c.created_at }}</td>
+                <td>{{ c.recipient_count }}</td>
+                <td>{{ c.get_status_display }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% include "plugins/list_pagination.html" %}
+    {% else %}
+        <p class="has-text-grey">{% trans "No communications found." %}</p>
+    {% endif %}
+</div>
+{% endblock %}

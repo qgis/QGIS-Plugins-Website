@@ -15,6 +15,7 @@ from django.contrib.gis.geoip2 import GeoIP2
 from django.contrib.sites.models import Site
 from django.core.exceptions import FieldDoesNotExist
 from django.core.mail import EmailMessage, EmailMultiAlternatives, send_mail
+from django.core.paginator import Paginator
 from django.db import IntegrityError, connection, transaction
 from django.db.models import Q
 from django.db.models.expressions import RawSQL
@@ -43,6 +44,7 @@ from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_VALIDATING,
     Plugin,
+    PluginEmailCommunication,
     PluginEmailConfirmation,
     PluginOutstandingToken,
     PluginVersion,
@@ -68,8 +70,13 @@ except ImportError:
 
 # Decorator
 staff_required = user_passes_test(lambda u: u.is_staff)
+superuser_required = user_passes_test(lambda u: u.is_superuser)
 from plugins.tasks.generate_plugins_xml import generate_plugins_xml
 from plugins.tasks.run_security_scan import run_security_scan_task
+from plugins.tasks.send_email_communication import (
+    get_communication_recipients,
+    send_email_communication,
+)
 
 # Plugin Notification Recipients Group Name
 NOTIFICATION_RECIPIENTS_GROUP_NAME = settings.NOTIFICATION_RECIPIENTS_GROUP_NAME
@@ -946,6 +953,121 @@ class PluginDetailView(DetailView):
             }
         )
         return context
+
+
+# Columns the communication list can be sorted by (maps 1:1 to model fields).
+COMMUNICATION_SORT_FIELDS = {"subject", "created_at", "recipient_count", "status"}
+
+
+@superuser_required
+def plugin_email_communicate(request):
+    """
+    Superuser-only form to compose and queue a news/announcement email to every
+    confirmed plugin contact address and the account emails of those plugins'
+    collaborators.  Sending is handed off to Celery.
+    """
+    recipient_count = len(get_communication_recipients())
+
+    if request.method == "POST":
+        form = EmailCommunicationForm(request.POST)
+        if form.is_valid():
+            communication = form.save(commit=False)
+            communication.created_by = request.user
+            communication.status = PluginEmailCommunication.STATUS_QUEUED
+            communication.save()
+            send_email_communication.delay(communication.pk)
+            messages.success(
+                request,
+                _(
+                    "Your message has been queued and will be sent to "
+                    "%(count)s recipient(s)."
+                )
+                % {"count": recipient_count},
+                fail_silently=True,
+            )
+            return HttpResponseRedirect(reverse("plugin_email_communication_list"))
+    else:
+        form = EmailCommunicationForm()
+
+    return render(
+        request,
+        "plugins/email_communicate.html",
+        {"form": form, "recipient_count": recipient_count},
+    )
+
+
+@superuser_required
+def plugin_email_communication_list(request):
+    """
+    Superuser-only paginated list of past email communications, with free-text
+    search, status filtering and column sorting.
+    """
+    qs = PluginEmailCommunication.objects.select_related("created_by")
+
+    search = request.GET.get("q", "").strip()
+    if search:
+        qs = qs.filter(
+            Q(subject__icontains=search)
+            | Q(body__icontains=search)
+            | Q(created_by__username__icontains=search)
+        )
+
+    status = request.GET.get("status", "").strip()
+    valid_statuses = {choice[0] for choice in PluginEmailCommunication.STATUS_CHOICES}
+    if status in valid_statuses:
+        qs = qs.filter(status=status)
+
+    sort = request.GET.get("sort", "created_at")
+    if sort not in COMMUNICATION_SORT_FIELDS:
+        sort = "created_at"
+    order = request.GET.get("order", "desc")
+    if order not in ("asc", "desc"):
+        order = "desc"
+    qs = qs.order_by(("-" if order == "desc" else "") + sort)
+
+    try:
+        per_page = min(int(request.GET.get("per_page", 20)), 100)
+    except ValueError:
+        per_page = 20
+    paginator = Paginator(qs, per_page)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    # Preserve filters across pagination links; base_query drops sort/order so
+    # column headers can set a fresh sort while keeping search/status.
+    preserved = request.GET.copy()
+    preserved.pop("page", None)
+    base = request.GET.copy()
+    for key in ("page", "sort", "order"):
+        base.pop(key, None)
+
+    return render(
+        request,
+        "plugins/email_communication_list.html",
+        {
+            "page_obj": page_obj,
+            "is_paginated": page_obj.has_other_pages(),
+            "paginator": paginator,
+            "current_querystring": preserved.urlencode(),
+            "current_sort_query": "",
+            "base_query": base.urlencode(),
+            "q": search,
+            "status": status,
+            "sort": sort,
+            "order": order,
+            "status_choices": PluginEmailCommunication.STATUS_CHOICES,
+        },
+    )
+
+
+@superuser_required
+def plugin_email_communication_detail(request, pk):
+    """Superuser-only view of a single past communication's full content."""
+    communication = get_object_or_404(PluginEmailCommunication, pk=pk)
+    return render(
+        request,
+        "plugins/email_communication_detail.html",
+        {"communication": communication},
+    )
 
 
 def confirm_plugin_email(request, key):
