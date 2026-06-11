@@ -1,5 +1,6 @@
 {% load i18n %}
 {% if user.is_staff or user in object.editors %}
+{% if object.approved %}
     {% if email_confirmation and email_confirmation.is_confirmed %}
         <div class="tooltip">
             <span class="button is-small is-rounded is-success" style="pointer-events:none;">
@@ -33,4 +34,5 @@
             <span class="tooltiptext">{% trans "No confirmation request found. Contact the site administrator." %}</span>
         </div>
     {% endif %}
+{% endif %}
 {% endif %}
