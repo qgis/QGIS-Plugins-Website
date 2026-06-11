@@ -21,7 +21,7 @@ ACTION REQUIRED
 To confirm that this address is still active and that you are
 associated with the plugin(s) listed above, you have two options:
 
-OPTION 1 — Confirm via the website (recommended):
+OPTION 1 — Confirm via the website:
 
   1. Log in to your account at https://{{ site_domain }}
   2. Navigate to your plugin page and click the yellow
