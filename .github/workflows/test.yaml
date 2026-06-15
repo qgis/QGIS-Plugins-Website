@@ -3,9 +3,11 @@ on:
   pull_request:
     branches:
       - master
+      - deploy-prod
   push:
     branches:
       - master
+      - deploy-prod
 jobs:
   lint:
     runs-on: ubuntu-latest
