@@ -15,9 +15,10 @@ from django.contrib.sites.models import Site
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils import timezone
+from plugins.models import PluginEmailConfirmation
 
 
-def _format_expiry(value):
+def _format_expiry(value: datetime.datetime) -> str:
     """
     Format a confirmation-expiry datetime in UTC with an explicit zone label.
 
@@ -31,7 +32,7 @@ def _format_expiry(value):
     return value.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M %Z")
 
 
-def send_confirmation_email(confirmation):
+def send_confirmation_email(confirmation: PluginEmailConfirmation) -> None:
     """
     Send one HTML+plaintext confirmation email for a PluginEmailConfirmation.
     Builds the plugin list from the M2M relation.
@@ -88,12 +89,13 @@ def send_confirmation_email(confirmation):
         notify_editors_of_pending_confirmation(confirmation)
     except Exception:
         logging.exception(
-            "Failed to notify editors of pending confirmation for %s",
-            confirmation.email,
+            f"Failed to notify editors of pending confirmation for {confirmation.email}"
         )
 
 
-def notify_editors_of_pending_confirmation(confirmation):
+def notify_editors_of_pending_confirmation(
+    confirmation: PluginEmailConfirmation,
+) -> None:
     """
     Send a tokenless heads-up to the account holders responsible for the
     plugins in *confirmation* (``plugin.editors`` — owners + creator).
@@ -183,5 +185,5 @@ def notify_editors_of_pending_confirmation(confirmation):
             msg.send()
         except Exception:
             logging.exception(
-                "Failed to send editor confirmation notification to %s", email
+                f"Failed to send editor confirmation notification to {email}"
             )

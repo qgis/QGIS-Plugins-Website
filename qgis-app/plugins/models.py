@@ -783,6 +783,8 @@ class Plugin(models.Model):
                 pass
         super(Plugin, self).save(*args, **kwargs)
         if email_changed and self.email:
+            # Inline import: trigger_email_confirmation imports Plugin from this module,
+            # so a top-level import would create a circular dependency.
             from plugins.tasks.trigger_email_confirmation import (
                 check_and_send_confirmation,
             )

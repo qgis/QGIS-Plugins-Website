@@ -27,6 +27,7 @@ from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_VALIDATED,
     PluginVersion,
+    PluginVersionSecurityScan,
 )
 from plugins.security_utils import run_security_scan
 from plugins.tasks.trigger_email_confirmation import check_and_send_confirmation
@@ -123,7 +124,7 @@ def _fire_confirmation_task(plugin_id: int):
     transaction.on_commit(lambda: check_and_send_confirmation.delay(plugin_id))
 
 
-def _auto_approve_if_trusted(plugin_version):
+def _auto_approve_if_trusted(plugin_version: PluginVersion) -> None:
     """
     Auto-approve the version if the uploader is trusted or the plugin
     already has at least one approved version.
@@ -140,7 +141,9 @@ def _auto_approve_if_trusted(plugin_version):
         )
 
 
-def _send_validation_results_email(plugin_version, security_scan):
+def _send_validation_results_email(
+    plugin_version: PluginVersion, security_scan: PluginVersionSecurityScan | None
+) -> None:
     """
     Send Stage 2 email: validation results to the plugin maintainer(s).
     """
@@ -220,7 +223,7 @@ Security best practices: {docs_url}
         logger.error(f"Failed to send validation results email: {e}")
 
 
-def _build_critical_issues_text(security_scan):
+def _build_critical_issues_text(security_scan: PluginVersionSecurityScan) -> str:
     """Build a text summary of critical issues from the scan report."""
     lines = []
     for check in security_scan.scan_report.get("checks", []):
@@ -237,7 +240,7 @@ def _build_critical_issues_text(security_scan):
     return "\n".join(lines) if lines else "No details available."
 
 
-def _notify_staff_for_review(plugin_version):
+def _notify_staff_for_review(plugin_version: PluginVersion) -> None:
     """
     Notify staff approvers that a plugin is ready for review
     (equivalent to version_notify but triggered from the task).

@@ -26,7 +26,7 @@ from plugins.tasks.trigger_email_confirmation import (
 # ---------------------------------------------------------------------------
 
 
-def make_plugin(creator, package_name, email, **kwargs):
+def make_plugin(creator: User, package_name: str, email: str, **kwargs) -> Plugin:
     return Plugin.objects.create(
         created_by=creator,
         package_name=package_name,
@@ -39,7 +39,9 @@ def make_plugin(creator, package_name, email, **kwargs):
     )
 
 
-def make_approved_plugin(creator, package_name, email, **kwargs):
+def make_approved_plugin(
+    creator: User, package_name: str, email: str, **kwargs
+) -> Plugin:
     plugin = make_plugin(creator, package_name, email, **kwargs)
     PluginVersion.objects.create(
         plugin=plugin,
@@ -53,7 +55,9 @@ def make_approved_plugin(creator, package_name, email, **kwargs):
     return plugin
 
 
-def make_confirmed_confirmation(email, plugins):
+def make_confirmed_confirmation(
+    email: str, plugins: list[Plugin]
+) -> PluginEmailConfirmation:
     conf = PluginEmailConfirmation.objects.create(
         email=email,
         key=f"confirmed-{email}",
@@ -64,7 +68,7 @@ def make_confirmed_confirmation(email, plugins):
     return conf
 
 
-def make_expired_pending(email, plugins):
+def make_expired_pending(email: str, plugins: list[Plugin]) -> PluginEmailConfirmation:
     conf = PluginEmailConfirmation.objects.create(
         email=email,
         key=f"expired-{email}",

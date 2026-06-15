@@ -21,7 +21,7 @@ logger = get_task_logger(__name__)
 
 
 @shared_task
-def check_and_send_confirmation(plugin_pk):
+def check_and_send_confirmation(plugin_pk: int) -> None:
     """
     Send an email confirmation for *plugin_pk* if its current email address
     has not yet been confirmed.
@@ -37,7 +37,7 @@ def check_and_send_confirmation(plugin_pk):
             .get(pk=plugin_pk)
         )
     except Plugin.DoesNotExist:
-        logger.warning("check_and_send_confirmation: plugin pk=%s not found", plugin_pk)
+        logger.warning(f"check_and_send_confirmation: plugin pk={plugin_pk} not found")
         return
 
     if not plugin.email:
@@ -53,23 +53,20 @@ def check_and_send_confirmation(plugin_pk):
         if created:
             send_confirmation_email(confirmation)
             logger.info(
-                "Sent confirmation email for plugin %s to <%s>",
-                plugin.package_name,
-                plugin.email,
+                f"Sent confirmation email for plugin {plugin.package_name} to <{plugin.email}>"
             )
         else:
             logger.debug(
-                "Skipped confirmation for plugin %s (already confirmed or pending)",
-                plugin.package_name,
+                f"Skipped confirmation for plugin {plugin.package_name} (already confirmed or pending)"
             )
     except Exception:
         logger.exception(
-            "check_and_send_confirmation failed for plugin pk=%s", plugin_pk
+            f"check_and_send_confirmation failed for plugin pk={plugin_pk}"
         )
 
 
 @shared_task
-def send_pending_email_confirmations():
+def send_pending_email_confirmations() -> dict:
     """
     Periodic sweep: expire stale pending tokens, then send fresh confirmations
     to every approved, non-deleted plugin whose email is still unconfirmed.
@@ -87,7 +84,7 @@ def send_pending_email_confirmations():
     expired_count = expired.count()
     expired.delete()
     if expired_count:
-        logger.info("Deleted %d expired pending confirmation(s)", expired_count)
+        logger.info(f"Deleted {expired_count} expired pending confirmation(s)")
 
     # Group all active plugins by email address.
     qs = Plugin.approved_objects.filter(is_deleted=False).exclude(email="")
@@ -107,13 +104,11 @@ def send_pending_email_confirmations():
         try:
             send_confirmation_email(confirmation)
             logger.info(
-                "Periodic: sent confirmation to <%s> (%d plugin(s))",
-                email,
-                len(plugins),
+                f"Periodic: sent confirmation to <{email}> ({len(plugins)} plugin(s))"
             )
             sent += 1
         except Exception as exc:
-            logger.exception("Periodic: failed to send to <%s>: %s", email, exc)
+            logger.exception(f"Periodic: failed to send to <{email}>: {exc}")
             PluginEmailConfirmationError.objects.create(
                 email=email,
                 plugins=", ".join(p.package_name for p in plugins),
@@ -122,9 +117,6 @@ def send_pending_email_confirmations():
             errors += 1
 
     logger.info(
-        "send_pending_email_confirmations done — sent=%d skipped=%d errors=%d",
-        sent,
-        skipped,
-        errors,
+        f"send_pending_email_confirmations done — sent={sent} skipped={skipped} errors={errors}"
     )
     return {"sent": sent, "skipped": skipped, "errors": errors}
