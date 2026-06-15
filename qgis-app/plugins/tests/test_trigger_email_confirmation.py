@@ -272,13 +272,15 @@ class TestVersionApproveHook(SetupMixin, TestCase):
         plugin, version = self._make_approvable_version(
             "vah-plugin-a", "vah@example.com"
         )
-        request = self.factory.get(
+        # version_approve requires POST (@require_POST) and staff login (@login_required)
+        request = self.factory.post(
             f"/plugins/{plugin.package_name}/{version.version}/approve/"
         )
         request.user = self.staff
 
         with (
             patch("plugins.views.check_and_send_confirmation.delay") as mock_delay,
+            patch("plugins.views.plugin_approve_notify"),
             self.captureOnCommitCallbacks(execute=True),
         ):
             version_approve(request, plugin.package_name, version.version)

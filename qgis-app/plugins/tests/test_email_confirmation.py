@@ -532,7 +532,7 @@ class TestEditorNotificationBackstop(SetupMixin, TestCase):
             "author@example.com", [self.plugin_a]
         )
         with patch(
-            "plugins.views.notify_editors_of_pending_confirmation",
+            "plugins.email_utils.notify_editors_of_pending_confirmation",
             side_effect=Exception("boom"),
         ):
             send_confirmation_email(conf)  # must not raise
