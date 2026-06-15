@@ -1459,3 +1459,52 @@ class PluginEmailConfirmationError(models.Model):
 
     def __str__(self):
         return f"<{self.email}> — {self.occurred_at}"
+
+
+class PluginEmailCommunication(models.Model):
+    """
+    A one-off news/announcement broadcast composed by a superuser and sent
+    (BCC, asynchronously) to every confirmed plugin contact address plus the
+    account emails of those plugins' collaborators.
+
+    Stored for audit (what was sent, when, to how many) and used as the
+    payload for the Celery send task.
+    """
+
+    STATUS_QUEUED = "queued"
+    STATUS_SENT = "sent"
+    STATUS_FAILED = "failed"
+    STATUS_CHOICES = [
+        (STATUS_QUEUED, _("Queued")),
+        (STATUS_SENT, _("Sent")),
+        (STATUS_FAILED, _("Failed")),
+    ]
+
+    subject = models.CharField(_("Subject"), max_length=255)
+    body = models.TextField(_("Message"))
+    created_by = models.ForeignKey(
+        User,
+        verbose_name=_("Created by"),
+        related_name="email_communications",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(_("Created at"), auto_now_add=True)
+    sent_at = models.DateTimeField(_("Sent at"), null=True, blank=True)
+    recipient_count = models.PositiveIntegerField(_("Recipient count"), default=0)
+    status = models.CharField(
+        _("Status"),
+        max_length=16,
+        choices=STATUS_CHOICES,
+        default=STATUS_QUEUED,
+    )
+    error = models.TextField(_("Error message"), blank=True, default="")
+
+    class Meta:
+        verbose_name = _("Plugin Email Communication")
+        verbose_name_plural = _("Plugin Email Communications")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.subject} [{self.status}] ({self.recipient_count} recipients)"
