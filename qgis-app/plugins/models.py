@@ -7,7 +7,7 @@ import secrets
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count, F, OuterRef, Subquery
 from django.urls import reverse
 from django.utils import timezone
@@ -761,12 +761,14 @@ class Plugin(models.Model):
             self.modified_on = datetime.datetime.now()
         if not self.maintainer:
             self.maintainer = self.created_by
+        email_changed = False
         if self.pk:
             try:
                 old_email = Plugin.objects.values_list("email", flat=True).get(
                     pk=self.pk
                 )
                 if old_email != self.email:
+                    email_changed = True
                     # Remove this plugin from every *pending* confirmation that
                     # was sent to the old address.  Confirmed records are
                     # historical and must not be touched.  If the pending
@@ -780,6 +782,12 @@ class Plugin(models.Model):
             except Plugin.DoesNotExist:
                 pass
         super(Plugin, self).save(*args, **kwargs)
+        if email_changed and self.email:
+            from plugins.tasks.trigger_email_confirmation import (
+                check_and_send_confirmation,
+            )
+
+            transaction.on_commit(lambda: check_and_send_confirmation.delay(self.pk))
 
 
 # Plugin version managers
