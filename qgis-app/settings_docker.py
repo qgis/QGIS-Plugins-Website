@@ -207,6 +207,12 @@ CELERY_BEAT_SCHEDULE = {
             minute=0, hour=4, day_of_month=1
         ),  # 04:00 on 1st of every month
     },
+    "send_anniversary_reverifications": {
+        "task": "plugins.tasks.trigger_annual_reverification.send_anniversary_reverifications",
+        "schedule": crontab(
+            minute=30, hour=4
+        ),  # 04:30 daily, staggered by first-publish anniversary
+    },
 }
 # Set plugin token access and refresh validity to a very long duration
 SIMPLE_JWT = {

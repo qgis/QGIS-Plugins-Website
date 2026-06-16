@@ -107,11 +107,29 @@ class TestCheckAndSendConfirmation(SetupMixin, TestCase):
         mock_send.assert_not_called()
 
     @patch("plugins.tasks.trigger_email_confirmation.send_confirmation_email")
-    def test_skips_if_not_approved(self, mock_send):
+    def test_skips_if_no_validated_or_approved_version(self, mock_send):
         plugin = make_plugin(self.creator, "tce-plugin-c", "c@example.com")
-        # No approved version — Plugin.approved_objects excludes it
+        # No version at all — neither approved nor available
         check_and_send_confirmation(plugin.pk)
         mock_send.assert_not_called()
+
+    @patch("plugins.tasks.trigger_email_confirmation.send_confirmation_email")
+    def test_sends_for_validated_but_not_yet_approved(self, mock_send):
+        # Confirmation must go out before manual approval, so a validated
+        # (available) but unapproved version is enough to trigger the send.
+        plugin = make_plugin(self.creator, "tce-plugin-f", "f@example.com")
+        PluginVersion.objects.create(
+            plugin=plugin,
+            created_by=self.creator,
+            min_qg_version="3.0.0",
+            max_qg_version="3.99.99",
+            version="1.0",
+            approved=False,
+            external_deps="",
+            validation_status="validated",
+        )
+        check_and_send_confirmation(plugin.pk)
+        mock_send.assert_called_once()
 
     @patch("plugins.tasks.trigger_email_confirmation.send_confirmation_email")
     def test_skips_if_email_empty(self, mock_send):
@@ -242,11 +260,11 @@ class TestEmailChangeHook(SetupMixin, TestCase):
 
 
 # ---------------------------------------------------------------------------
-# version_approve() view hook
+# version_approve() email-verification gate
 # ---------------------------------------------------------------------------
 
 
-class TestVersionApproveHook(SetupMixin, TestCase):
+class TestVersionApproveGate(SetupMixin, TestCase):
     def setUp(self):
         super().setUp()
         self.staff = User.objects.get(id=1)  # fixture superuser
@@ -266,23 +284,157 @@ class TestVersionApproveHook(SetupMixin, TestCase):
         )
         return plugin, version
 
-    def test_task_queued_after_manual_approval(self):
+    def _approve(self, plugin, version):
         from plugins.views import version_approve
 
-        plugin, version = self._make_approvable_version(
-            "vah-plugin-a", "vah@example.com"
-        )
-        # version_approve requires POST (@require_POST) and staff login (@login_required)
         request = self.factory.post(
             f"/plugins/{plugin.package_name}/{version.version}/approve/"
         )
         request.user = self.staff
+        with patch("plugins.views.plugin_approve_notify"):
+            return version_approve(request, plugin.package_name, version.version)
 
-        with (
-            patch("plugins.views.check_and_send_confirmation.delay") as mock_delay,
-            patch("plugins.views.plugin_approve_notify"),
-            self.captureOnCommitCallbacks(execute=True),
-        ):
-            version_approve(request, plugin.package_name, version.version)
+    def test_blocks_approval_when_email_unconfirmed(self):
+        plugin, version = self._make_approvable_version(
+            "vag-plugin-a", "vag-a@example.com"
+        )
+        self._approve(plugin, version)
+        version.refresh_from_db()
+        self.assertFalse(version.approved)
 
-        mock_delay.assert_called_once_with(plugin.pk)
+    def test_allows_approval_when_email_confirmed(self):
+        plugin, version = self._make_approvable_version(
+            "vag-plugin-b", "vag-b@example.com"
+        )
+        make_confirmed_confirmation("vag-b@example.com", [plugin])
+        self._approve(plugin, version)
+        version.refresh_from_db()
+        self.assertTrue(version.approved)
+
+
+# ---------------------------------------------------------------------------
+# Plugin model helpers
+# ---------------------------------------------------------------------------
+
+
+class TestPluginEmailHelpers(SetupMixin, TestCase):
+    def test_is_email_confirmed_true_when_confirmed(self):
+        plugin = make_approved_plugin(self.creator, "peh-plugin-a", "peh-a@example.com")
+        make_confirmed_confirmation("peh-a@example.com", [plugin])
+        self.assertTrue(plugin.is_email_confirmed)
+
+    def test_is_email_confirmed_false_when_only_pending(self):
+        plugin = make_approved_plugin(self.creator, "peh-plugin-b", "peh-b@example.com")
+        make_expired_pending("peh-b@example.com", [plugin])
+        self.assertFalse(plugin.is_email_confirmed)
+
+    def test_is_email_confirmed_false_when_no_email(self):
+        plugin = make_approved_plugin(self.creator, "peh-plugin-c", "")
+        self.assertFalse(plugin.is_email_confirmed)
+
+    def test_first_published_on_is_earliest_approved_version(self):
+        plugin = make_plugin(self.creator, "peh-plugin-d", "peh-d@example.com")
+        early = PluginVersion.objects.create(
+            plugin=plugin,
+            created_by=self.creator,
+            min_qg_version="3.0.0",
+            max_qg_version="3.99.99",
+            version="1.0",
+            approved=True,
+            external_deps="",
+        )
+        PluginVersion.objects.create(
+            plugin=plugin,
+            created_by=self.creator,
+            min_qg_version="3.0.0",
+            max_qg_version="3.99.99",
+            version="2.0",
+            approved=True,
+            external_deps="",
+        )
+        self.assertEqual(plugin.first_published_on, early.created_on)
+
+    def test_first_published_on_none_when_unapproved(self):
+        plugin = make_plugin(self.creator, "peh-plugin-e", "peh-e@example.com")
+        PluginVersion.objects.create(
+            plugin=plugin,
+            created_by=self.creator,
+            min_qg_version="3.0.0",
+            max_qg_version="3.99.99",
+            version="1.0",
+            approved=False,
+            external_deps="",
+        )
+        self.assertIsNone(plugin.first_published_on)
+
+
+# ---------------------------------------------------------------------------
+# Annual anniversary re-verification
+# ---------------------------------------------------------------------------
+
+
+class TestAnniversaryReverification(SetupMixin, TestCase):
+    def _set_first_published(self, plugin, when):
+        # created_on is auto_now_add; set it directly on the approved version.
+        plugin.pluginversion_set.update(created_on=when)
+
+    @staticmethod
+    def _anniversary_today():
+        # A datetime in a prior year sharing today's month/day.
+        now_dt = timezone.now()
+        return now_dt.replace(year=now_dt.year - 1, hour=12, minute=0, second=0, microsecond=0)
+
+    @patch("plugins.tasks.trigger_annual_reverification.send_confirmation_email")
+    def test_reverifies_even_already_confirmed_and_keeps_history(self, mock_send):
+        from plugins.tasks.trigger_annual_reverification import (
+            send_anniversary_reverifications,
+        )
+
+        plugin = make_approved_plugin(self.creator, "anv-plugin-a", "anv-a@example.com")
+        self._set_first_published(plugin, self._anniversary_today())
+        old = make_confirmed_confirmation("anv-a@example.com", [plugin])
+
+        result = send_anniversary_reverifications()
+
+        mock_send.assert_called_once()
+        self.assertEqual(result["sent"], 1)
+        # Old confirmed record kept as history; a new pending record now exists.
+        self.assertTrue(
+            PluginEmailConfirmation.objects.filter(pk=old.pk).exists()
+        )
+        self.assertEqual(
+            PluginEmailConfirmation.objects.filter(email="anv-a@example.com").count(),
+            2,
+        )
+
+    @patch("plugins.tasks.trigger_annual_reverification.send_confirmation_email")
+    def test_skips_non_anniversary_plugins(self, mock_send):
+        from plugins.tasks.trigger_annual_reverification import (
+            send_anniversary_reverifications,
+        )
+
+        plugin = make_approved_plugin(self.creator, "anv-plugin-b", "anv-b@example.com")
+        not_today = timezone.now() - datetime.timedelta(days=100)
+        self._set_first_published(plugin, not_today)
+
+        result = send_anniversary_reverifications()
+
+        mock_send.assert_not_called()
+        self.assertEqual(result["sent"], 0)
+
+    @patch("plugins.tasks.trigger_annual_reverification.send_confirmation_email")
+    def test_does_not_resend_twice_in_same_day(self, mock_send):
+        from plugins.tasks.trigger_annual_reverification import (
+            send_anniversary_reverifications,
+        )
+
+        plugin = make_approved_plugin(self.creator, "anv-plugin-c", "anv-c@example.com")
+        self._set_first_published(plugin, self._anniversary_today())
+
+        send_anniversary_reverifications()
+        result = send_anniversary_reverifications()
+
+        # Second run finds the pending record created today and skips.
+        self.assertEqual(mock_send.call_count, 1)
+        self.assertEqual(result["sent"], 0)
+        self.assertEqual(result["skipped"], 1)

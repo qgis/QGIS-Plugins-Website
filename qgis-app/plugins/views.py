@@ -77,7 +77,6 @@ from plugins.tasks.send_email_communication import (
     get_communication_recipients,
     send_email_communication,
 )
-from plugins.tasks.trigger_email_confirmation import check_and_send_confirmation
 
 # Plugin Notification Recipients Group Name
 NOTIFICATION_RECIPIENTS_GROUP_NAME = settings.NOTIFICATION_RECIPIENTS_GROUP_NAME
@@ -2263,9 +2262,18 @@ def version_approve(request, package_name, version):
             )
         messages.error(request, msg, fail_silently=True)
         return HttpResponseRedirect(version.get_absolute_url())
+    # A verified contact email is an acceptance criterion for approval.
+    if not version.plugin.is_email_confirmed:
+        msg = _(
+            "This plugin cannot be approved until the author's contact email "
+            "has been verified. A confirmation link was emailed when security "
+            "validation passed; ask the author to click it, or use 'Resend "
+            "confirmation'."
+        )
+        messages.error(request, msg, fail_silently=True)
+        return HttpResponseRedirect(version.get_absolute_url())
     version.approved = True
     version.save()
-    transaction.on_commit(lambda: check_and_send_confirmation.delay(version.plugin_id))
     msg = (
         _(
             "The plugin version '%s' is now approved. "

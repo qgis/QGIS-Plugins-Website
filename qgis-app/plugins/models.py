@@ -627,6 +627,31 @@ class Plugin(models.Model):
         return self.pluginversion_set.filter(approved=True).count() > 0
 
     @property
+    def is_email_confirmed(self):
+        """
+        Returns True if the plugin's current contact email has at least one
+        confirmed confirmation record. Used to gate manual approval.
+        """
+        if not self.email:
+            return False
+        return self.email_confirmations.filter(
+            email=self.email, confirmed_at__isnull=False
+        ).exists()
+
+    @property
+    def first_published_on(self):
+        """
+        Datetime the plugin was first published, derived from the earliest
+        approved version. Returns None if the plugin has no approved version.
+        """
+        return (
+            self.pluginversion_set.filter(approved=True)
+            .order_by("created_on")
+            .values_list("created_on", flat=True)
+            .first()
+        )
+
+    @property
     def trusted(self):
         """
         Returns True if the plugin's author has plugins.can_approve permission
@@ -1443,6 +1468,31 @@ class PluginEmailConfirmation(models.Model):
         )
         confirmation.plugins.set(valid_plugins)
         return confirmation, True
+
+    @classmethod
+    def force_new_for_email(cls, email, plugins):
+        """
+        Start a fresh confirmation round for *email*, regardless of whether it
+        was already confirmed. Past confirmed/expired records are left intact
+        as history; this only ever creates a brand-new pending record.
+
+        Returns the new confirmation, or ``None`` if no plugin's current email
+        still matches *email*.
+        """
+        valid_plugins = [p for p in plugins if p.email == email]
+        if not valid_plugins:
+            return None
+
+        expiry = timezone.now() + datetime.timedelta(
+            days=PLUGIN_EMAIL_CONFIRMATION_EXPIRY_DAYS
+        )
+        confirmation = cls.objects.create(
+            email=email,
+            key=secrets.token_urlsafe(48),
+            expires_at=expiry,
+        )
+        confirmation.plugins.set(valid_plugins)
+        return confirmation
 
 
 class PluginEmailConfirmationError(models.Model):

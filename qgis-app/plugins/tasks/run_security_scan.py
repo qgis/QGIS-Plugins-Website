@@ -73,8 +73,9 @@ def run_security_scan_task(self, plugin_version_pk, is_manual=False):
             plugin_version.validation_status = VALIDATION_STATUS_VALIDATED
             _auto_approve_if_trusted(plugin_version)
             plugin_version.save()
-            if plugin_version.approved:
-                _fire_confirmation_task(plugin_version.plugin_id)
+            # Send the email confirmation as soon as validation passes, so the
+            # author can verify before an approver acts (approval is gated on it).
+            _fire_confirmation_task(plugin_version.plugin_id)
             _send_validation_results_email(plugin_version, security_scan=None)
             if not plugin_version.approved:
                 _notify_staff_for_review(plugin_version)
@@ -105,7 +106,9 @@ def run_security_scan_task(self, plugin_version_pk, is_manual=False):
         )
 
     plugin_version.save()
-    if plugin_version.approved:
+    # Send the email confirmation as soon as validation passes, so the author
+    # can verify before an approver acts (manual approval is gated on it).
+    if plugin_version.validation_status == VALIDATION_STATUS_VALIDATED:
         _fire_confirmation_task(plugin_version.plugin_id)
 
     # Send validation results email to maintainer(s)

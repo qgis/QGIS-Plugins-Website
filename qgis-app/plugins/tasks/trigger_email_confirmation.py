@@ -43,7 +43,15 @@ def check_and_send_confirmation(plugin_pk: int) -> None:
     if not plugin.email:
         return
 
-    if not Plugin.approved_objects.filter(pk=plugin_pk, is_deleted=False).exists():
+    # Send once the plugin is reachable for approval: it is non-deleted and
+    # either already approved or has at least one validated (available) version.
+    # This lets the confirmation go out before manual approval, which is gated
+    # on the email being confirmed.
+    if plugin.is_deleted:
+        return
+    if not plugin.approved and not any(
+        v.is_available for v in plugin.pluginversion_set.all()
+    ):
         return
 
     try:
