@@ -84,7 +84,7 @@ jobs:
 
       - name: Upload SBOM and scan as build artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: image-security-${{ steps.meta.outputs.tag }}
           path: |
