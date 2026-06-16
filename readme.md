@@ -127,7 +127,8 @@ We are fine with using LLM's and Generative Machine Learning to act as general a
 ![image](./img/Docker_Services.png)
 
 This application is based on Django, written in Python and deployed on the server using
-docker-compose.
+docker-compose. For how releases are versioned, planned, and deployed (including
+hotfixes and rollback), see [docs/RELEASING.md](./docs/RELEASING.md).
 
 ![-----------------------------------------------------](./img/green-gradient.png)
 
@@ -169,6 +170,12 @@ Please refer to the [Nix section](./CONTRIBUTING.md#nix) in [CONTRIBUTING.md](./
 ## ✨ Contributing
 
 We welcome contributions! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to get started.
+
+When opening a PR, **add a label** (`feature`, `fix`, `breaking`, `chore`, …): labels
+drive the release notes and the next version bump. Release history lives on the
+[GitHub Releases page](https://github.com/qgis/QGIS-Plugins-Website/releases), built
+automatically from merged PRs. See [docs/RELEASING.md](./docs/RELEASING.md#release-notes-changelog)
+for details.
 
 ![-----------------------------------------------------](./img/green-gradient.png)
 

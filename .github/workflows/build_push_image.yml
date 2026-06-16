@@ -23,15 +23,26 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }} # Using token is recommended
 
-    - name: Build and push Docker image
+    # Always publish the immutable, version-pinned tag (e.g. v3.3.0) that
+    # production deploys reference. Only move the floating ':latest' tag for
+    # real release tags pushed on a tag ref, never for manual/dispatch builds,
+    # so production is always deployed by explicit version. See docs/RELEASING.md.
+    - name: Build and push versioned image
       uses: docker/build-push-action@v6
       with:
         context: .
         file: dockerize/docker/Dockerfile
         push: true
-        tags: |
-          qgis/qgis-plugins-uwsgi:${{ github.ref_name }}
-          qgis/qgis-plugins-uwsgi:latest
+        tags: qgis/qgis-plugins-uwsgi:${{ github.ref_name }}
+
+    - name: Update floating latest tag (release tags only)
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: dockerize/docker/Dockerfile
+        push: true
+        tags: qgis/qgis-plugins-uwsgi:latest
 
     - name: Log out from Docker Hub
       run: docker logout

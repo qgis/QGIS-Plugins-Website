@@ -1,0 +1,61 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+
+categories:
+  - title: 'Breaking changes'
+    labels:
+      - 'breaking'
+  - title: 'Added'
+    labels:
+      - 'feature'
+      - 'enhancement'
+  - title: 'Fixed'
+    labels:
+      - 'fix'
+      - 'bug'
+      - 'hotfix'
+  - title: 'Changed'
+    labels:
+      - 'changed'
+      - 'refactor'
+  - title: 'Maintenance & Ops'
+    labels:
+      - 'chore'
+      - 'ci'
+      - 'infra'
+      - 'docs'
+      - 'dependencies'
+
+# Drive the semver bump from PR labels.
+version-resolver:
+  major:
+    labels:
+      - 'breaking'
+  minor:
+    labels:
+      - 'feature'
+      - 'enhancement'
+  patch:
+    labels:
+      - 'fix'
+      - 'bug'
+      - 'hotfix'
+      - 'chore'
+      - 'ci'
+      - 'infra'
+      - 'docs'
+      - 'dependencies'
+  default: patch
+
+exclude-labels:
+  - 'skip-changelog'
+
+change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+no-changes-template: '- No user-facing changes'
+
+template: |
+  ## What's changed
+
+  $CHANGES
+
+  **Full changelog**: https://github.com/qgis/QGIS-Plugins-Website/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
