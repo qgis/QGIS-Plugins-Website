@@ -67,7 +67,7 @@
 | Badge | Description |
 |-------|-------------|
 | [![Lint and Django Unit Tests](https://github.com/qgis/QGIS-Plugins-Website/actions/workflows/test.yaml/badge.svg)](https://github.com/qgis/QGIS-Plugins-Website/actions/workflows/test.yaml) | Lint and Django Unit Tests |
-| [![Build and Push Docker Image to DockerHub](https://github.com/qgis/QGIS-Plugins-Website/actions/workflows/build_push_image.yml/badge.svg)](https://github.com/qgis/QGIS-Plugins-Website/actions/workflows/build_push_image.yml) | Build and Push Docker Image to DockerHub |
+| [![Docker image](https://github.com/qgis/QGIS-Plugins-Website/actions/workflows/docker.yml/badge.svg)](https://github.com/qgis/QGIS-Plugins-Website/actions/workflows/docker.yml) | Build & scan the image on PRs; push to DockerHub on release |
 | ![Website Status](https://img.shields.io/website-up-down-green-red/https/plugins.qgis.org.svg) | Website availability status |
 | ![License](https://img.shields.io/github/license/qgis/QGIS-Plugins-Website.svg) | Repository license |
 | ![](https://img.shields.io/github/issues/qgis/QGIS-Plugins-Website.svg) | Open issues count |

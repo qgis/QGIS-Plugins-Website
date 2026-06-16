@@ -1,0 +1,123 @@
+# Unified Docker image pipeline.
+#
+#   - On every PR: build the *production* image and scan it (SBOM + CVE), so
+#     Dockerfile/dependency breakage and new vulnerabilities are caught during
+#     review — not at release time. Nothing is pushed.
+#   - On a published GitHub Release: build, scan, then push the version-pinned
+#     image (+ latest) to Docker Hub and attach the SBOM/scan to the release.
+#
+# Publishing the release is the single event that produces the deployable image.
+# See docs/RELEASING.md.
+name: Docker image
+
+on:
+  pull_request:
+    branches:
+      - master
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write        # attach assets to the release
+  security-events: write # upload CVE scan to the Security tab
+
+env:
+  IMAGE: qgis/qgis-plugins-uwsgi
+
+jobs:
+  build-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Resolve image tag
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=ci-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Build the prod target (NOT the dev stage, which ships sshd/sudo). Loaded
+      # locally so the exact image can be scanned before any push.
+      - name: Build production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dockerize/docker/Dockerfile
+          target: prod
+          load: true
+          tags: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate SBOM (syft, SPDX JSON)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Scan image for vulnerabilities (Grype)
+        id: scan
+        uses: anchore/scan-action@v6
+        with:
+          image: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+          # Report-only for now so a fresh CVE never blocks a deploy. Flip to
+          # true (with a severity-cutoff) once the baseline is clean.
+          fail-build: false
+          severity-cutoff: high
+          output-format: sarif
+
+      - name: Upload scan to code scanning
+        if: always() && steps.scan.outputs.sarif != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+
+      - name: Upload SBOM and scan as build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-security-${{ steps.meta.outputs.tag }}
+          path: |
+            sbom.spdx.json
+            ${{ steps.scan.outputs.sarif }}
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # ----- Release-only: publish the image and attach security artifacts -----
+      - name: Log in to Docker Hub
+        if: github.event_name == 'release'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push versioned + latest image
+        if: github.event_name == 'release'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dockerize/docker/Dockerfile
+          target: prod
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+
+      - name: Attach SBOM and scan to the release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            sbom.spdx.json
+            ${{ steps.scan.outputs.sarif }}

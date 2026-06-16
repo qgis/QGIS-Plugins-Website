@@ -93,18 +93,17 @@ pass and at least one review before merge.
 
 ```mermaid
 flowchart TD
-    A[feature/* or fix/* branch] -->|labelled PR + CI green| B[master]
+    A[feature/* or fix/* branch] -->|labelled PR<br/>tests + image build/scan green| B[master]
     B -->|release-drafter updates| C[Draft GitHub Release]
     B -->|milestone complete| D[Bump qgis-app/.version]
-    D --> E[Tag vX.Y.0 and push]
-    E --> F[build_push_image.yml builds qgis/qgis-plugins-uwsgi:vX.Y.0]
-    C -->|maintainer publishes| G[Published GitHub Release<br/>= release history]
+    C --> P[Publish GitHub Release vX.Y.0<br/>creates tag = release history]
+    D --> P
+    P --> F[docker.yml: build + SBOM + CVE scan<br/>push qgis/qgis-plugins-uwsgi:vX.Y.0 + latest]
     F --> H[deploy.sh vX.Y.0 on server]
-    G --> H
     H --> I[(Production)]
 
     I -. urgent issue .-> J[hotfix/* from latest tag]
-    J -->|labelled PR + CI green| K[Tag vX.Y.Z patch]
+    J -->|labelled PR + CI green| K[Publish Release vX.Y.Z patch]
     K --> F
     J -->|back-merge| B
 ```
@@ -119,20 +118,18 @@ flowchart TD
    `breaking`, `chore`, …) so release notes and the version bump are derived
    automatically.
 3. **Cut the release** when the milestone is done:
-   1. Bump [`qgis-app/.version`](../qgis-app/.version) to the new version, commit,
-      then tag and push:
-      ```sh
-      git tag v3.3.0
-      git push origin master --tags
-      ```
-   2. The tag push triggers
-      [`build_push_image.yml`](../.github/workflows/build_push_image.yml) →
-      `qgis/qgis-plugins-uwsgi:v3.3.0` (+ `latest`).
-   3. Open the **draft GitHub Release** that release-drafter prepared, give it a
-      final read (the entries come from your merged-PR labels/titles), and
-      **publish** it. The published release is the project's changelog — see
+   1. Bump [`qgis-app/.version`](../qgis-app/.version) to the new version and
+      merge that to `master` (e.g. `3.3.0`).
+   2. Open the **draft GitHub Release** that release-drafter prepared, give it a
+      final read (the entries come from your merged-PR labels/titles), set the
+      target to `master`, and **publish** it as `v3.3.0`. Publishing creates the
+      tag and is the single event that builds the deployable image.
+   3. Publishing triggers [`docker.yml`](../.github/workflows/docker.yml):
+      build the `prod` image → SBOM + CVE scan → push
+      `qgis/qgis-plugins-uwsgi:v3.3.0` (+ `latest`), with the SBOM/scan attached
+      to the release. The published release is also the project's changelog — see
       [Release notes](#release-notes-changelog) below.
-4. **Deploy** (see below).
+4. **Deploy** once the image is pushed (see below).
 
 ## Hotfix (out of band)
 
@@ -143,14 +140,14 @@ Use this when production needs a fix before the next planned release.
 git checkout -b hotfix/fix-upload-crash v3.3.0
 # ... make the fix, bump qgis-app/.version to 3.3.1 ...
 git commit -am "Fix upload crash"
-# Open a PR (label it `hotfix`/`fix`) for review + CI, then once merged/approved:
-git tag v3.3.1
-git push origin --tags
+# Open a PR (label it `hotfix`/`fix`) for review + CI.
+git push origin hotfix/fix-upload-crash
 ```
 
-The tag builds an image just like any release; then deploy `v3.3.1`. Publish the
-GitHub Release for `v3.3.1` so it appears in the release history. **Always merge
-the hotfix back into `master`** so it is included in the next release.
+Once approved, **publish a GitHub Release `v3.3.1`** targeting the hotfix commit:
+that builds, scans, and pushes the image just like any release. Then deploy
+`v3.3.1`. **Always merge the hotfix back into `master`** so it is included in the
+next release.
 
 ## Deploying to production
 
@@ -207,4 +204,8 @@ Release notes are built from your PRs, so day to day:
 | --- | --- | --- |
 | [`test.yaml`](../.github/workflows/test.yaml) | PR/push to `master` | lint + dockerized Django tests |
 | [`release-drafter.yml`](../.github/workflows/release-drafter.yml) | push to `master`, PRs | keep a draft GitHub Release updated from PR labels |
-| [`build_push_image.yml`](../.github/workflows/build_push_image.yml) | git tag push | build & push `qgis/qgis-plugins-uwsgi:<tag>` (and `latest` for tags) |
+| [`docker.yml`](../.github/workflows/docker.yml) | PR (build + SBOM/CVE scan, no push); release published (build, scan, **push** `:<tag>` + `:latest`, attach SBOM/scan) | verify the prod image early and publish it on release |
+
+> The `docker.yml` scan is **report-only** today (`fail-build: false`) and uploads
+> results to the repo's **Security → Code scanning** tab. Once the CVE baseline is
+> clean, flip it to fail PRs above a severity cutoff.
