@@ -41,17 +41,33 @@ def check_and_send_confirmation(plugin_pk: int) -> None:
         return
 
     if not plugin.email:
+        logger.info(
+            f"check_and_send_confirmation: plugin pk={plugin_pk} has no email — skipping"
+        )
         return
+
+    logger.info(
+        f"check_and_send_confirmation: checking plugin pk={plugin_pk} "
+        f"({plugin.package_name}) with email <{plugin.email}>"
+    )
 
     # Send once the plugin is reachable for approval: it is non-deleted and
     # either already approved or has at least one validated (available) version.
     # This lets the confirmation go out before manual approval, which is gated
     # on the email being confirmed.
     if plugin.is_deleted:
+        logger.info(
+            f"check_and_send_confirmation: plugin pk={plugin_pk} is deleted — skipping"
+        )
         return
     if not plugin.approved and not any(
         v.is_available for v in plugin.pluginversion_set.all()
     ):
+        logger.info(
+            f"check_and_send_confirmation: plugin pk={plugin_pk} ({plugin.package_name}) "
+            f"has no available version and is not approved — likely still validating or "
+            f"blocked by the security scan; skipping"
+        )
         return
 
     try:
@@ -63,9 +79,15 @@ def check_and_send_confirmation(plugin_pk: int) -> None:
             logger.info(
                 f"Sent confirmation email for plugin {plugin.package_name} to <{plugin.email}>"
             )
+        elif confirmation is None:
+            logger.info(
+                f"check_and_send_confirmation: email <{plugin.email}> is already confirmed "
+                f"for plugin {plugin.package_name} — no new confirmation needed"
+            )
         else:
-            logger.debug(
-                f"Skipped confirmation for plugin {plugin.package_name} (already confirmed or pending)"
+            logger.info(
+                f"check_and_send_confirmation: reusing existing pending confirmation for "
+                f"<{plugin.email}> (plugin {plugin.package_name}) — not resending"
             )
     except Exception:
         logger.exception(

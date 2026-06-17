@@ -631,10 +631,15 @@ class Plugin(models.Model):
         """
         Returns True if the plugin's current contact email has at least one
         confirmed confirmation record. Used to gate manual approval.
+
+        Confirmation is tracked per *email address*, not per plugin: proving
+        control of a mailbox verifies it for every plugin using that address.
+        A plugin therefore inherits confirmed status from any record for its
+        email — e.g. one created by another plugin sharing the address.
         """
         if not self.email:
             return False
-        return self.email_confirmations.filter(
+        return PluginEmailConfirmation.objects.filter(
             email=self.email, confirmed_at__isnull=False
         ).exists()
 
@@ -1427,8 +1432,9 @@ class PluginEmailConfirmation(models.Model):
 
         Only plugins whose current ``email`` field still matches are included.
         Returns ``(confirmation, created)``.  If no valid plugins remain,
-        returns ``(None, False)``.  If all valid plugins are already confirmed
-        for this address, also returns ``(None, False)``.
+        returns ``(None, False)``.  Confirmation is tracked per email address:
+        if this address already has any confirmed record it is considered
+        verified, so ``(None, False)`` is returned without sending again.
         """
         now = timezone.now()
         expiry = now + datetime.timedelta(days=PLUGIN_EMAIL_CONFIRMATION_EXPIRY_DAYS)
@@ -1438,26 +1444,26 @@ class PluginEmailConfirmation(models.Model):
         if not valid_plugins:
             return None, False
 
-        # If every valid plugin already has a confirmed record for this email, skip.
-        all_confirmed = all(
-            cls.objects.filter(
-                email=email,
-                confirmed_at__isnull=False,
-                plugins=plugin,
-            ).exists()
-            for plugin in valid_plugins
-        )
-        if all_confirmed:
+        # Confirmation is per email address: if this address already has any
+        # confirmed record, the mailbox is verified and nothing needs sending —
+        # regardless of which plugin originally confirmed it.
+        already_confirmed = cls.objects.filter(
+            email=email,
+            confirmed_at__isnull=False,
+        ).exists()
+        if already_confirmed:
             return None, False
 
-        # Reuse an existing unexpired pending confirmation for this email.
+        # Reuse an existing unexpired pending confirmation for this email,
+        # *adding* these plugins rather than replacing the set, so an address
+        # shared by several plugins accumulates them all on one token.
         existing = cls.objects.filter(
             email=email,
             confirmed_at__isnull=True,
             expires_at__gt=now,
         ).first()
         if existing:
-            existing.plugins.set(valid_plugins)
+            existing.plugins.add(*valid_plugins)
             return existing, False
 
         # Create a fresh confirmation.

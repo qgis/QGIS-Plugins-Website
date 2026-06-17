@@ -775,7 +775,7 @@ class PluginDetailView(DetailView):
                 "rating": plugin.rating.get_rating(),
                 "votes": plugin.rating.votes,
                 "title": self.title,
-                "email_confirmation": plugin.email_confirmations.filter(
+                "email_confirmation": PluginEmailConfirmation.objects.filter(
                     email=plugin.email
                 )
                 .order_by("-sent_at")
@@ -948,7 +948,7 @@ def plugin_email_token_confirm(request, package_name):
         return render(request, "plugins/plugin_permission_deny.html", {})
 
     email_confirmation = (
-        plugin.email_confirmations.filter(email=plugin.email)
+        PluginEmailConfirmation.objects.filter(email=plugin.email)
         .order_by("-sent_at")
         .first()
     )
