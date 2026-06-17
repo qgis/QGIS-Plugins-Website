@@ -19,7 +19,13 @@ from django.db import IntegrityError, connection, transaction
 from django.db.models import Q
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Lower
-from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import (
+    Http404,
+    HttpRequest,
+    HttpResponse,
+    HttpResponseRedirect,
+    JsonResponse,
+)
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
@@ -900,7 +906,7 @@ def plugin_email_communication_detail(request, pk):
     )
 
 
-def confirm_plugin_email(request, key):
+def confirm_plugin_email(request: HttpRequest, key: str) -> HttpResponse:
     """
     Handles the one-time email confirmation link sent to a plugin's author email.
 
@@ -935,7 +941,7 @@ def confirm_plugin_email(request, key):
 
 
 @login_required
-def plugin_email_token_confirm(request, package_name):
+def plugin_email_token_confirm(request: HttpRequest, package_name: str) -> HttpResponse:
     """
     Presents a form where a logged-in plugin editor can paste the confirmation
     token from the email they received.  On submit, redirects to the existing
@@ -975,7 +981,9 @@ def plugin_email_token_confirm(request, package_name):
 
 
 @login_required
-def resend_plugin_email_confirmation(request, package_name):
+def resend_plugin_email_confirmation(
+    request: HttpRequest, package_name: str
+) -> HttpResponse:
     """
     Staff/superuser-only view that creates or replaces a pending email
     confirmation for a plugin's author email address.
@@ -2610,7 +2618,9 @@ def version_download(request, package_name, version):
     return response
 
 
-def version_detail(request, package_name, version):
+def version_detail(
+    request: HttpRequest, package_name: str, version: str
+) -> HttpResponse:
     """
     Show version details
     """

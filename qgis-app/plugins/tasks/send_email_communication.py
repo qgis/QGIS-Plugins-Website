@@ -14,7 +14,7 @@ from plugins.models import Plugin, PluginEmailCommunication, PluginEmailConfirma
 logger = get_task_logger(__name__)
 
 
-def get_communication_recipients():
+def get_communication_recipients() -> list:
     """
     Build the deduped recipient list for an email communication.
 
@@ -44,7 +44,8 @@ def get_communication_recipients():
     # plugin has confirmed it, so collect the full set of confirmed addresses.
     confirmed_emails = set(
         PluginEmailConfirmation.objects.filter(
-            confirmed_at__isnull=False
+            confirmed_at__isnull=False,
+            superseded_at__isnull=True,
         ).values_list("email", flat=True)
     )
 

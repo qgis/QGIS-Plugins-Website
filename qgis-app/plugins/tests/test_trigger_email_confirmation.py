@@ -374,48 +374,71 @@ class TestPluginEmailHelpers(SetupMixin, TestCase):
 
 
 class TestAnniversaryReverification(SetupMixin, TestCase):
-    def _set_first_published(self, plugin, when):
-        # created_on is auto_now_add; set it directly on the approved version.
-        plugin.pluginversion_set.update(created_on=when)
+    def _set_first_sent(self, email, when):
+        # sent_at is auto_now_add; backdate every confirmation for this address.
+        PluginEmailConfirmation.objects.filter(email=email).update(sent_at=when)
 
     @staticmethod
     def _anniversary_today():
         # A datetime in a prior year sharing today's month/day.
         now_dt = timezone.now()
-        return now_dt.replace(year=now_dt.year - 1, hour=12, minute=0, second=0, microsecond=0)
+        return now_dt.replace(
+            year=now_dt.year - 1, hour=12, minute=0, second=0, microsecond=0
+        )
 
     @patch("plugins.tasks.trigger_annual_reverification.send_confirmation_email")
-    def test_reverifies_even_already_confirmed_and_keeps_history(self, mock_send):
+    def test_reverifies_already_confirmed_supersedes_and_lapses(self, mock_send):
         from plugins.tasks.trigger_annual_reverification import (
             send_anniversary_reverifications,
         )
 
         plugin = make_approved_plugin(self.creator, "anv-plugin-a", "anv-a@example.com")
-        self._set_first_published(plugin, self._anniversary_today())
         old = make_confirmed_confirmation("anv-a@example.com", [plugin])
+        # First confirmation was sent a year ago today -> due now.
+        self._set_first_sent("anv-a@example.com", self._anniversary_today())
+        self.assertTrue(plugin.is_email_confirmed)
 
         result = send_anniversary_reverifications()
 
         mock_send.assert_called_once()
         self.assertEqual(result["sent"], 1)
-        # Old confirmed record kept as history; a new pending record now exists.
-        self.assertTrue(
-            PluginEmailConfirmation.objects.filter(pk=old.pk).exists()
-        )
+        # Old confirmed record kept as history but retired (superseded).
+        old.refresh_from_db()
+        self.assertTrue(PluginEmailConfirmation.objects.filter(pk=old.pk).exists())
+        self.assertIsNotNone(old.superseded_at)
+        # A new pending record now exists alongside the retired one.
         self.assertEqual(
             PluginEmailConfirmation.objects.filter(email="anv-a@example.com").count(),
             2,
         )
+        # The address has lapsed to unconfirmed until the fresh link is clicked.
+        self.assertFalse(plugin.is_email_confirmed)
 
     @patch("plugins.tasks.trigger_annual_reverification.send_confirmation_email")
-    def test_skips_non_anniversary_plugins(self, mock_send):
+    def test_skips_when_first_sent_not_today(self, mock_send):
         from plugins.tasks.trigger_annual_reverification import (
             send_anniversary_reverifications,
         )
 
         plugin = make_approved_plugin(self.creator, "anv-plugin-b", "anv-b@example.com")
+        make_confirmed_confirmation("anv-b@example.com", [plugin])
         not_today = timezone.now() - datetime.timedelta(days=100)
-        self._set_first_published(plugin, not_today)
+        self._set_first_sent("anv-b@example.com", not_today)
+
+        result = send_anniversary_reverifications()
+
+        mock_send.assert_not_called()
+        self.assertEqual(result["sent"], 0)
+
+    @patch("plugins.tasks.trigger_annual_reverification.send_confirmation_email")
+    def test_skips_when_first_sent_this_year(self, mock_send):
+        from plugins.tasks.trigger_annual_reverification import (
+            send_anniversary_reverifications,
+        )
+
+        # First confirmation sent earlier today: not yet a full year old.
+        plugin = make_approved_plugin(self.creator, "anv-plugin-d", "anv-d@example.com")
+        make_confirmed_confirmation("anv-d@example.com", [plugin])
 
         result = send_anniversary_reverifications()
 
@@ -429,7 +452,8 @@ class TestAnniversaryReverification(SetupMixin, TestCase):
         )
 
         plugin = make_approved_plugin(self.creator, "anv-plugin-c", "anv-c@example.com")
-        self._set_first_published(plugin, self._anniversary_today())
+        make_confirmed_confirmation("anv-c@example.com", [plugin])
+        self._set_first_sent("anv-c@example.com", self._anniversary_today())
 
         send_anniversary_reverifications()
         result = send_anniversary_reverifications()
