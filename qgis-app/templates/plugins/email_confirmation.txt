@@ -1,0 +1,66 @@
+================================================================
+  QGIS Plugins Repository — Email Address Confirmation Request
+================================================================
+
+Dear Plugin Author,
+
+Our records indicate that the address below is registered as the
+author contact email for {% if plugins|length == 1 %}a plugin{% else %}{{ plugins|length }} plugins{% endif %} hosted on the QGIS
+Plugins Repository:
+
+  Email address : {{ email }}
+
+  Plugin(s):
+{% for p in plugins %}    • {{ p.name }}
+      {{ p.url }}
+{% endfor %}
+----------------------------------------------------------------
+ACTION REQUIRED
+----------------------------------------------------------------
+
+To confirm that this address is still active and that you are
+associated with the plugin(s) listed above, you have two options:
+
+OPTION 1 — Confirm via the website:
+
+  1. Log in to your account at https://{{ site_domain }}
+  2. Navigate to your plugin page and click the yellow
+     "Email confirmation pending" button
+  3. When prompted, enter the following token:
+
+       {{ token }}
+
+OPTION 2 — Confirm directly via link:
+
+  Copy and paste the link below into your browser:
+
+  {{ confirmation_url }}
+
+Confirming will apply to ALL of the plugin(s) listed above
+at once.
+
+This confirmation link will remain valid until {{ expires_at }}.
+After that date the link will expire and a new request will be
+required.
+
+----------------------------------------------------------------
+WHY AM I RECEIVING THIS?
+----------------------------------------------------------------
+
+The QGIS Plugins Repository periodically verifies that author
+contact addresses are still responsive. Confirming your address
+helps us reach you with important notifications about your
+plugin(s), such as security alerts or policy updates.
+
+If you did not expect this message, or if you are no longer
+associated with the plugin(s) named above, please ignore this
+email. No changes will be made to your plugin(s) unless you
+click the confirmation link.
+
+----------------------------------------------------------------
+
+This is an automated message. Please do not reply directly to
+this email.
+
+QGIS Plugins Repository
+https://{{ site_domain }}

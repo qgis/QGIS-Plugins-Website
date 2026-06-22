@@ -17,7 +17,7 @@ jobs:
         working-directory: dockerize
     steps:
       - name: 🛒 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - uses: actions/setup-node@v3
         with:
           node-version: 20
@@ -66,7 +66,7 @@ jobs:
       - name: Run Playwright tests
         working-directory: playwright/ci-test
         run: npx playwright test
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-report

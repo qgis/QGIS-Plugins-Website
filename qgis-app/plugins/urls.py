@@ -98,6 +98,12 @@ urlpatterns = [
         {},
         name="plugin_token_delete",
     ),
+    url(
+        r"^confirm-email/(?P<key>[A-Za-z0-9_-]+)/$",
+        confirm_plugin_email,
+        {},
+        name="confirm_plugin_email",
+    ),
     # Uncomment the following lines when ready to use featured plugins
     # url(
     #     r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/set_featured/$",
@@ -534,6 +540,16 @@ urlpatterns += [
 
 # Plugin detail (keep last)
 urlpatterns += [
+    url(
+        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/confirm-email-token/$",
+        plugin_email_token_confirm,
+        name="plugin_email_token_confirm",
+    ),
+    url(
+        r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/resend-email-confirmation/$",
+        resend_plugin_email_confirmation,
+        name="plugin_resend_email_confirmation",
+    ),
     url(
         r"^(?P<package_name>[A-Za-z][A-Za-z0-9-_]+)/$",
         PluginDetailView.as_view(

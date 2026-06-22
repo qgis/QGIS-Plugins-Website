@@ -68,7 +68,11 @@ services:
       - SENTRY_DSN=${SENTRY_DSN}
       - SENTRY_RATE=${SENTRY_RATE}
     volumes:
-      - ../qgis-app:/home/web/django_project
+      # NOTE: the application code is NOT bind-mounted here on purpose.
+      # Production runs the code baked into ${UWSGI_DOCKER_IMAGE} (immutable,
+      # versioned deploys). For local development, docker-compose.override.yml
+      # (see docker-compose.override.template.yml) re-mounts ../qgis-app for
+      # live editing. See docs/RELEASING.md.
       - ./docker/uwsgi.conf:/uwsgi.conf
       - ${QGISPLUGINS_STATIC_VOLUME}:/home/web/static:rw
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw

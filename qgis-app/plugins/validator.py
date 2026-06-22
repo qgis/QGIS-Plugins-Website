@@ -134,9 +134,9 @@ def _check_url_link(urls):
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/117.0.0.0 Safari/537.36"
             }
-            req = requests.head(url, headers=headers)
+            req = requests.head(url, headers=headers, allow_redirects=True)
         except requests.exceptions.SSLError:
-            req = requests.head(url, verify=False)
+            req = requests.head(url, verify=False, allow_redirects=True)
         except Exception:
             return True
         return req.status_code >= 400
@@ -151,7 +151,7 @@ def _check_url_link(urls):
                 "Chrome/117.0.0.0 Safari/537.36"
             }
             req = requests.head(
-                url, headers=headers, timeout=10
+                url, headers=headers, timeout=10, allow_redirects=True
             )  # Set timeout to 10 seconds
         except requests.exceptions.Timeout:
             return True

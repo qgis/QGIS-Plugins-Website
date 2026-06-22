@@ -1,0 +1,38 @@
+{% load i18n %}
+{% if user.is_staff or user in object.editors %}
+{% if object.approved %}
+    {% if email_confirmation and email_confirmation.is_confirmed %}
+        <div class="tooltip">
+            <span class="button is-small is-rounded is-success" style="pointer-events:none;">
+                <span class="icon is-small"><i class="fas fa-check-circle"></i></span>
+                <span>{% trans "Email confirmed" %}</span>
+            </span>
+            <span class="tooltiptext">{% trans "This plugin's author email has been confirmed" %}</span>
+        </div>
+    {% elif email_confirmation and not email_confirmation.is_expired %}
+        <div class="tooltip">
+            <a href="{% url 'plugin_email_token_confirm' object.package_name %}" class="button is-small is-rounded is-warning">
+                <span class="icon is-small"><i class="fas fa-envelope"></i></span>
+                <span>{% trans "Email confirmation pending" %}</span>
+            </a>
+            <span class="tooltiptext">{% trans "Click here to confirm your email" %}</span>
+        </div>
+    {% elif email_confirmation and email_confirmation.is_expired %}
+        <div class="tooltip">
+            <span class="button is-small is-rounded is-danger" style="pointer-events:none;">
+                <span class="icon is-small"><i class="fas fa-envelope"></i></span>
+                <span>{% trans "Email confirmation expired" %}</span>
+            </span>
+            <span class="tooltiptext">{% trans "The confirmation request has expired. Contact the site administrator to send a new one." %}</span>
+        </div>
+    {% else %}
+        <div class="tooltip">
+            <span class="button is-small is-rounded" style="pointer-events:none;">
+                <span class="icon is-small"><i class="fas fa-envelope"></i></span>
+                <span>{% trans "Email unconfirmed" %}</span>
+            </span>
+            <span class="tooltiptext">{% trans "No confirmation request found. Contact the site administrator." %}</span>
+        </div>
+    {% endif %}
+{% endif %}
+{% endif %}

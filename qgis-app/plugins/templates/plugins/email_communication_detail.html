@@ -1,0 +1,30 @@
+{% extends 'plugins/plugin_base.html' %}
+{% load i18n %}
+{% block content %}
+<div class="box-content">
+    <h2 class="title is-4">{{ communication.subject }}</h2>
+
+    <div class="container rich mb-4">
+        <div class="cont coloring-1">
+            <p>
+                <strong>{% trans "Author" %}:</strong>
+                {% if communication.created_by %}{{ communication.created_by.get_full_name|default:communication.created_by.username }}{% else %}&mdash;{% endif %}
+            </p>
+            <p><strong>{% trans "Status" %}:</strong> {{ communication.get_status_display }}</p>
+            <p><strong>{% trans "Recipients" %}:</strong> {{ communication.recipient_count }}</p>
+            <p><strong>{% trans "Created" %}:</strong> {{ communication.created_at }}</p>
+            <p><strong>{% trans "Sent" %}:</strong> {{ communication.sent_at|default:"—" }}</p>
+        </div>
+    </div>
+
+    <h3 class="title is-5">{% trans "Message" %}</h3>
+    <div class="content">
+        <pre style="white-space: pre-wrap; word-wrap: break-word;">{{ communication.body }}</pre>
+    </div>
+
+    <a class="button is-light" href="{% url 'plugin_email_communication_list' %}">
+        <span class="icon"><i class="fas fa-arrow-left"></i></span>
+        <span>{% trans "Back to list" %}</span>
+    </a>
+</div>
+{% endblock %}
