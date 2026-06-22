@@ -46,6 +46,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from plugins.decorators import has_valid_token, validate_plugin_token
 from plugins.forms import (
+    EmailCommunicationForm,
     PackageUploadForm,
     PluginCreateForm,
     PluginForm,
