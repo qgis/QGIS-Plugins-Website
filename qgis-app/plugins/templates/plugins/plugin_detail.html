@@ -224,7 +224,7 @@
                 <p class="plugin-details-description">{{ object.description|linebreaksbr }}</p>
                 <div id="rating"> (<span id="votes">{% firstof votes '0' %}</span>) {% trans "votes" %}&nbsp;<span id="loading" style="display:none">Loading...</span><span id="vote-message" style="display:none"></span></div>
                 <div class="is-flex" style="gap: 0.5rem;">
-                        {% with release=object.stable|default:object.experimental %}
+                        {% with release=object.stable|default:object.experimental|default:object.latest_version %}
                             {% if user.is_staff or user in object.editors %}
                             {% if release %}
                                 {% with security_scan=release.security_scan %}

@@ -659,6 +659,15 @@ class Plugin(models.Model):
             return None
 
     @property
+    def latest_version(self):
+        """
+        Returns the most recent version regardless of approval or blocked
+        status. Used to surface the security scan badge even when a plugin
+        has no published stable/experimental version (e.g. blocked uploads).
+        """
+        return self.pluginversion_set.order_by("-version").first()
+
+    @property
     def editors(self):
         """
         Returns a list of users that can edit the plugin: creator and owners
