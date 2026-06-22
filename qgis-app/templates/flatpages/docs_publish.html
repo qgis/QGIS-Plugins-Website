@@ -2,165 +2,63 @@
 
 {% block content %}
 <div class="responsive-content">
-  <h4>How to add your plugin to this repository</h4>
-  <ul>
-    <li>
-      You will need an
-      <a href="http://www.osgeo.org/osgeo_userid">OSGEO ID</a>&nbsp; to publish
-      a plugin
-    </li>
-    <li>
-      Go to <a title="Repo" href="/plugins/">QGIS plugin repo</a> and click on
-      <a title="Share" href="/plugins/add/">Upload a plugin</a>.
-    </li>
-    <li>For a prompt approval of the plugin read the following guidelines</li>
-  </ul>
-  <h4>Requirements</h4>
-  <ul>
-    <li>Plugins need to have at least minimal documentation</li>
-    <li>
-      The plugin metadata contains a valid link to the homepage
-      (the URL should either point to a page describing plugin
-      usage or the README/wiki in your repository),
-      the repository (source code - should be publicly accessible
-      and should not contain zipped files),
-      the tracker (issue tracker) and a license.
-    </li>
-    <li>
-      All plugins should include a short English description of what the plugin does.
-    </li>
-    <li>
-      The plugin license is compatible with the
-      <a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html"
-        >GPLv2 or later</a
-      >
-      (<a
-        href="http://blog.qgis.org/2016/05/29/licensing-requirements-for-qgis-plugins/"
-        >more information about licensing</a
-      >)
-    </li>
-    <li>
-      Respect the licenses by libraries and other resources that your plugin
-      uses
-    </li>
-    <li>
-      If the plugin has an external dependency, this needs to be clearly stated
-      in the About metadata field; you can include a short guide to install
-      Python libs as needed, or point to existing guides, e.g. for Windows:
-      "<a href="https://landscapearchaeology.org/2018/installing-python-packages-in-qgis-3-for-windows/"
-         >Installing Python packages in QGIS 3 (for Windows)</a>"
-    </li>
-    <li>Don't include binaries</li>
-    <li>The size of the plugin package should not exceed 25MB</li>
-  </ul>
-  <h4>Recommendations</h4>
-  <ul>
-    <li>
-      Write comments in your code in English, it will make it easier for others
-      to contribute
-    </li>
-    <li>Provide a minimal data set for testing</li>
-    <li>
-      Put the plugin into the appropriate menu (Vector, Raster, Web, Database)
-    </li>
-    <li>
-      Before publishing a new plugin, check if it duplicates existing
-      functionality and explore collaboration possibilities
-    </li>
-    <li>
-      Make your plugin work on all supported platforms (Windows, Linux, macOS)
-    </li>
-    <li>
-      Don't rename the plugin title just because it's upgraded to a newer
-      version like QGIS 3
-    </li>
-    <li>
-      Check if source code uploaded to the QGIS plugin repo as zip is identical
-      to "Code repository" indicated in metadata.txt
-    </li>
-    <li>
-      Mention any requirements, dependencies and restrictions in the description
-      text section (which can be multi-line). Examples of requirements,
-      dependencies and restrictions are, if the plugin is running only on
-      selected platforms, requires SW to be installed separately or some user
-      account, but also if the plugin is spatially covering just some countries
-      or regions.
-    </li>
-  </ul>
-  <h4>Tips and Tricks</h4>
-  <ul>
-    <li>
-      Keep your source repository in good shape:&nbsp;
-      <ul>
-        <li>
-          No generated files left in the repository (ui_*.py, resources_rc.py,
-          gen. help files…).
-        </li>
-        <li>No __MACOSX, .git, __pycache__ or other hidden directories</li>
-        <li>Good code organization (subfolders).</li>
-        <li>Code comments are available.</li>
-        <li>PEP8 &amp; Python/QGIS guidelines compliance.</li>
-        <li>A README file and a LICENSE file are present.</li>
-      </ul>
-    </li>
-    <li>
-      If some dependencies are not available in OSGeo4w Python, provide
-      instructions on how to install them on Windows.
-    </li>
-    <li>
-      The name of the plugin and the folder name do not repeat the word
-      `plugin`.
-    </li>
-    <li>
-      Plugins should make use of 
-      <a href="https://qgis.org/pyqgis/latest/core/QgsNetworkAccessManager.html">QgsNetworkAccessManager</a>
-      instead of using urllib2/requests/etc... which often fail to use correct proxy settings.
-    </li>
-    <li>
-      Plugins should make use of QGIS widgets, such as
-      <a href="https://qgis.org/pyqgis/latest/gui/QgsMapLayerComboBox.html">QgsMapLayerComboBox</a>
-      for a drop down menu with layers.
-      Other widgets are available, check the <a href="https://qgis.org/pyqgis/latest/gui/index.html">list on the documentation</a>.
-    </li>
-    <li>
-      The
-      <a title="QGIS Plugin Templater GUI" href="/plugins/qgis_plugin_templater_gui/"
-        >QGIS Plugin Templater GUI</a
-      > or 
-      <a title="QGIS Minimal Plugin" href="https://github.com/wonder-sk/qgis-minimal-plugin"
-        >QGIS Minimal Plugin</a
-      >
-      are recommended.
-</li>
-<li>
-      Experienced developers with quality standards for quality and tools and used to git workflow are encouraged to use
-      one of the well-known <a title="Cookiecutter" href="https://cookiecutter.readthedocs.io/" target="_blank">Cookiecutter</a>
-      templates:
-      <ul>
-        <li>
-            <a title="QGIS Plugin Templater" href="https://oslandia.gitlab.io/qgis/template-qgis-plugin/" target="_blank">QGIS Plugin Templater</a>
-            (used behind the scenes of the plugin listed above)
-        </li>
-        <li>
-            <a title="Cookiecutter QGIS Plugin" href="https://github.com/GispoCoding/cookiecutter-qgis-plugin" target="_blank">Cookiecutter QGIS Plugin</a>
-        </li>
-      </ul>
-</li>
-</ul>
-  <div
-    id="_mcePaste"
-    class="mcePaste"
-    style="
-      position: absolute;
-      left: -10000px;
-      top: 187px;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-    "
-  >
-    <p style="text-indent: 0px; margin: 0px">dai nomi dei campi)</p>
-    <!-- p, li { white-space: pre-wrap; } -->
+  <h1>Publishing Plugins</h1>
+  <p>
+    Everything you need to know before publishing a plugin on the QGIS Plugin Repository.
+  </p>
+
+  <hr />
+
+  <h2>Getting started</h2>
+  <p>
+    To publish a plugin you need an
+    <a href="http://www.osgeo.org/osgeo_userid" target="_blank" rel="noopener">OSGeo ID</a>.
+    Once you have one, go to the
+    <a href="/plugins/add/">Upload a plugin</a> page and follow the upload wizard.
+    Your plugin will be queued for review — see the
+    <a href="{% url 'docs_approval' %}">Approval Process</a> page for what to expect.
+  </p>
+
+  <hr />
+
+  <h2>Plugin Guidelines</h2>
+  <p>Before uploading, review the guidelines to make sure your plugin is ready for approval.</p>
+  <div class="columns is-multiline">
+    <div class="column is-half">
+      <div class="box-content">
+        <p class="title is-5"><a href="{% url 'docs_guidelines_metadata' %}">Requirements</a></p>
+        <p>Required metadata fields, description and about field rules, accepted licenses, external dependency
+        disclosure, and naming conventions.</p>
+      </div>
+    </div>
+    <div class="column is-half">
+      <div class="box-content">
+        <p class="title is-5"><a href="{% url 'docs_guidelines_quality' %}">Plugin Quality</a></p>
+        <p>Code organisation, ongoing maintenance, security scanning, recommendations, and
+        tips for building a well-maintained plugin.</p>
+      </div>
+    </div>
+    <div class="column is-half">
+      <div class="box-content">
+        <p class="title is-5"><a href="{% url 'docs_guidelines_compatibility' %}">Version Compatibility</a></p>
+        <p>How to declare QGIS version compatibility in <code>metadata.txt</code> and prepare
+        your plugin for QGIS 4.</p>
+      </div>
+    </div>
+    <div class="column is-half">
+      <div class="box-content">
+        <p class="title is-5"><a href="{% url 'docs_guidelines_promotion' %}">Promoting Your Plugin</a></p>
+        <p>Accepted community channels and best practices for announcing a newly published
+        plugin.</p>
+      </div>
+    </div>
+    <div class="column is-half">
+      <div class="box-content">
+        <p class="title is-5"><a href="{% url 'docs_guidelines_policy' %}">Repository Policy</a></p>
+        <p>Plugin removal, dispute procedure, renaming rules, code of conduct, and guidelines
+        on political neutrality.</p>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

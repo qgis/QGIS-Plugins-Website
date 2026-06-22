@@ -1,0 +1,50 @@
+{% extends 'flatpages/docs.html' %}
+
+{% block content %}
+<div class="responsive-content">
+  <h1>Plugin Guidelines</h1>
+  <p>
+    These guidelines help you publish a plugin that meets community expectations, passes the
+    approval process smoothly, and reaches the users who will benefit from it most.
+  </p>
+
+  <div class="columns is-multiline">
+    <div class="column is-half">
+      <div class="box-content">
+        <p class="title is-5">
+          <a href="{% url 'docs_guidelines_metadata' %}">Requirements</a>
+        </p>
+        <p>Required metadata fields, description and about field rules, external dependency
+        disclosure, and naming conventions.</p>
+      </div>
+    </div>
+    <div class="column is-half">
+      <div class="box-content">
+        <p class="title is-5">
+          <a href="{% url 'docs_guidelines_quality' %}">Plugin Quality</a>
+        </p>
+        <p>Code organisation, ongoing maintenance, security scanning, recommendations, and
+        tips for building a well-maintained plugin.</p>
+      </div>
+    </div>
+    <div class="column is-half">
+      <div class="box-content">
+        <p class="title is-5">
+          <a href="{% url 'docs_guidelines_compatibility' %}">Version Compatibility</a>
+        </p>
+        <p>How to declare QGIS version compatibility in <code>metadata.txt</code> and prepare
+        your plugin for QGIS 4.</p>
+      </div>
+    </div>
+    <div class="column is-half">
+      <div class="box-content">
+        <p class="title is-5">
+          <a href="{% url 'docs_guidelines_promotion' %}">Promoting Your Plugin</a>
+        </p>
+        <p>Accepted community channels and best practices for announcing a newly published
+        plugin.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

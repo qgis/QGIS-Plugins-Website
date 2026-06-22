@@ -8,7 +8,19 @@ from django.urls import include, path
 from django.urls import re_path as url
 from django.views.generic.base import RedirectView
 from django.views.static import serve
-from docs import docs_approval, docs_faq, docs_migrate_qgis4, docs_publish, docs_security_scanning
+from docs import (
+    docs_approval,
+    docs_faq,
+    docs_guidelines,
+    docs_guidelines_compatibility,
+    docs_guidelines_policy,
+    docs_guidelines_promotion,
+    docs_guidelines_quality,
+    docs_guidelines_requirements,
+    docs_migrate_qgis4,
+    docs_publish,
+    docs_security_scanning,
+)
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 
@@ -88,6 +100,36 @@ urlpatterns += [
         r"^docs/migrate-qgis4",
         docs_migrate_qgis4,
         name="docs_migrate_qgis4",
+    ),
+    url(
+        r"^docs/guidelines/requirements",
+        docs_guidelines_requirements,
+        name="docs_guidelines_requirements",
+    ),
+    url(
+        r"^docs/guidelines/quality",
+        docs_guidelines_quality,
+        name="docs_guidelines_quality",
+    ),
+    url(
+        r"^docs/guidelines/compatibility",
+        docs_guidelines_compatibility,
+        name="docs_guidelines_compatibility",
+    ),
+    url(
+        r"^docs/guidelines/promotion",
+        docs_guidelines_promotion,
+        name="docs_guidelines_promotion",
+    ),
+    url(
+        r"^docs/guidelines/policy",
+        docs_guidelines_policy,
+        name="docs_guidelines_policy",
+    ),
+    url(
+        r"^docs/guidelines",
+        docs_guidelines,
+        name="docs_guidelines",
     ),
 ]
 

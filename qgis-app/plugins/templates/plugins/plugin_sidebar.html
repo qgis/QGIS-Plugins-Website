@@ -86,34 +86,49 @@
       </div>
       <ul class="collapsed" id="docs">
         {% url 'docs_publish' as docs_publish_url %}
-        <li class="has-child {% if request.path == docs_publish_url %}is-active{% endif %}">
-          <a href="{{ docs_publish_url }}">
-            Publish a plugin
-          </a>
+        <li class="{% if request.path == docs_publish_url %}is-active{% endif %}">
+          <div class="has-child">
+            <a href="{{ docs_publish_url }}">Publishing</a>
+            <span onclick="toggleSubMenu('docs-publishing')" class="drop-arrow"><img src="{% static "images/arrow.svg" %}"/></span>
+          </div>
+          <ul class="collapsed" id="docs-publishing">
+            {% url 'docs_guidelines_metadata' as docs_guidelines_metadata_url %}
+            <li class="has-child {% if request.path == docs_guidelines_metadata_url %}is-active{% endif %}">
+              <a href="{{ docs_guidelines_metadata_url }}">Requirements</a>
+            </li>
+            {% url 'docs_guidelines_quality' as docs_guidelines_quality_url %}
+            <li class="has-child {% if request.path == docs_guidelines_quality_url %}is-active{% endif %}">
+              <a href="{{ docs_guidelines_quality_url }}">Plugin Quality</a>
+            </li>
+            {% url 'docs_guidelines_compatibility' as docs_guidelines_compatibility_url %}
+            <li class="has-child {% if request.path == docs_guidelines_compatibility_url %}is-active{% endif %}">
+              <a href="{{ docs_guidelines_compatibility_url }}">Version Compatibility</a>
+            </li>
+            {% url 'docs_guidelines_promotion' as docs_guidelines_promotion_url %}
+            <li class="has-child {% if request.path == docs_guidelines_promotion_url %}is-active{% endif %}">
+              <a href="{{ docs_guidelines_promotion_url }}">Promoting Your Plugin</a>
+            </li>
+            {% url 'docs_guidelines_policy' as docs_guidelines_policy_url %}
+            <li class="has-child {% if request.path == docs_guidelines_policy_url %}is-active{% endif %}">
+              <a href="{{ docs_guidelines_policy_url }}">Repository Policy</a>
+            </li>
+          </ul>
         </li>
         {% url 'docs_approval' as docs_approval_url %}
         <li class="has-child {% if request.path == docs_approval_url %}is-active{% endif %}">
-          <a href="{{ docs_approval_url }}">
-            Approval process
-          </a>
+          <a href="{{ docs_approval_url }}">Approval Process</a>
         </li>
         {% url 'docs_faq' as docs_faq_url %}
         <li class="has-child {% if request.path == docs_faq_url %}is-active{% endif %}">
-          <a href="{{ docs_faq_url }}">
-            FAQ
-          </a>
+          <a href="{{ docs_faq_url }}">FAQ</a>
         </li>
         {% url 'docs_security_scanning' as docs_security_scanning_url %}
         <li class="has-child {% if request.path == docs_security_scanning_url %}is-active{% endif %}">
-          <a href="{{ docs_security_scanning_url }}">
-            Security Scanning
-          </a>
+          <a href="{{ docs_security_scanning_url }}">Security Scanning</a>
         </li>
         {% url 'docs_migrate_qgis4' as docs_migrate_qgis4_url %}
         <li class="has-child {% if request.path == docs_migrate_qgis4_url %}is-active{% endif %}">
-          <a href="{{ docs_migrate_qgis4_url }}">
-            Migrate to QGIS 4
-          </a>
+          <a href="{{ docs_migrate_qgis4_url }}">Migrate to QGIS 4</a>
         </li>
       </ul>
     </li>
