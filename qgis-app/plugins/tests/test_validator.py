@@ -148,6 +148,66 @@ class TestValidatorMetadataPlugins(TestCase):
         self.assertIsNone(_check_url_link(urls))
 
 
+class TestCheckUrlLinkFollowsRedirects(TestCase):
+    """Regression tests for issue #342: URL validation must follow redirects
+    (e.g. GitLab moving /-/issues to /-/work-items) instead of rejecting them."""
+
+    URLS = [{
+        'url': "https://gitlab.com/example/-/issues",
+        'forbidden_url': "forbidden_url",
+        'metadata_attr': "tracker",
+    }]
+
+    def _make_response(self, status_code):
+        response = mock.Mock()
+        response.status_code = status_code
+        return response
+
+    @mock.patch("requests.head")
+    def test_head_calls_pass_allow_redirects(self, mock_head):
+        mock_head.return_value = self._make_response(200)
+        self.assertIsNone(_check_url_link(self.URLS))
+        # Both the timeout check and the existence check should opt in to
+        # following redirects, otherwise a 3xx response would be treated as
+        # the final status.
+        self.assertGreaterEqual(mock_head.call_count, 2)
+        for call in mock_head.call_args_list:
+            self.assertTrue(
+                call.kwargs.get("allow_redirects"),
+                "requests.head must be called with allow_redirects=True",
+            )
+
+    @mock.patch("requests.head")
+    def test_redirect_to_valid_url_is_accepted(self, mock_head):
+        # When allow_redirects=True, requests transparently follows the
+        # redirect chain and returns the final response's status code.
+        mock_head.return_value = self._make_response(200)
+        self.assertIsNone(_check_url_link(self.URLS))
+
+    @mock.patch("requests.head")
+    def test_redirect_to_broken_url_is_rejected(self, mock_head):
+        # If the final URL after redirects is itself broken, validation
+        # must still fail.
+        mock_head.return_value = self._make_response(404)
+        with self.assertRaises(ValidationError):
+            _check_url_link(self.URLS)
+
+    @mock.patch("requests.head")
+    def test_ssl_error_retries_with_allow_redirects(self, mock_head):
+        # The SSL fallback path (verify=False) lives in error_check_if_exist,
+        # which runs after the timeout check passes. Both the retry and its
+        # redirect handling must stay intact.
+        mock_head.side_effect = [
+            self._make_response(200),         # timeout check passes
+            requests.exceptions.SSLError(),   # existence check trips SSL error
+            self._make_response(200),         # SSL-fallback retry succeeds
+        ]
+        self.assertIsNone(_check_url_link(self.URLS))
+        ssl_retry_call = mock_head.call_args_list[2]
+        self.assertTrue(ssl_retry_call.kwargs.get("allow_redirects"))
+        self.assertFalse(ssl_retry_call.kwargs.get("verify"))
+
+
 class TestValidatorForbiddenFileFolder(TestCase):
     """Test if zipfile is not containing forbidden folders and files """
 
