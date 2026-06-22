@@ -271,9 +271,24 @@
                         {% endwith %}
                     {% include "plugins/includes/email_confirmation_badge.html" %}
                 </div>
-                <a class="button mt-3" href="{% if object.stable %}{{ object.stable.get_download_url }}{% else %}{{ object.experimental.get_download_url }}{% endif %}">
-                    <i class="fas fa-download" style="vertical-align: middle;"></i>&nbsp;{% trans "Download latest" %}
-                </a>
+                <div class="buttons mt-3">
+                    <a class="button" href="{% if object.stable %}{{ object.stable.get_download_url }}{% else %}{{ object.experimental.get_download_url }}{% endif %}">
+                        <span class="icon"><i class="fas fa-download"></i></span>
+                        <span>{% trans "Download latest" %}</span>
+                    </a>
+                    <div class="tooltip">
+                        <a class="button is-outlined" href="{% url 'plugin_versions_json' object.package_name %}" aria-label="{% trans 'Versions JSON' %}">
+                            <span class="icon"><i class="fas fa-code"></i></span>
+                        </a>
+                        <span class="tooltiptext">{% trans "Versions JSON" %}</span>
+                    </div>
+                    <div class="tooltip">
+                        <a class="button is-outlined" href="{% url 'plugin_latest_redirect' object.package_name %}" aria-label="{% trans 'Latest version' %}">
+                            <span class="icon"><i class="fas fa-tag"></i></span>
+                        </a>
+                        <span class="tooltiptext">{% trans "Latest version" %}</span>
+                    </div>
+                </div>
             </div>
         </div>
         <div>
