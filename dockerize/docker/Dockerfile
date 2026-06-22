@@ -42,6 +42,20 @@ WORKDIR /home/web/django_project
 COPY qgis-app/package.json /home/web/django_project/package.json
 RUN npm install --unsafe-perm -g npm@10.2.1 && npm install --unsafe-perm -g webpack@5.89.0 && npm install --unsafe-perm -g webpack-cli@5.1.4 && npm install --unsafe-perm
 
+# Build webpack bundles at image build time — no runtime npm needed.
+RUN npm run build
+
+# Collect all static files (including webpack bundles) into a baked directory inside
+# the image. DATABASE_* must be present for settings_docker.py to parse (it uses
+# os.environ[] not os.environ.get()), but collectstatic never opens a DB connection.
+RUN STATIC_ROOT=/home/web/static_baked/ \
+    DATABASE_NAME=build \
+    DATABASE_USERNAME=build \
+    DATABASE_PASSWORD=build \
+    DATABASE_HOST=build \
+    DJANGO_SETTINGS_MODULE=settings_docker \
+    python manage.py collectstatic --noinput --skip-checks
+
 RUN mkdir -p /var/log/uwsgi
 
 WORKDIR /home/web/django_project

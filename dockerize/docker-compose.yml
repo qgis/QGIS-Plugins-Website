@@ -77,7 +77,7 @@ services:
       - ${QGISPLUGINS_STATIC_VOLUME}:/home/web/static:rw
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw
       - celerybeat-schedule:/home/web/celerybeat-schedule:rw
-    command: bash -c "npm install && npm run build && uwsgi --ini /uwsgi.conf"
+    command: bash -c "cp -rf /home/web/static_baked/. /home/web/static/ && uwsgi --ini /uwsgi.conf"
     depends_on:
       - db
       - rabbitmq
