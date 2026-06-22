@@ -45,6 +45,11 @@ RUN npm install --unsafe-perm -g npm@10.2.1 && npm install --unsafe-perm -g webp
 # Build webpack bundles at image build time — no runtime npm needed.
 RUN npm run build
 
+# Preserve webpack-stats.json outside django_project so the devweb bind-mount
+# (../qgis-app:/home/web/django_project) doesn't hide it. The startup command
+# copies it back into the project dir at container start.
+RUN cp /home/web/django_project/webpack-stats.json /home/web/webpack-stats.json
+
 # Collect all static files (including webpack bundles) into a baked directory inside
 # the image. DATABASE_* and RABBITMQ_HOST are required by settings.py/settings_docker.py
 # at import time (os.environ[] with no default), but collectstatic never uses them.
