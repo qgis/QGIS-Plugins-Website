@@ -46,13 +46,14 @@ RUN npm install --unsafe-perm -g npm@10.2.1 && npm install --unsafe-perm -g webp
 RUN npm run build
 
 # Collect all static files (including webpack bundles) into a baked directory inside
-# the image. DATABASE_* must be present for settings_docker.py to parse (it uses
-# os.environ[] not os.environ.get()), but collectstatic never opens a DB connection.
+# the image. DATABASE_* and RABBITMQ_HOST are required by settings.py/settings_docker.py
+# at import time (os.environ[] with no default), but collectstatic never uses them.
 RUN STATIC_ROOT=/home/web/static_baked/ \
     DATABASE_NAME=build \
     DATABASE_USERNAME=build \
     DATABASE_PASSWORD=build \
     DATABASE_HOST=build \
+    RABBITMQ_HOST=build \
     DJANGO_SETTINGS_MODULE=settings_docker \
     python manage.py collectstatic --noinput --skip-checks
 
