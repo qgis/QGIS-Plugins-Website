@@ -31,7 +31,8 @@ def save_qt6_result(plugin_version_pk: int, passed: bool, logs: str):
         plugin_version.qt6_status = status
         plugin_version.qt6_logs = logs
         plugin_version.qt6_checked_on = timezone.now()
-        plugin_version.save()
+        plugin_version.save(update_fields=["qt6_status", "qt6_logs", "qt6_checked_on"])
+
         logger.info(f"=== Save OK for PluginVersion pk={plugin_version.pk}, status={status} ===")
     except Exception as e:
         logger.error(f"Error saving PluginVersion: {e}")

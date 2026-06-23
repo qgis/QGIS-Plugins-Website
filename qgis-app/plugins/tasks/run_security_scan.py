@@ -81,7 +81,7 @@ def run_security_scan_task(
                     f"Auto-approving {plugin.package_name} v{plugin_version.version} "
                     "(scan tool error, uploader opted in)"
                 )
-            plugin_version.save()
+            plugin_version.save(update_fields=["validation_status", "approved"])
             _send_validation_results_email(plugin_version, security_scan=None)
             if not plugin_version.approved:
                 _notify_staff_for_review(plugin_version)
@@ -116,7 +116,7 @@ def run_security_scan_task(
             f"Plugin {plugin.package_name} v{plugin_version.version} validated successfully"
         )
 
-    plugin_version.save()
+    plugin_version.save(update_fields=["validation_status", "approved"])
 
     # Send validation results email to maintainer(s)
     _send_validation_results_email(plugin_version, security_scan)
