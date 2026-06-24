@@ -81,6 +81,9 @@ services:
       - ${QGISPLUGINS_STATIC_VOLUME}:/home/web/static:rw
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw
       - celerybeat-schedule:/home/web/celerybeat-schedule:rw
+      # Shared search index: the celery worker writes it, uwsgi reads it.
+      # Mounted on the PARENT dir (not the index dir itself) so Whoosh's
+      # rebuild_index can rmtree the index subdir without hitting EBUSY.
       - whoosh-index:/home/web/search_index:rw
     command: >
       bash -c "
@@ -88,9 +91,6 @@ services:
         cp -rf /home/web/static_baked/. /home/web/static/ &&
         uwsgi --ini /uwsgi.conf
       "
-      # Shared search index: the celery worker writes it, uwsgi reads it.
-      # Mounted on the PARENT dir (not the index dir itself) so Whoosh's
-      # rebuild_index can rmtree the index subdir without hitting EBUSY.
     depends_on:
       - db
       - rabbitmq
