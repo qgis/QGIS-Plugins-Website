@@ -67,12 +67,17 @@ jobs:
       - name: Export image as tarball
         run: docker save ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }} | gzip > ${{ env.TARBALL }}
 
+      # This action also uploads the SBOM as a workflow artifact. Pin the name
+      # and keep upload on so the `sbom.spdx.json` artifact is guaranteed and
+      # does not depend on the action's default behaviour changing.
       - name: Generate SBOM (syft, SPDX JSON)
         uses: anchore/sbom-action@v0
         with:
           image: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
           format: spdx-json
           output-file: sbom.spdx.json
+          artifact-name: sbom.spdx.json
+          upload-artifact: true
 
       - name: Generate SBOM table
         run: |
@@ -100,38 +105,88 @@ jobs:
       - name: Generate build report
         run: |
           VERSION="${{ steps.meta.outputs.tag }}"
+          SHA="${{ github.event.pull_request.head.sha }}"
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           IMAGE_ID=$(docker image inspect ${{ env.IMAGE }}:${VERSION} --format '{{.Id}}' | cut -c8-19)
           IMAGE_SIZE=$(docker image inspect ${{ env.IMAGE }}:${VERSION} --format '{{.Size}}' | numfmt --to=iec-i --suffix=B)
           TARBALL_SIZE=$(stat --format=%s ${{ env.TARBALL }} | numfmt --to=iec-i --suffix=B)
           LAYER_COUNT=$(docker image inspect ${{ env.IMAGE }}:${VERSION} --format '{{len .RootFS.Layers}}')
+
+          # Availability and run instructions are event-specific. A release image
+          # is pushed to and pullable from Docker Hub; a PR image is never pushed,
+          # it exists only as the downloadable "docker-image" workflow artifact.
+          if [ "${{ github.event_name }}" = "release" ]; then
+            AVAILABILITY="\`${{ env.IMAGE }}:${VERSION}\` on Docker Hub"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            AVAILABILITY="Workflow artifact \`docker-image\` (not pushed to any registry)"
+          else
+            AVAILABILITY="Local build only (not pushed or uploaded)"
+          fi
 
           cat > build-report.md <<EOF
           ## Docker Image Build
 
           | Property | Value |
           |----------|-------|
-          | Registry image | \`${{ env.IMAGE }}\` (Docker Hub) |
+          | Image | \`${{ env.IMAGE }}\` |
           | Tag | \`${VERSION}\` |
+          | Availability | ${AVAILABILITY} |
           | Image ID | \`${IMAGE_ID}\` |
           | Image Size | ${IMAGE_SIZE} |
           | Tarball Size | ${TARBALL_SIZE} |
           | Layers | ${LAYER_COUNT} |
           | uWSGI Port | 8080 |
+          EOF
+
+          if [ "${{ github.event_name }}" = "release" ]; then
+          cat >> build-report.md <<EOF
 
           ### Quick Start
 
-          This image is **published on a release** to Docker Hub:
+          This image is **published on this release** to Docker Hub:
 
           \`\`\`bash
           docker pull ${{ env.IMAGE }}:${VERSION}
           \`\`\`
 
-          The app is not a standalone container — it needs PostgreSQL, RabbitMQ,
+          The app is not a standalone container. It needs PostgreSQL, RabbitMQ,
           nginx and Celery. Deploy the full, pinned stack on the server with:
 
           \`\`\`bash
           dockerize/scripts/deploy.sh ${VERSION}
           \`\`\`
+          EOF
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+          cat >> build-report.md <<EOF
+
+          ### Download & Run This Build
+
+          This is a **pull request build**. The image is **not** pushed to any
+          registry. Download the \`docker-image\` artifact from the
+          [workflow run](${RUN_URL}), then load and run it locally:
+
+          \`\`\`bash
+          # Unzip the downloaded artifact, then load it into Docker
+          unzip docker-image.zip
+          docker load < ${{ env.TARBALL }}
+
+          # Point the stack at the loaded image and bring up the app services
+          cd dockerize
+          UWSGI_DOCKER_IMAGE=${{ env.IMAGE }}:${VERSION} \\
+            docker compose up -d db rabbitmq uwsgi web
+          \`\`\`
+          EOF
+          else
+          cat >> build-report.md <<EOF
+
+          ### Build Only
+
+          This is a manual CI build (\`${VERSION}\`). The image was built and
+          scanned but is not pushed to a registry or uploaded as an artifact.
+          EOF
+          fi
+
+          cat >> build-report.md <<EOF
 
           ### SBOM
 
@@ -141,6 +196,14 @@ jobs:
 
           $(cat cve-table.md)
           EOF
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          cat >> build-report.md <<EOF
+
+          ---
+          Commit: \`${SHA}\`
+          EOF
+          fi
 
           cat build-report.md >> "$GITHUB_STEP_SUMMARY"
 
@@ -173,42 +236,6 @@ jobs:
           retention-days: 7
           overwrite: true
 
-      - name: Build PR comment body
-        if: github.event_name == 'pull_request'
-        run: |
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          SHA="${{ github.event.pull_request.head.sha }}"
-          VERSION="${{ steps.meta.outputs.tag }}"
-
-          # Write the comment body to a file (NOT $GITHUB_ENV). The report embeds
-          # the full SBOM/CVE tables and can be large; routing it through the
-          # environment bloats every later step's env block past ARG_MAX, which
-          # makes the runner fail to spawn node with "Argument list too long".
-          {
-            cat build-report.md
-            cat <<ARTIFACT_EOF
-
-          ### Download & Run This Build
-
-          The image is **not** pushed to any registry from a PR. Download and load
-          the \`docker-image\` artifact from the [workflow run](${RUN_URL}):
-
-          \`\`\`bash
-          # Unzip the downloaded artifact, then load it into Docker
-          unzip docker-image.zip
-          docker load < ${{ env.TARBALL }}
-
-          # Point the stack at the loaded image and bring up the app services
-          cd dockerize
-          UWSGI_DOCKER_IMAGE=${{ env.IMAGE }}:${VERSION} \\
-            docker compose up -d db rabbitmq uwsgi web
-          \`\`\`
-
-          ---
-          Commit: \`${SHA}\`
-          ARTIFACT_EOF
-          } > pr-comment.md
-
       - name: Find existing PR comment
         if: github.event_name == 'pull_request'
         uses: peter-evans/find-comment@v4
@@ -225,7 +252,7 @@ jobs:
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
-          body-path: pr-comment.md
+          body-path: build-report.md
 
       # ----- Release-only: push the scanned image and enrich the release --------
 
