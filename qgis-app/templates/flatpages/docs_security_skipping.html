@@ -1,0 +1,256 @@
+{% extends 'flatpages/docs.html' %}
+{% block content %}
+<div class="responsive-content">
+
+  <h4>
+    <span class="icon-text">
+      <span class="icon has-text-warning"><i class="fas fa-toggle-off"></i></span>
+      <span>Rule Configuration &amp; Skipping</span>
+    </span>
+  </h4>
+
+  <p>
+    The security scanning system uses a <strong>configurable, opt-in rule model</strong> to
+    minimise false positives while maintaining security standards. Site administrators control
+    which rules are active and which may be skipped; developers may then opt out of specific
+    skippable rules during upload.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       ADMIN CONFIG
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Administrator Rule Configuration</h5>
+
+  <p>
+    Site administrators can configure security rules through the Django admin interface:
+  </p>
+
+  <div class="content">
+    <ul>
+      <li>
+        <strong>Enabled/Disabled:</strong> Rules ship with sensible defaults — <em>critical</em>
+        and <em>warning</em> rules are enabled; <em>info</em> (style/cosmetic) rules are
+        disabled. Only enabled rules are checked during scans.
+      </li>
+      <li>
+        <strong>Skippable:</strong> Each rule can be marked skippable or non-skippable.
+        <em>Critical</em> rules are non-skippable by default and cannot be bypassed by
+        developers. <em>Warning</em> and <em>info</em> rules are skippable by default.
+      </li>
+      <li>
+        <strong>Severity:</strong> Rules are categorised by severity (Critical, Warning, Info),
+        which determines how they are displayed and whether they block plugin approval.
+      </li>
+      <li>
+        <strong>Bulk Actions:</strong> The admin interface provides bulk actions to enable,
+        disable, or toggle skippability for multiple rules at once.
+      </li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       DEVELOPER SKIPPING
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Developer Rule Skipping</h5>
+
+  <p>
+    When uploading a plugin version you can choose to skip specific security rules that produce
+    known false positives for your plugin. For example:
+  </p>
+
+  <div class="content">
+    <ul>
+      <li>
+        A plugin that safely uses XML parsing may skip Bandit's XML-related warnings if those
+        uses have been verified as secure.
+      </li>
+      <li>
+        A plugin that includes vendored third-party libraries may skip secrets detection for
+        those specific files if they contain test keys or example configurations.
+      </li>
+      <li>
+        A plugin with intentional style choices may skip specific Flake8 rules that conflict
+        with the project's coding standards.
+      </li>
+    </ul>
+  </div>
+
+  <p><strong>Important limitations:</strong></p>
+
+  <div class="content">
+    <ul>
+      <li>
+        Only rules that are both <em>enabled</em> AND marked as <em>skippable</em> by
+        administrators can be skipped by developers.
+      </li>
+      <li>
+        Non-skippable rules (typically the most critical security checks) cannot be bypassed
+        via the skip mechanism. Consider using
+        <a href="{% url 'docs_security_config_files' %}">security config files</a>
+        to suppress specific findings within those tools.
+      </li>
+      <li>
+        All skipped rules are logged and visible to administrators, creating an audit trail.
+      </li>
+      <li>
+        The skip list is displayed on the version detail page's <strong>Security</strong> tab.
+      </li>
+      <li>
+        <strong>XML-RPC uploads automatically skip all skippable rules.</strong> The legacy
+        XML-RPC upload interface (<code>plugin.upload</code> / <code>plugin.uploadVersion</code>)
+        has a fixed binary parameter signature and cannot accept a rule-skip list from the
+        client. As a result, the server automatically skips every rule that is currently
+        marked as <em>skippable</em> on behalf of XML-RPC callers. This mirrors the most
+        permissive choice a developer could make via the web form. Only non-skippable
+        (mandatory) rules are enforced for XML-RPC uploads.
+      </li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       WEB FORM
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Skipping Rules via the Web Upload Form</h5>
+
+  <div class="content">
+    <ol>
+      <li>Navigate to the plugin upload page or version creation form.</li>
+      <li>
+        Below the file upload field, a <strong>Security Rules</strong> panel lists all
+        enabled, skippable rules (only shown if at least one such rule is configured).
+      </li>
+      <li>
+        All rules start with their toggle <strong>ON</strong> (enabled — will be checked
+        during the scan). Click a row or the toggle switch to turn a rule <strong>OFF</strong>
+        and skip it for this upload. Each rule shows its code, name, severity, and a short
+        description. A counter in the panel header tracks how many rules will actually run.
+      </li>
+      <li>Upload your plugin as normal.</li>
+      <li>
+        Rules toggled <strong>OFF</strong> are excluded from the scan for this specific
+        version only and do not affect any other version.
+      </li>
+      <li>
+        View which rules were skipped in the <strong>Security</strong> tab on the version
+        detail page.
+      </li>
+    </ol>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       REST API
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Skipping Rules via the Token-Based REST API</h5>
+
+  <p>
+    When uploading with an authentication token, include one <code>skip_security_rules</code>
+    POST field per rule you want to skip. The value must be the rule's
+    <strong>check code</strong> exactly as shown on the
+    <a href="{% url 'docs_security_rules' %}">Security Rules reference page</a>
+    (e.g. <code>B311</code>, <code>KeywordDetector</code>, <code>E722</code>).
+  </p>
+
+  <pre><code># Upload and skip two skippable rules
+curl -X POST https://plugins.qgis.org/plugins/&lt;plugin-slug&gt;/version/add/ \
+  -H "Authorization: Token &lt;your-token&gt;" \
+  -F "package=@myplugin.zip" \
+  -F "skip_security_rules=B311" \
+  -F "skip_security_rules=KeywordDetector"</code></pre>
+
+  <div class="content">
+    <ul>
+      <li>Only rules that are <em>enabled</em> and marked <em>skippable</em> by an
+        administrator can be skipped this way.</li>
+      <li>Check codes are case-sensitive. Unknown or non-skippable codes are silently
+        ignored.</li>
+      <li>Skipped rules are recorded and visible on the version detail page's
+        <strong>Security</strong> tab.</li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       REQUESTING CHANGES
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Requesting Rule Configuration Changes</h5>
+
+  <p>
+    If you believe a rule is producing excessive false positives or should be made skippable:
+  </p>
+
+  <div class="content">
+    <ul>
+      <li>
+        File an issue on the
+        <a href="https://github.com/qgis/QGIS-Plugins-Website/issues/new/choose"
+           target="_blank" rel="noopener">
+          QGIS-Plugins-Website GitHub repository
+        </a>
+        explaining the specific rule and why it's problematic.
+      </li>
+      <li>Provide concrete examples of false positives from your plugin.</li>
+      <li>
+        Site administrators will review the request and may adjust the rule configuration or
+        provide guidance.
+      </li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SEE ALSO
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <hr>
+  <div class="columns">
+    <div class="column">
+      <div class="notification is-link is-light">
+        <div class="is-flex is-align-items-center" style="gap:1rem;">
+          <span class="icon is-large has-text-link" style="flex-shrink:0;">
+            <i class="fas fa-list-alt fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold mb-1">Rules Reference</p>
+            <a class="button is-link is-small" href="{% url 'docs_security_rules' %}">
+              <span class="icon"><i class="fas fa-list-alt"></i></span>
+              <span>View All Rules</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="notification is-warning is-light">
+        <div class="is-flex is-align-items-center" style="gap:1rem;">
+          <span class="icon is-large has-text-warning" style="flex-shrink:0;">
+            <i class="fas fa-cog fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold mb-1">Config Files</p>
+            <p class="is-size-7 mb-2">Suppress false positives using tool config files bundled in your ZIP.</p>
+            <a class="button is-warning is-small" href="{% url 'docs_security_config_files' %}">
+              <span class="icon"><i class="fas fa-cog"></i></span>
+              <span>Config Files Guide</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="notification is-danger is-light">
+        <div class="is-flex is-align-items-center" style="gap:1rem;">
+          <span class="icon is-large has-text-danger" style="flex-shrink:0;">
+            <i class="fas fa-life-ring fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold mb-1">Troubleshooting</p>
+            <p class="is-size-7 mb-2">Blocked plugin? Find out how to resolve issues and get help.</p>
+            <a class="button is-danger is-small" href="{% url 'docs_security_troubleshooting' %}">
+              <span class="icon"><i class="fas fa-life-ring"></i></span>
+              <span>Troubleshooting</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /responsive-content -->
+{% endblock %}

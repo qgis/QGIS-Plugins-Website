@@ -1,0 +1,277 @@
+{% extends 'flatpages/docs.html' %}
+{% load i18n %}
+
+{% block content %}
+<div class="responsive-content">
+
+  <h4>
+    <span class="icon-text">
+      <span class="icon has-text-link"><i class="fas fa-list-alt"></i></span>
+      <span>Security Rules Reference</span>
+    </span>
+  </h4>
+
+  <p>
+    This page lists <strong>every security and quality rule</strong> configured on this server,
+    with its current enabled/disabled status and whether developers may skip it during upload.
+    The table is generated live from the database — administrators can modify rule settings at
+    any time.
+  </p>
+
+  {% if security_rules_grouped %}
+
+  <!-- Summary stats -->
+  <div class="columns is-multiline mb-5">
+    <div class="column is-one-fifth-tablet">
+      <div class="srw-stat-card">
+        <p class="srw-stat-label">Total Rules</p>
+        <p class="srw-stat-value">{{ total_rules }}</p>
+      </div>
+    </div>
+    <div class="column is-one-fifth-tablet">
+      <div class="srw-stat-card srw-stat-success">
+        <p class="srw-stat-label">Active</p>
+        <p class="srw-stat-value has-text-success">{{ total_enabled }}</p>
+      </div>
+    </div>
+    <div class="column is-one-fifth-tablet">
+      <div class="srw-stat-card srw-stat-warning">
+        <p class="srw-stat-label">Skippable</p>
+        <p class="srw-stat-value has-text-warning-dark">{{ total_skippable }}</p>
+      </div>
+    </div>
+    <div class="column is-one-fifth-tablet">
+      <div class="srw-stat-card srw-stat-danger">
+        <p class="srw-stat-label">Disabled</p>
+        <p class="srw-stat-value has-text-danger">{{ total_disabled }}</p>
+      </div>
+    </div>
+    <div class="column is-one-fifth-tablet">
+      <div class="srw-stat-card srw-stat-info">
+        <p class="srw-stat-label">Categories</p>
+        <p class="srw-stat-value has-text-info">{{ security_rules_grouped|length }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search bar -->
+  <div class="field mb-4">
+    <div class="control has-icons-left">
+      <input class="input" type="search" id="rules-search"
+             placeholder="Filter rules by code, name or description…"
+             oninput="filterRules(this.value)">
+      <span class="icon is-left"><i class="fas fa-search"></i></span>
+    </div>
+  </div>
+
+  <!-- Filter toggles -->
+  <div class="field is-grouped is-grouped-multiline mb-5" id="filter-tags">
+    <div class="control">
+      <span class="tags has-addons is-clickable" onclick="toggleFilter('all')" id="filter-all">
+        <span class="tag mb-0 is-dark">All</span>
+        <span class="tag mb-0 is-light">{{ total_rules }}</span>
+      </span>
+    </div>
+    <div class="control">
+      <span class="tags has-addons is-clickable" onclick="toggleFilter('critical')" id="filter-critical">
+        <span class="tag mb-0 is-danger">Critical</span>
+        <span class="tag mb-0 is-light">{{ total_critical }}</span>
+      </span>
+    </div>
+    <div class="control">
+      <span class="tags has-addons is-clickable" onclick="toggleFilter('warning')" id="filter-warning">
+        <span class="tag mb-0 is-warning">Warning</span>
+        <span class="tag mb-0 is-light">{{ total_warning }}</span>
+      </span>
+    </div>
+    <div class="control">
+      <span class="tags has-addons is-clickable" onclick="toggleFilter('info')" id="filter-info">
+        <span class="tag mb-0 is-info">Info</span>
+        <span class="tag mb-0 is-light">{{ total_info }}</span>
+      </span>
+    </div>
+    <div class="control">
+      <span class="tags has-addons is-clickable" onclick="toggleFilter('enabled')" id="filter-enabled">
+        <span class="tag mb-0 is-success">Active only</span>
+        <span class="tag mb-0 is-light">{{ total_enabled }}</span>
+      </span>
+    </div>
+    <div class="control">
+      <span class="tags has-addons is-clickable" onclick="toggleFilter('skippable')" id="filter-skippable">
+        <span class="tag mb-0" style="background:#fbbf24;color:#fff;">Skippable</span>
+        <span class="tag mb-0 is-light">{{ total_skippable }}</span>
+      </span>
+    </div>
+  </div>
+
+  <p class="is-size-7 has-text-grey mb-5">
+    Rule sources:
+    <a href="https://bandit.readthedocs.io/en/latest/plugins/index.html" target="_blank" rel="noopener" class="has-text-grey">Bandit</a>
+    &middot;
+    <a href="https://pypi.org/project/detect-secrets/" target="_blank" rel="noopener" class="has-text-grey">detect-secrets</a>
+    &middot;
+    <a href="https://www.flake8rules.com/" target="_blank" rel="noopener" class="has-text-grey">flake8</a>
+  </p>
+
+  {% for category in security_rules_grouped %}
+  <div class="srw-cat-card" id="srw-cat-card-{{ category.key }}">
+
+    <div class="srw-cat-header" onclick="srwToggle('{{ category.key }}')">
+      <div class="cat-title">
+        <span class="icon srw-icon-{{ category.key }}"><i class="{{ category.icon }}"></i></span>
+        {{ category.label }}
+        <span class="tag is-light">{{ category.total_count }}</span>
+      </div>
+      <div class="cat-right">
+        {% if category.critical_count %}<span class="tag is-small srw-sev-critical">{{ category.critical_count }}C</span>{% endif %}
+        {% if category.warning_count %}<span class="tag is-small srw-sev-warning">{{ category.warning_count }}W</span>{% endif %}
+        {% if category.info_count %}<span class="tag is-small srw-sev-info">{{ category.info_count }}I</span>{% endif %}
+        <span class="tag is-success is-light is-small">{{ category.enabled_count }} active</span>
+        <span class="icon srw-chevron" id="srw-chevron-{{ category.key }}">
+          <i class="fas fa-chevron-right fa-sm"></i>
+        </span>
+      </div>
+    </div>
+
+    <div class="srw-cat-body" id="srw-body-{{ category.key }}" style="display:none;">
+      <p class="no-results-msg" id="srw-nores-{{ category.key }}">
+        No rules match the current filter.
+      </p>
+      <table class="table is-fullwidth srw-table" id="srw-table-{{ category.key }}">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Rule Name</th>
+            <th>Description</th>
+            <th>Severity</th>
+            <th class="has-text-centered">Active</th>
+            <th class="has-text-centered">Skippable</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rule in category.rules %}
+          <tr class="srw-row{% if not rule.enabled %} row-disabled{% endif %}"
+              data-code="{{ rule.check_code|lower }}"
+              data-name="{{ rule.check_name|lower }}"
+              data-desc="{{ rule.check_description|lower }}"
+              data-severity="{{ rule.severity }}"
+              data-enabled="{{ rule.enabled|yesno:'1,0' }}"
+              data-skippable="{{ rule.can_be_skipped|yesno:'1,0' }}">
+            <td>
+              <code class="srw-rule-code sev-{% if rule.enabled %}{{ rule.severity }}{% else %}disabled{% endif %}">
+                {{ rule.check_code }}
+              </code>
+            </td>
+            <td><strong>{{ rule.check_name }}</strong></td>
+            <td><span class="srw-rule-desc">{{ rule.check_description }}</span></td>
+            <td>
+              <span class="tag is-small srw-sev-{{ rule.severity }}">{{ rule.get_severity_display }}</span>
+            </td>
+            <td class="has-text-centered">
+              {% if rule.enabled %}
+                <span class="icon has-text-success" title="Enabled"><i class="fas fa-check-circle"></i></span>
+              {% else %}
+                <span class="icon has-text-grey-light" title="Disabled"><i class="far fa-circle"></i></span>
+              {% endif %}
+            </td>
+            <td class="has-text-centered">
+              {% if rule.can_be_skipped %}
+                <span class="icon has-text-warning-dark" title="Can be skipped by developer"><i class="fas fa-forward"></i></span>
+              {% else %}
+                <span class="icon has-text-danger" title="Required – cannot be skipped"><i class="fas fa-lock"></i></span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  {% endfor %}
+
+  <p class="is-size-7 has-text-grey mt-4">
+    <span class="icon-text">
+      <span class="icon"><i class="fas fa-sync-alt"></i></span>
+      <span>This table reflects the live database configuration. Administrators can change rule settings at any time via the Django admin interface.</span>
+    </span>
+  </p>
+
+  {% else %}
+  <div class="notification is-warning is-light">
+    <p>No security rules have been configured yet. Run <code>python manage.py populate_security_rules</code> to seed the default rule set.</p>
+  </div>
+  {% endif %}
+
+</div><!-- /responsive-content -->
+
+<script>
+(function () {
+  /* ── expand/collapse category blocks ────────────────────────────── */
+  function srwToggle(key) {
+    var body    = document.getElementById('srw-body-' + key);
+    var chevron = document.getElementById('srw-chevron-' + key);
+    var isOpen  = body.style.display !== 'none' && body.style.display !== '';
+    body.style.display = isOpen ? 'none' : 'block';
+    chevron.classList[isOpen ? 'remove' : 'add']('open');
+  }
+  window.srwToggle = srwToggle;
+
+  /* ── search & filter ─────────────────────────────────────────────── */
+  var allRows = document.querySelectorAll('.srw-row');
+  var activeFilter = 'all';
+
+  function applyFilter() {
+    var query = (document.getElementById('rules-search').value || '').toLowerCase().trim();
+    var categories = {};
+
+    allRows.forEach(function (row) {
+      var cat = row.closest('.srw-cat-card').id.replace('srw-cat-card-', '');
+      var matchText = !query ||
+        row.dataset.code.includes(query) ||
+        row.dataset.name.includes(query) ||
+        row.dataset.desc.includes(query);
+
+      var matchFilter = true;
+      if (activeFilter === 'critical')   matchFilter = row.dataset.severity === 'critical';
+      else if (activeFilter === 'warning')   matchFilter = row.dataset.severity === 'warning';
+      else if (activeFilter === 'info')      matchFilter = row.dataset.severity === 'info';
+      else if (activeFilter === 'enabled')   matchFilter = row.dataset.enabled === '1';
+      else if (activeFilter === 'skippable') matchFilter = row.dataset.skippable === '1' && row.dataset.enabled === '1';
+
+      var show = matchText && matchFilter;
+      row.classList[show ? 'remove' : 'add']('row-hidden');
+      categories[cat] = categories[cat] || { visible: 0 };
+      if (show) categories[cat].visible++;
+    });
+
+    /* Show/hide no-results messages and auto-open categories with results */
+    Object.keys(categories).forEach(function (cat) {
+      var nores   = document.getElementById('srw-nores-' + cat);
+      var body    = document.getElementById('srw-body-' + cat);
+      var chevron = document.getElementById('srw-chevron-' + cat);
+      var hasResults = categories[cat].visible > 0;
+      if (nores) nores.style.display = hasResults ? 'none' : 'block';
+      if ((query || activeFilter !== 'all') && hasResults && body) {
+        body.style.display = 'block';
+        if (chevron) chevron.classList.add('open');
+      }
+    });
+  }
+
+  window.filterRules = applyFilter;
+
+  window.toggleFilter = function (filter) {
+    activeFilter = activeFilter === filter ? 'all' : filter;
+    document.querySelectorAll('[id^="filter-"]').forEach(function (el) {
+      el.classList.remove('filter-tag-active');
+    });
+    document.getElementById('filter-' + activeFilter).classList.add('filter-tag-active');
+    applyFilter();
+  };
+
+  /* initial active highlight */
+  document.getElementById('filter-all').classList.add('filter-tag-active');
+}());
+</script>
+{% endblock %}

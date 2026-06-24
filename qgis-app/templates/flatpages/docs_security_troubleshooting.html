@@ -1,0 +1,208 @@
+{% extends 'flatpages/docs.html' %}
+{% block content %}
+<div class="responsive-content">
+
+  <h4>
+    <span class="icon-text">
+      <span class="icon has-text-danger"><i class="fas fa-life-ring"></i></span>
+      <span>Security Scanning — Troubleshooting</span>
+    </span>
+  </h4>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       RESOLVING A BLOCKED PLUGIN
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Resolving a Blocked Plugin</h5>
+
+  <p>
+    A <strong class="has-text-danger">Blocked</strong> status means at least one critical
+    security issue was found. You cannot unblock an existing version — each new upload starts
+    a fresh scan.
+  </p>
+
+  <div class="content">
+    <ol>
+      <li>Open the <strong>Security</strong> tab on the blocked version's detail page.</li>
+      <li>Review the critical findings listed there.</li>
+      <li>Fix the issues in your local copy of the plugin.</li>
+      <li>Upload a new version — it will be scanned automatically.</li>
+    </ol>
+  </div>
+
+  <p class="notification is-warning is-light">
+    <strong>Note:</strong> Re-scanning an existing version (via the manual re-scan button) does
+    <em>not</em> change the validation status. It only refreshes the displayed results. You must
+    upload a new version to clear a blocked status.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       FALSE POSITIVES
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Dealing with False Positives</h5>
+
+  <p>
+    Some findings may be false positives. For example, a password-manager plugin may
+    legitimately handle credentials. You have three options:
+  </p>
+
+  <div class="content">
+    <ol>
+      <li>
+        <strong>Skip a skippable rule</strong> during upload — available for rules that
+        administrators have marked as skippable. See the
+        <a href="{% url 'docs_security_skipping' %}">Rule Skipping guide</a>.
+      </li>
+      <li>
+        <strong>Bundle a config file</strong> inside your plugin ZIP to suppress specific
+        findings within a tool (<code>.bandit</code>, <code>.secrets.baseline</code>,
+        <code>.flake8</code>). See the
+        <a href="{% url 'docs_security_config_files' %}">Config Files guide</a>.
+      </li>
+      <li>
+        <strong>Raise an issue</strong> if neither of the above is possible — see below.
+      </li>
+    </ol>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       RAISING AN ISSUE
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Raising an Issue about a Security Check</h5>
+
+  <p>
+    If you believe a <strong>mandatory (non-skippable)</strong> rule is producing a genuine
+    false positive for your plugin and neither config files nor rule skipping can resolve it,
+    you can request a review from the site administrators.
+  </p>
+
+  <p>
+    Use the dedicated issue template on GitHub — it guides you through providing the
+    information administrators need to make a decision quickly:
+  </p>
+
+  <div class="notification is-link is-light">
+    <div class="is-flex is-align-items-center" style="gap:1rem;">
+      <span class="icon is-large has-text-link" style="flex-shrink:0;">
+        <i class="fab fa-github fa-2x"></i>
+      </span>
+      <div>
+        <p class="has-text-weight-bold mb-1">Security Check Issue Template</p>
+        <p class="mb-2">
+          Fill in your plugin name, the rule code, why you believe it's a false positive, and
+          any workaround you've already attempted.
+        </p>
+        <a class="button is-link is-small"
+           href="https://github.com/qgis/QGIS-Plugins-Website/issues/new?template=security_check.yml"
+           target="_blank" rel="noopener">
+          <span class="icon"><i class="fab fa-github"></i></span>
+          <span>Open Security Check Issue</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <p class="is-size-7 has-text-grey">
+    Administrators will review your request and may adjust the rule's skippability, update the
+    rule configuration, or provide guidance. Raising an issue does not automatically unblock
+    your plugin.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       IMPORTANT NOTES
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Important Notes</h5>
+
+  <div class="content">
+    <ul>
+      <li>
+        <strong>🔒 Privacy:</strong> All scans run locally on the server. No plugin code is
+        sent to external services.
+      </li>
+      <li>
+        <strong>📊 Transparency:</strong> Full scan results are always visible to plugin authors
+        and administrators on the version detail page.
+      </li>
+      <li>
+        <strong>🔁 Re-scan:</strong> You can trigger a manual re-scan from the
+        <strong>Security</strong> tab at any time. It refreshes the results display but does
+        not change the validation status.
+      </li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SUPPORT
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Getting Support</h5>
+
+  <div class="content">
+    <ul>
+      <li>Review the detailed scan results on your plugin's version detail page.</li>
+      <li>Check the linked documentation for each security tool.</li>
+      <li>Ask questions on the QGIS Developers mailing list.</li>
+      <li>
+        File a general issue on the
+        <a href="https://github.com/qgis/QGIS-Plugins-Website" target="_blank" rel="noopener">
+          QGIS-Plugins-Website GitHub repository
+        </a>.
+      </li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SEE ALSO
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <hr>
+  <div class="columns">
+    <div class="column">
+      <div class="notification is-link is-light">
+        <div class="is-flex is-align-items-center" style="gap:1rem;">
+          <span class="icon is-large has-text-link" style="flex-shrink:0;">
+            <i class="fas fa-search fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold mb-1">Scanning Overview</p>
+            <a class="button is-link is-small" href="{% url 'docs_security_scanning' %}">
+              <span class="icon"><i class="fas fa-search"></i></span>
+              <span>Overview</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="notification is-link is-light">
+        <div class="is-flex is-align-items-center" style="gap:1rem;">
+          <span class="icon is-large has-text-link" style="flex-shrink:0;">
+            <i class="fas fa-toggle-off fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold mb-1">Rule Skipping</p>
+            <a class="button is-link is-small" href="{% url 'docs_security_skipping' %}">
+              <span class="icon"><i class="fas fa-toggle-off"></i></span>
+              <span>Rule Skipping Guide</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="notification is-warning is-light">
+        <div class="is-flex is-align-items-center" style="gap:1rem;">
+          <span class="icon is-large has-text-warning" style="flex-shrink:0;">
+            <i class="fas fa-cog fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold mb-1">Config Files</p>
+            <a class="button is-warning is-small" href="{% url 'docs_security_config_files' %}">
+              <span class="icon"><i class="fas fa-cog"></i></span>
+              <span>Config Files Guide</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /responsive-content -->
+{% endblock %}
