@@ -11,31 +11,27 @@ Tests cover:
  - Stage 1 (upload confirmation) and Stage 2 (results) email notifications
 """
 
+import datetime
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from django.contrib.auth.models import Permission, User
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, RequestFactory, TestCase, override_settings
 from django.urls import reverse
-
-import datetime
-
 from django.utils import timezone
-
 from plugins.models import (
-    Plugin,
-    PluginEmailConfirmation,
-    PluginVersion,
-    PluginVersionSecurityScan,
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_PENDING,
     VALIDATION_STATUS_VALIDATED,
     VALIDATION_STATUS_VALIDATING,
+    Plugin,
+    PluginEmailConfirmation,
+    PluginVersion,
+    PluginVersionSecurityScan,
 )
 from plugins.tasks.run_security_scan import (
-    _auto_approve_if_trusted,
     _send_validation_results_email,
     run_security_scan_task,
 )
@@ -43,7 +39,9 @@ from plugins.tasks.run_security_scan import (
 TESTFILE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "testfiles"))
 
 
-def _make_plugin_version(user, validation_status=VALIDATION_STATUS_PENDING, approved=False):
+def _make_plugin_version(
+    user, validation_status=VALIDATION_STATUS_PENDING, approved=False
+):
     """Create a minimal Plugin + PluginVersion for testing."""
     plugin = Plugin.objects.create(
         package_name="test-security-pkg",
@@ -67,6 +65,7 @@ def _make_plugin_version(user, validation_status=VALIDATION_STATUS_PENDING, appr
 # ---------------------------------------------------------------------------
 # Model / property tests
 # ---------------------------------------------------------------------------
+
 
 class ValidationStatusPropertyTest(TestCase):
     """Tests for PluginVersion.is_available and validation_status field."""
@@ -112,6 +111,7 @@ class ValidationStatusPropertyTest(TestCase):
 # ---------------------------------------------------------------------------
 # Async task tests
 # ---------------------------------------------------------------------------
+
 
 class RunSecurityScanTaskTest(TestCase):
     """Tests for the run_security_scan_task Celery task."""
@@ -224,60 +224,9 @@ class RunSecurityScanTaskTest(TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Auto-approve helper tests
-# ---------------------------------------------------------------------------
-
-class MaybeAutoApproveTest(TestCase):
-    """Tests for the _auto_approve_if_trusted helper."""
-
-    def setUp(self):
-        self.user = User.objects.create_user(
-            username="approveuser", password="pass", email="approve@test.com"
-        )
-        self.plugin, self.version = _make_plugin_version(self.user)
-
-    def test_auto_approve_for_trusted_user(self):
-        """Users with 'can_approve' permission are auto-approved."""
-        permission = Permission.objects.get(codename="can_approve")
-        self.user.user_permissions.add(permission)
-        # Refresh from DB to pick up new permissions
-        self.user = User.objects.get(pk=self.user.pk)
-        self.version.created_by = self.user
-
-        _auto_approve_if_trusted(self.version)
-
-        self.assertTrue(self.version.approved)
-
-    def test_auto_approve_when_plugin_already_approved(self):
-        """Versions of already-approved plugins are auto-approved."""
-        # Approve the plugin by approving an older version
-        self.plugin.latest_approved_version = self.version
-        old_version = PluginVersion.objects.create(
-            plugin=self.plugin,
-            version="0.9.0",
-            downloads=0,
-            created_by=self.user,
-            approved=True,
-            package=SimpleUploadedFile("t2.zip", b"PK\x05\x06" + b"\x00" * 18),
-            min_qg_version="3.0.0",
-            max_qg_version="3.99.0",
-        )
-        # Plugin.approved returns True when any version is approved
-        self.assertTrue(self.plugin.approved)
-
-        _auto_approve_if_trusted(self.version)
-
-        self.assertTrue(self.version.approved)
-
-    def test_no_auto_approve_for_untrusted_user(self):
-        """Regular users without 'can_approve' are NOT auto-approved."""
-        _auto_approve_if_trusted(self.version)
-        self.assertFalse(self.version.approved)
-
-
-# ---------------------------------------------------------------------------
 # Upload flow tests
 # ---------------------------------------------------------------------------
+
 
 class PluginUploadValidationFlowTest(TestCase):
     """Tests that the upload view sets validating status and queues the task."""
@@ -300,7 +249,9 @@ class PluginUploadValidationFlowTest(TestCase):
         self.client.login(username="uploaduser", password="testpass")
         valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin.zip_")
         with open(valid_plugin, "rb") as f:
-            uploaded = SimpleUploadedFile("valid_plugin.zip_", f.read(), content_type="application/zip")
+            uploaded = SimpleUploadedFile(
+                "valid_plugin.zip_", f.read(), content_type="application/zip"
+            )
 
         response = self.client.post(self.url, {"package": uploaded})
 
@@ -318,7 +269,9 @@ class PluginUploadValidationFlowTest(TestCase):
         self.client.login(username="uploaduser", password="testpass")
         valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin.zip_")
         with open(valid_plugin, "rb") as f:
-            uploaded = SimpleUploadedFile("valid_plugin.zip_", f.read(), content_type="application/zip")
+            uploaded = SimpleUploadedFile(
+                "valid_plugin.zip_", f.read(), content_type="application/zip"
+            )
 
         self.client.post(self.url, {"package": uploaded})
 
@@ -335,7 +288,9 @@ class PluginUploadValidationFlowTest(TestCase):
         self.client.login(username="uploaduser", password="testpass")
         valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin.zip_")
         with open(valid_plugin, "rb") as f:
-            uploaded = SimpleUploadedFile("valid_plugin.zip_", f.read(), content_type="application/zip")
+            uploaded = SimpleUploadedFile(
+                "valid_plugin.zip_", f.read(), content_type="application/zip"
+            )
 
         self.client.post(self.url, {"package": uploaded})
 
@@ -349,6 +304,7 @@ class PluginUploadValidationFlowTest(TestCase):
 # Download blocking tests
 # ---------------------------------------------------------------------------
 
+
 class VersionDownloadBlockingTest(TestCase):
     """Tests that download is blocked for validating/blocked versions."""
 
@@ -360,7 +316,9 @@ class VersionDownloadBlockingTest(TestCase):
         self.plugin, self.version = _make_plugin_version(self.user)
 
     def _get_download(self):
-        url = reverse("version_download", args=[self.plugin.package_name, self.version.version])
+        url = reverse(
+            "version_download", args=[self.plugin.package_name, self.version.version]
+        )
         c = Client()
         return c.get(url)
 
@@ -375,7 +333,9 @@ class VersionDownloadBlockingTest(TestCase):
     def test_download_allowed_when_approved(self):
         """Approved versions are always downloadable, regardless of validation_status."""
         self.version.approved = True
-        self.version.validation_status = VALIDATION_STATUS_BLOCKED  # hypothetical edge case
+        self.version.validation_status = (
+            VALIDATION_STATUS_BLOCKED  # hypothetical edge case
+        )
         self.version.save()
         response = self._get_download()
         self.assertNotEqual(response.status_code, 403)
@@ -409,6 +369,7 @@ class VersionDownloadBlockingTest(TestCase):
 # Approval blocking tests
 # ---------------------------------------------------------------------------
 
+
 class VersionApproveBlockingTest(TestCase):
     """Tests that approval is blocked for validating/blocked versions."""
 
@@ -417,7 +378,9 @@ class VersionApproveBlockingTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.staff_user = User.objects.create_user(
-            username="staffapprover", password="pass", email="staff@test.com",
+            username="staffapprover",
+            password="pass",
+            email="staff@test.com",
             is_staff=True,
         )
         self.staff_user.user_permissions.add(
@@ -433,7 +396,9 @@ class VersionApproveBlockingTest(TestCase):
 
     def _post_approve(self):
         self.client.login(username="staffapprover", password="pass")
-        url = reverse("version_approve", args=[self.plugin.package_name, self.version.version])
+        url = reverse(
+            "version_approve", args=[self.plugin.package_name, self.version.version]
+        )
         return self.client.post(url)
 
     def test_approve_allowed_when_validated(self):
@@ -480,6 +445,7 @@ class VersionApproveBlockingTest(TestCase):
 # Manual re-scan view tests
 # ---------------------------------------------------------------------------
 
+
 class VersionRescanViewTest(TestCase):
     """Tests for the version_rescan view."""
 
@@ -495,7 +461,9 @@ class VersionRescanViewTest(TestCase):
     @patch("plugins.views.run_security_scan_task")
     def test_rescan_requires_login(self, mock_task):
         """Anonymous users must be redirected to the login page."""
-        url = reverse("version_rescan", args=[self.plugin.package_name, self.version.version])
+        url = reverse(
+            "version_rescan", args=[self.plugin.package_name, self.version.version]
+        )
         response = self.client.post(url)
         self.assertEqual(response.status_code, 302)
         self.assertIn("/accounts/login/", response["Location"])
@@ -505,7 +473,9 @@ class VersionRescanViewTest(TestCase):
     def test_rescan_requires_post(self, mock_task):
         """GET requests to rescan must not trigger the task."""
         self.client.login(username="rescanuser", password="pass")
-        url = reverse("version_rescan", args=[self.plugin.package_name, self.version.version])
+        url = reverse(
+            "version_rescan", args=[self.plugin.package_name, self.version.version]
+        )
         response = self.client.get(url)
         # Should return 405 (method not allowed)
         self.assertEqual(response.status_code, 405)
@@ -515,7 +485,9 @@ class VersionRescanViewTest(TestCase):
     def test_rescan_owner_can_trigger(self, mock_task):
         """The plugin owner can trigger a manual re-scan."""
         self.client.login(username="rescanuser", password="pass")
-        url = reverse("version_rescan", args=[self.plugin.package_name, self.version.version])
+        url = reverse(
+            "version_rescan", args=[self.plugin.package_name, self.version.version]
+        )
         response = self.client.post(url)
         self.assertEqual(response.status_code, 302)
         mock_task.delay.assert_called_once_with(self.version.pk, is_manual=True)
@@ -527,7 +499,9 @@ class VersionRescanViewTest(TestCase):
             username="otheruser2", password="pass", email="other2@test.com"
         )
         self.client.login(username="otheruser2", password="pass")
-        url = reverse("version_rescan", args=[self.plugin.package_name, self.version.version])
+        url = reverse(
+            "version_rescan", args=[self.plugin.package_name, self.version.version]
+        )
         response = self.client.post(url)
         # Should redirect with an error, not call task
         self.assertEqual(response.status_code, 302)
@@ -538,6 +512,7 @@ class VersionRescanViewTest(TestCase):
 # Email notification tests
 # ---------------------------------------------------------------------------
 
+
 class UploadConfirmationEmailTest(TestCase):
     """Tests for Stage 1 upload confirmation email."""
 
@@ -545,7 +520,9 @@ class UploadConfirmationEmailTest(TestCase):
         self.user = User.objects.create_user(
             username="emailuser", password="pass", email="emailuser@test.com"
         )
-        self.plugin, self.version = _make_plugin_version(self.user, VALIDATION_STATUS_VALIDATING)
+        self.plugin, self.version = _make_plugin_version(
+            self.user, VALIDATION_STATUS_VALIDATING
+        )
 
     @override_settings(DEBUG=False)
     def test_upload_confirmation_email_sent(self):
@@ -590,7 +567,9 @@ class ValidationResultsEmailTest(TestCase):
         self.user = User.objects.create_user(
             username="resultsuser", password="pass", email="results@test.com"
         )
-        self.plugin, self.version = _make_plugin_version(self.user, VALIDATION_STATUS_VALIDATED)
+        self.plugin, self.version = _make_plugin_version(
+            self.user, VALIDATION_STATUS_VALIDATED
+        )
 
     def _make_scan(self, critical_count=0):
         return PluginVersionSecurityScan.objects.create(
@@ -649,7 +628,10 @@ class ValidationResultsEmailTest(TestCase):
 
         subject = mail.outbox[0].subject.lower()
         self.assertTrue(
-            "block" in subject or "fail" in subject or "critical" in subject or "issue" in subject,
+            "block" in subject
+            or "fail" in subject
+            or "critical" in subject
+            or "issue" in subject,
             f"Unexpected subject for blocked email: {mail.outbox[0].subject}",
         )
 

@@ -224,7 +224,7 @@
                 <p class="plugin-details-description">{{ object.description|linebreaksbr }}</p>
                 <div id="rating"> (<span id="votes">{% firstof votes '0' %}</span>) {% trans "votes" %}&nbsp;<span id="loading" style="display:none">Loading...</span><span id="vote-message" style="display:none"></span></div>
                 <div class="is-flex" style="gap: 0.5rem;">
-                        {% with release=object.stable|default:object.experimental %}
+                        {% with release=object.stable|default:object.experimental|default:object.latest_version %}
                             {% if user.is_staff or user in object.editors %}
                             {% if release %}
                                 {% with security_scan=release.security_scan %}
@@ -271,9 +271,24 @@
                         {% endwith %}
                     {% include "plugins/includes/email_confirmation_badge.html" %}
                 </div>
-                <a class="button mt-3" href="{% if object.stable %}{{ object.stable.get_download_url }}{% else %}{{ object.experimental.get_download_url }}{% endif %}">
-                    <i class="fas fa-download" style="vertical-align: middle;"></i>&nbsp;{% trans "Download latest" %}
-                </a>
+                <div class="buttons mt-3">
+                    <a class="button" href="{% if object.stable %}{{ object.stable.get_download_url }}{% else %}{{ object.experimental.get_download_url }}{% endif %}">
+                        <span class="icon"><i class="fas fa-download"></i></span>
+                        <span>{% trans "Download latest" %}</span>
+                    </a>
+                    <div class="tooltip">
+                        <a class="button is-outlined" href="{% url 'plugin_versions_json' object.package_name %}" aria-label="{% trans 'Versions JSON' %}">
+                            <span class="icon"><i class="fas fa-code"></i></span>
+                        </a>
+                        <span class="tooltiptext">{% trans "Versions JSON" %}</span>
+                    </div>
+                    <div class="tooltip">
+                        <a class="button is-outlined" href="{% url 'plugin_latest_redirect' object.package_name %}" aria-label="{% trans 'Latest version' %}">
+                            <span class="icon"><i class="fas fa-tag"></i></span>
+                        </a>
+                        <span class="tooltiptext">{% trans "Latest version" %}</span>
+                    </div>
+                </div>
             </div>
         </div>
         <div>

@@ -5,7 +5,7 @@
 
 > ## 👋 Welcome to plugins.qgis.org!
 >
-> **This repository hosts the source code for the official QGIS Plugins Repository Website:**  
+> **This repository hosts the source code for the official QGIS Plugins Repository Website:**
 > 🌍 [https://plugins.qgis.org](https://plugins.qgis.org)
 >
 > Here you'll find everything you need to **build, develop, and contribute** to the QGIS Plugins Website.
@@ -14,7 +14,7 @@
 >
 > **This repository is _only_ for the main QGIS Plugins Repository Website ([plugins.qgis.org](https://plugins.qgis.org)).**
 >
-> If you are looking for the source code or want to contribute to other QGIS websites, please visit their respective repositories below.  
+> If you are looking for the source code or want to contribute to other QGIS websites, please visit their respective repositories below.
 > Each website has its own codebase and contribution process:
 >
 > - [qgis.org](https://qgis.org) ([GitHub: QGIS-Website](https://github.com/qgis/QGIS-Website)) – QGIS Main Wesite
@@ -67,7 +67,7 @@
 | Badge | Description |
 |-------|-------------|
 | [![Lint and Django Unit Tests](https://github.com/qgis/QGIS-Plugins-Website/actions/workflows/test.yaml/badge.svg)](https://github.com/qgis/QGIS-Plugins-Website/actions/workflows/test.yaml) | Lint and Django Unit Tests |
-| [![Build and Push Docker Image to DockerHub](https://github.com/qgis/QGIS-Plugins-Website/actions/workflows/build_push_image.yml/badge.svg)](https://github.com/qgis/QGIS-Plugins-Website/actions/workflows/build_push_image.yml) | Build and Push Docker Image to DockerHub |
+| [![Docker image](https://github.com/qgis/QGIS-Plugins-Website/actions/workflows/docker.yml/badge.svg)](https://github.com/qgis/QGIS-Plugins-Website/actions/workflows/docker.yml) | Build & scan the image on PRs; push to DockerHub on release |
 | ![Website Status](https://img.shields.io/website-up-down-green-red/https/plugins.qgis.org.svg) | Website availability status |
 | ![License](https://img.shields.io/github/license/qgis/QGIS-Plugins-Website.svg) | Repository license |
 | ![](https://img.shields.io/github/issues/qgis/QGIS-Plugins-Website.svg) | Open issues count |
@@ -127,13 +127,14 @@ We are fine with using LLM's and Generative Machine Learning to act as general a
 ![image](./img/Docker_Services.png)
 
 This application is based on Django, written in Python and deployed on the server using
-docker-compose.
+docker-compose. For how releases are versioned, planned, and deployed (including
+hotfixes and rollback), see [docs/RELEASING.md](./docs/RELEASING.md).
 
 ![-----------------------------------------------------](./img/green-gradient.png)
 
 ## 🗄️ Data Model
 
-Below is the Entity-Relationship Diagram (ERD) illustrating the core data model for the QGIS Plugins Website.  
+Below is the Entity-Relationship Diagram (ERD) illustrating the core data model for the QGIS Plugins Website.
 For a detailed view, click on the image below or see the full-size diagram in [erd.svg](./img/erd.svg):
 
 [![ERD](./img/erd.svg)](./img/erd.svg)
@@ -147,6 +148,8 @@ Users can generate a Simple JWT token by providing their credentials, which can 
 Users can create specific tokens for a plugin at `https://plugins.qgis.org/<package_name>/tokens/`.
 
 
+### Version Upload/Update
+
 ```sh
 # A specific plugin token can be used to upload or update a plugin version. For example:
 curl \
@@ -157,6 +160,26 @@ curl \
   -H "Authorization: Bearer the_access_token" \
   https://plugins.qgis.org/plugins/api/<package_name>/version/<version>/update
 ```
+
+### Plugin/Version JSON
+
+```sh
+# A specific plugin token can be also used to get JSON metadata, including security checks results, of a plugin or a specific version. For example:
+curl \
+  -H "Authorization: Bearer the_access_token" \
+  https://plugins.qgis.org/plugins/<package_name>/json
+
+curl \
+  -H "Authorization: Bearer the_access_token" \
+  https://plugins.qgis.org/plugins/api/<package_name>/version/<version>/json
+
+curl \
+  -H "Authorization: Bearer the_access_token" \
+  https://plugins.qgis.org/plugins/api/<package_name>/latest/json
+```
+
+> [!NOTE]
+> These endpoints are also available from public view (if the token is not specified or incorrect), but without security checks results.
 
 ![-----------------------------------------------------](./img/green-gradient.png)
 
@@ -170,11 +193,17 @@ Please refer to the [Nix section](./CONTRIBUTING.md#nix) in [CONTRIBUTING.md](./
 
 We welcome contributions! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to get started.
 
+When opening a PR, **add a label** (`feature`, `fix`, `breaking`, `chore`, …): labels
+drive the release notes and the next version bump. Release history lives on the
+[GitHub Releases page](https://github.com/qgis/QGIS-Plugins-Website/releases), built
+automatically from merged PRs. See [docs/RELEASING.md](./docs/RELEASING.md#release-notes-changelog)
+for details.
+
 ![-----------------------------------------------------](./img/green-gradient.png)
 
 ## 🙋 Have Questions?
 
-Have questions or feedback? Feel free to open an issue or submit a Pull Request!  
+Have questions or feedback? Feel free to open an issue or submit a Pull Request!
 
 ![-----------------------------------------------------](./img/green-gradient.png)
 ## 🧑‍💻👩‍💻 Contributors
