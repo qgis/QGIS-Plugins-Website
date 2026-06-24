@@ -5,6 +5,7 @@ volumes:
   static-data:
   media-data:
   backups-data:
+  whoosh-index:
 services:
   maindev:
     build:
@@ -77,6 +78,10 @@ services:
       - ${QGISPLUGINS_STATIC_VOLUME}:/home/web/static:rw
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw
       - celerybeat-schedule:/home/web/celerybeat-schedule:rw
+      # Shared search index: the celery worker writes it, uwsgi reads it.
+      # Without a shared volume each container has its own (empty) copy and
+      # search returns no results. The dir is gitignored / not baked in image.
+      - whoosh-index:/home/web/django_project/whoosh_index:rw
     command: bash -c "npm install && npm run build && uwsgi --ini /uwsgi.conf"
     depends_on:
       - db
