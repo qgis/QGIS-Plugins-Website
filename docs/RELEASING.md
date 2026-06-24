@@ -138,6 +138,7 @@ for a breaking release (`vX.0.0`).
 ## Hotfix (out of band)
 
 Use this when production needs a fix before the next planned release.
+**Full step-by-step runbook: [HOTFIX.md](./HOTFIX.md).**
 
 ```sh
 # Branch from the live release tag, NOT master.
@@ -151,7 +152,8 @@ git push origin hotfix/fix-upload-crash
 Once approved, **publish a GitHub Release `v3.3.1`** targeting the hotfix commit:
 that builds, scans, and pushes the image just like any release. Then deploy
 `v3.3.1`. **Always merge the hotfix back into `master`** so it is included in the
-next release.
+next release. See [HOTFIX.md](./HOTFIX.md) for the complete checklist, rollback,
+and back-merge details.
 
 ## Deploying to production
 
