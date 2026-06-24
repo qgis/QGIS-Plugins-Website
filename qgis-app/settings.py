@@ -193,7 +193,14 @@ HAYSTACK_WHOOSH_PATH = SITE_ROOT + "/search-index"
 HAYSTACK_CONNECTIONS = {
     "default": {
         "ENGINE": "haystack.backends.whoosh_backend.WhooshEngine",
-        "PATH": os.path.join(os.path.dirname(__file__), "whoosh_index"),
+        # Must point at a normal directory, never a volume mountpoint: Whoosh
+        # rebuild_index does shutil.rmtree(PATH), and removing a mountpoint
+        # raises OSError [Errno 16] Device or resource busy. In Docker the
+        # shared volume is mounted on the PARENT dir and PATH is a subdir of it.
+        "PATH": os.environ.get(
+            "HAYSTACK_WHOOSH_PATH",
+            os.path.join(os.path.dirname(__file__), "whoosh_index"),
+        ),
     },
 }
 

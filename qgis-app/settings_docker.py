@@ -112,8 +112,8 @@ PAGINATION_DEFAULT_PAGINATION_HUB = 30
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
-ACCOUNT_SIGNUP_FIELDS = ['email', 'username*', 'password1*', 'password2*']
-ACCOUNT_LOGIN_METHODS = {'username'}
+ACCOUNT_SIGNUP_FIELDS = ["email", "username*", "password1*", "password2*"]
+ACCOUNT_LOGIN_METHODS = {"username"}
 ACCOUNT_EMAIL_VERIFICATION = "none"
 ACCOUNT_SIGNUP_ENABLED = False
 
@@ -200,6 +200,18 @@ CELERY_BEAT_SCHEDULE = {
         "task": "plugins.tasks.delete_marked_plugins.delete_marked_plugins",
         "schedule": crontab(minute=0, hour=2),  # Execute every day at 2 AM.
         "kwargs": {"days": 30},  # Delete items marked for 30+ days
+    },
+    "send_pending_email_confirmations": {
+        "task": "plugins.tasks.trigger_email_confirmation.send_pending_email_confirmations",
+        "schedule": crontab(
+            minute=0, hour=4, day_of_month=1
+        ),  # 04:00 on 1st of every month
+    },
+    "send_anniversary_reverifications": {
+        "task": "plugins.tasks.trigger_annual_reverification.send_anniversary_reverifications",
+        "schedule": crontab(
+            minute=30, hour=4
+        ),  # 04:30 daily, staggered by first-publish anniversary
     },
 }
 # Set plugin token access and refresh validity to a very long duration
