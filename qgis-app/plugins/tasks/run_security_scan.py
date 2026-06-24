@@ -15,13 +15,15 @@ Upload flow:
 5. Email sent to maintainer(s) with results
 """
 
-from celery import shared_task
-from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.sites.models import Site
 from django.core.mail import send_mail
+from django.contrib.sites.models import Site
 from django.utils.translation import gettext_lazy as _
+
+from celery import shared_task
+from celery.utils.log import get_task_logger
+
 from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_VALIDATED,
@@ -29,13 +31,12 @@ from plugins.models import (
 )
 from plugins.security_utils import run_security_scan
 
+
 logger = get_task_logger(__name__)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def run_security_scan_task(
-    self, plugin_version_pk, is_manual=False, auto_approve=False
-):
+def run_security_scan_task(self, plugin_version_pk, is_manual=False):
     """
     Run security scan on a plugin version asynchronously.
 
@@ -44,11 +45,6 @@ def run_security_scan_task(
         is_manual: If True, this is a manual re-scan on an existing version.
                    Manual scans are informational only and do not change
                    the plugin's approval or validation status.
-        auto_approve: If True, approve the version automatically once all
-                      security checks pass. This is only set when a trusted
-                      user explicitly opts in via the "Publish immediately"
-                      checkbox on the upload form. Defaults to False so that
-                      the normal two-step approval flow applies to everyone.
     """
     try:
         plugin_version = PluginVersion.objects.select_related(
@@ -75,12 +71,7 @@ def run_security_scan_task(
         )
         if not is_manual:
             plugin_version.validation_status = VALIDATION_STATUS_VALIDATED
-            if auto_approve:
-                plugin_version.approved = True
-                logger.info(
-                    f"Auto-approving {plugin.package_name} v{plugin_version.version} "
-                    "(scan tool error, uploader opted in)"
-                )
+            _auto_approve_if_trusted(plugin_version)
             plugin_version.save()
             _send_validation_results_email(plugin_version, security_scan=None)
             if not plugin_version.approved:
@@ -106,12 +97,7 @@ def run_security_scan_task(
         )
     else:
         plugin_version.validation_status = VALIDATION_STATUS_VALIDATED
-        if auto_approve:
-            plugin_version.approved = True
-            logger.info(
-                f"Auto-approving {plugin.package_name} v{plugin_version.version} "
-                "(uploader opted in, scan passed)"
-            )
+        _auto_approve_if_trusted(plugin_version)
         logger.info(
             f"Plugin {plugin.package_name} v{plugin_version.version} validated successfully"
         )
@@ -127,6 +113,25 @@ def run_security_scan_task(
         and not plugin_version.approved
     ):
         _notify_staff_for_review(plugin_version)
+
+
+def _auto_approve_if_trusted(plugin_version):
+    """
+    Auto-approve the version if the uploader is trusted or the plugin
+    already has at least one approved version.
+    """
+    created_by = plugin_version.created_by
+    plugin = plugin_version.plugin
+
+    if created_by and (
+        created_by.has_perm("plugins.can_approve") or plugin.approved
+    ):
+        plugin_version.approved = True
+        logger.info(
+            f"Auto-approving {plugin.package_name} v{plugin_version.version} "
+            f"(trusted={created_by.has_perm('plugins.can_approve')}, "
+            f"plugin_approved={plugin.approved})"
+        )
 
 
 def _send_validation_results_email(plugin_version, security_scan):
@@ -266,7 +271,7 @@ Uploaded by: {plugin_version.created_by}
 Link: http://{domain}{plugin_version.get_absolute_url()}
 """,
             mail_from,
-            recipients,
+            recipients
         )
     except Exception as e:
         logger.error(f"Failed to send staff review notification: {e}")

@@ -118,19 +118,15 @@ class PluginVersionForm(ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        is_trusted = kwargs.pop("is_trusted", False)
+        kwargs.pop("is_trusted")
         super(PluginVersionForm, self).__init__(*args, **kwargs)
-        if is_trusted:
-            self.fields["auto_approve_after_scan"] = forms.BooleanField(
-                required=False,
-                initial=False,
-                label=_("Publish immediately after security scan passes"),
-                help_text=_(
-                    "If checked and all automated security checks pass, your plugin "
-                    "will be published automatically without waiting for manual review. "
-                    "Leave unchecked to follow the normal two-step approval process."
-                ),
-            )
+        # FIXME: check why this is not working correctly anymore
+        #        now "approved" is removed from the form (see Meta)
+        # instance = getattr(self, 'instance', None)
+        # if instance and not is_trusted:
+        #    self.fields['approved'].initial = False
+        #    self.fields['approved'].widget.attrs = {'disabled':'disabled'}
+        #    instance.approved = False
 
     class Meta:
         model = PluginVersion
@@ -267,21 +263,6 @@ class PackageUploadForm(forms.Form):
         label=_("Plugin Package"),
         help_text=_("Select the zipped plugin file (maximum size: 25MB)."),
     )
-
-    def __init__(self, *args, **kwargs):
-        is_trusted = kwargs.pop("is_trusted", False)
-        super(PackageUploadForm, self).__init__(*args, **kwargs)
-        if is_trusted:
-            self.fields["auto_approve_after_scan"] = forms.BooleanField(
-                required=False,
-                initial=False,
-                label=_("Publish immediately after security scan passes"),
-                help_text=_(
-                    "If checked and all automated security checks pass, your plugin "
-                    "will be published automatically without waiting for manual review. "
-                    "Leave unchecked to follow the normal two-step approval process."
-                ),
-            )
 
     def clean(self):
         clean_data = super(PackageUploadForm, self).clean()

@@ -14,9 +14,9 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import IntegrityError, connection
 from django.utils.translation import gettext_lazy as _
 from plugins.models import *
-from plugins.tasks.run_security_scan import run_security_scan_task
 from plugins.validator import validator
 from plugins.views import plugin_notify, send_upload_confirmation_email
+from plugins.tasks.run_security_scan import run_security_scan_task
 from rpc4django import rpcmethod
 from taggit.models import Tag
 
@@ -42,10 +42,8 @@ def plugin_maintaners(**kwargs):
     )
 
 
-@rpcmethod(
-    name="plugin.upload", signature=["array", "base64", "boolean"], login_required=True
-)
-def plugin_upload(package, auto_approve=False, **kwargs):
+@rpcmethod(name="plugin.upload", signature=["array", "base64"], login_required=True)
+def plugin_upload(package, **kwargs):
     """
     Creates a new plugin or updates an existing one
     Returns an array containing the ID (primary key) of the plugin and the ID of the version.
@@ -123,8 +121,8 @@ def plugin_upload(package, auto_approve=False, **kwargs):
                 package.len,
                 "UTF-8",
             ),
-            # Always start unapproved; the async security scan may approve
-            # the version afterwards if the uploader opts in.
+            # Always start unapproved; async security checks will auto-approve
+            # trusted users after validation completes.
             "approved": False,
             "validation_status": VALIDATION_STATUS_VALIDATING,
         }
@@ -143,13 +141,8 @@ def plugin_upload(package, auto_approve=False, **kwargs):
         # Send Stage 1 upload confirmation email
         send_upload_confirmation_email(new_version)
 
-        # Queue async security scan task.
-        # auto_approve=True only when a trusted user explicitly opts in by
-        # passing auto_approve=True in the RPC call.
-        is_trusted = request.user.has_perm("plugins.can_approve")
-        run_security_scan_task.delay(
-            new_version.pk, auto_approve=is_trusted and auto_approve
-        )
+        # Queue async security scan task
+        run_security_scan_task.delay(new_version.pk)
     except IntegrityError as e:
         # Avoids error: current transaction is aborted, commands ignored until
         # end of transaction block
