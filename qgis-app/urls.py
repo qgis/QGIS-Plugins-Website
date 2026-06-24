@@ -14,6 +14,11 @@ from drf_yasg.views import get_schema_view
 # to find users app views
 # from users.views import *
 from homepage import homepage
+from plugins.views import (
+    plugin_email_communicate,
+    plugin_email_communication_detail,
+    plugin_email_communication_list,
+)
 from rest_framework import permissions
 
 from docs import (
@@ -125,6 +130,28 @@ urlpatterns += [
         r"^docs/migrate-qgis4",
         docs_migrate_qgis4,
         name="docs_migrate_qgis4",
+    ),
+]
+
+
+# Superuser-only email communication tool — top-level so the paths are
+# /communicate/, /communicate/new/, /communicate/<pk>/
+# (keeps them separate from the /plugins/ namespace).
+urlpatterns += [
+    url(
+        r"^communicate/$",
+        plugin_email_communication_list,
+        name="plugin_email_communication_list",
+    ),
+    url(
+        r"^communicate/new/$",
+        plugin_email_communicate,
+        name="plugin_email_communicate",
+    ),
+    url(
+        r"^communicate/(?P<pk>\d+)/$",
+        plugin_email_communication_detail,
+        name="plugin_email_communication_detail",
     ),
 ]
 

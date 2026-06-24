@@ -1,0 +1,66 @@
+{% extends 'plugins/plugin_base.html' %}
+{% load i18n %}
+{% block content %}
+<div class="box-content">
+    <h2 class="title is-4">{% trans "Communicate with plugin authors" %}</h2>
+
+    <div class="container rich mb-4">
+        <div class="cont coloring-1">
+            <p>
+                {% blocktrans trimmed %}
+                    Compose a message to send to all confirmed plugin contact
+                    addresses and their collaborators. Recipients are placed in
+                    BCC and the message is sent in the background.
+                {% endblocktrans %}
+            </p>
+            <p class="mt-2">
+                <strong>
+                {% blocktrans trimmed count counter=recipient_count %}
+                    This will be sent to {{ counter }} recipient.
+                {% plural %}
+                    This will be sent to {{ counter }} recipients.
+                {% endblocktrans %}
+                </strong>
+            </p>
+            <p class="mt-2 has-text-grey">
+                {% blocktrans trimmed %}
+                    Please keep messages limited to matters relating to the
+                    management of plugins.
+                {% endblocktrans %}
+            </p>
+        </div>
+    </div>
+
+    <form action="" method="post">
+        {% csrf_token %}
+        <div class="field">
+            <label class="label" for="{{ form.subject.id_for_label }}">{% trans "Subject" %}</label>
+            <div class="control">{{ form.subject }}</div>
+            {% for error in form.subject.errors %}
+                <p class="help is-danger">{{ error }}</p>
+            {% endfor %}
+        </div>
+        <div class="field">
+            <label class="label" for="{{ form.body.id_for_label }}">{% trans "Message" %}</label>
+            <div class="control">{{ form.body }}</div>
+            {% for error in form.body.errors %}
+                <p class="help is-danger">{{ error }}</p>
+            {% endfor %}
+        </div>
+        <div class="field is-grouped">
+            <p class="control">
+                <button type="submit" class="button is-success">
+                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                    <span>{% trans "Send" %}</span>
+                </button>
+            </p>
+            <p class="control">
+                <a class="button is-light" href="{% url 'plugin_email_communication_list' %}">
+                    <span class="icon"><i class="fas fa-arrow-left"></i></span>
+                    <span>{% trans "Cancel" %}</span>
+                </a>
+            </p>
+        </div>
+    </form>
+</div>
+{% endblock %}

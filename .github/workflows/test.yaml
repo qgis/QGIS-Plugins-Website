@@ -22,9 +22,9 @@ jobs:
           architecture: x64
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('REQUIREMENTS-dev.txt') }}
@@ -45,7 +45,7 @@ jobs:
       run:
         working-directory: dockerize
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Generate the .env file
         run: cp .env.template .env
@@ -56,10 +56,10 @@ jobs:
 
       - name: Run the containers
         run: docker compose up -d db devweb
-    
+
 
       - name: Wait for the containers to start
-        run: sleep 15 
+        run: sleep 30
 
       - name: Run test
         run: |

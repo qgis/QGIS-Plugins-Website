@@ -186,7 +186,7 @@ class PluginSecurityScanner:
                     results = bandit_report.get("results", [])
                     check.issues_found = len(results)
 
-                    for issue in results[:10]:  # Limit to first 10
+                    for issue in results:
                         check.details.append(
                             {
                                 "file": issue.get("filename", "").replace(
@@ -420,12 +420,8 @@ class PluginSecurityScanner:
                     for file_path, issues in flake8_data.items():
                         check.issues_found += len(issues)
 
-                    # Collect first 20 issues for display
-                    issue_count = 0
                     for file_path, issues in flake8_data.items():
                         for issue in issues:
-                            if issue_count >= 20:
-                                break
                             check.details.append(
                                 {
                                     "file": file_path.replace(self.extracted_dir, ""),
@@ -435,9 +431,6 @@ class PluginSecurityScanner:
                                     "message": issue.get("text", ""),
                                 }
                             )
-                            issue_count += 1
-                        if issue_count >= 20:
-                            break
 
                     check.passed = check.issues_found == 0
                 else:
@@ -477,7 +470,7 @@ class PluginSecurityScanner:
                         lines = result.stdout.strip().split("\n")
                         check.issues_found = len([l for l in lines if l.strip()])
 
-                        for line in lines[:20]:  # First 20 issues
+                        for line in lines:
                             if not line.strip():
                                 continue
 
@@ -741,7 +734,7 @@ class PluginSecurityScanner:
                     "passed": check.passed,
                     "files_checked": check.files_checked,
                     "issues_found": check.issues_found,
-                    "details": check.details[:20],  # Show first 20 details
+                    "details": check.details,
                 }
             )
 

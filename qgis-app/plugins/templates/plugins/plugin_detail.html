@@ -223,8 +223,8 @@
                 </div>
                 <p class="plugin-details-description">{{ object.description|linebreaksbr }}</p>
                 <div id="rating"> (<span id="votes">{% firstof votes '0' %}</span>) {% trans "votes" %}&nbsp;<span id="loading" style="display:none">Loading...</span><span id="vote-message" style="display:none"></span></div>
-                <div>
-                        {% with release=object.stable|default:object.experimental %}
+                <div class="is-flex" style="gap: 0.5rem;">
+                        {% with release=object.stable|default:object.experimental|default:object.latest_version %}
                             {% if user.is_staff or user in object.editors %}
                             {% if release %}
                                 {% with security_scan=release.security_scan %}
@@ -276,7 +276,8 @@
                             {% endif %}
 
                         {% endwith %}
-                    </div>
+                    {% include "plugins/includes/email_confirmation_badge.html" %}
+                </div>
                 <div class="buttons mt-3">
                     <a class="button" href="{% if object.stable %}{{ object.stable.get_download_url }}{% else %}{{ object.experimental.get_download_url }}{% endif %}">
                         <span class="icon"><i class="fas fa-download"></i></span>
@@ -457,6 +458,7 @@
                         <div class="column is-6">
                             <div class="field">
                                 <label class="label">{% trans "Author's email" %}:</label>
+                                <div>{% include "plugins/includes/email_confirmation_badge.html" %}</div>
                                 <div class="control truncate">
                                     <a href="mailto:{{ object.email }}">{{ object.email }}</a>
                                 </div>

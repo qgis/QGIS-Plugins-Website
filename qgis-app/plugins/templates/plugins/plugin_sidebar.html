@@ -76,6 +76,27 @@
         </li>
       {% endif %}
     {% endfor %}
+    {% if user.is_superuser %}
+    <li>
+      <div class="has-child">
+        <a onclick="toggleSubMenu('administration')">
+          <i class="fas fa-user-shield mr-3"></i>
+          {% trans "Administration" %}
+        </a>
+        <span onclick="toggleSubMenu('administration')" class="drop-arrow"><img src="{% static "images/arrow.svg" %}"/></span>
+      </div>
+      <ul class="collapsed" id="administration">
+        {% url 'admin:index' as admin_index_url %}
+        <li class="has-child {% if request.path == admin_index_url %}is-active{% endif %}">
+          <a href="{{ admin_index_url }}">{% trans "Admin" %}</a>
+        </li>
+        {% url 'plugin_email_communication_list' as communicate_url %}
+        <li class="has-child {% if request.path == communicate_url %}is-active{% endif %}">
+          <a href="{{ communicate_url }}">{% trans "Communicate" %}</a>
+        </li>
+      </ul>
+    </li>
+    {% endif %}
     <li>
       <div class="has-child">
         <a onclick="toggleSubMenu('docs')">
