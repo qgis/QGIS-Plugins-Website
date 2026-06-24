@@ -54,7 +54,7 @@ jobs:
       # Build the prod target (NOT the dev stage, which ships sshd/sudo). Loaded
       # locally so the exact image is the one we scan, push, and ship.
       - name: Build production image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: dockerize/docker/Dockerfile
@@ -180,8 +180,11 @@ jobs:
           SHA="${{ github.event.pull_request.head.sha }}"
           VERSION="${{ steps.meta.outputs.tag }}"
 
+          # Write the comment body to a file (NOT $GITHUB_ENV). The report embeds
+          # the full SBOM/CVE tables and can be large; routing it through the
+          # environment bloats every later step's env block past ARG_MAX, which
+          # makes the runner fail to spawn node with "Argument list too long".
           {
-            echo "REPORT_BODY<<ENDOFBODY"
             cat build-report.md
             cat <<ARTIFACT_EOF
 
@@ -204,12 +207,11 @@ jobs:
           ---
           Commit: \`${SHA}\`
           ARTIFACT_EOF
-            echo "ENDOFBODY"
-          } >> "$GITHUB_ENV"
+          } > pr-comment.md
 
       - name: Find existing PR comment
         if: github.event_name == 'pull_request'
-        uses: peter-evans/find-comment@v3
+        uses: peter-evans/find-comment@v4
         id: find-comment
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -218,18 +220,18 @@ jobs:
 
       - name: Post or update PR comment
         if: github.event_name == 'pull_request'
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@v5
         with:
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
-          body: ${{ env.REPORT_BODY }}
+          body-path: pr-comment.md
 
       # ----- Release-only: push the scanned image and enrich the release --------
 
       - name: Log in to Docker Hub
         if: github.event_name == 'release'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -245,7 +247,7 @@ jobs:
 
       - name: Append build report + attach security artifacts to the release
         if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           append_body: true
           body_path: build-report.md
