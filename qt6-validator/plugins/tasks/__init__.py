@@ -1,0 +1,1 @@
+from plugins.tasks.run_check_qt6 import *

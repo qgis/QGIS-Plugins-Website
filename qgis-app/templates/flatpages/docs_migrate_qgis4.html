@@ -121,6 +121,17 @@ qgisMaximumVersion=4.99
           <ul>
             <li>{% trans "Replace any deprecated Qt 5-only APIs with their Qt 6 equivalents." %}</li>
             <li>{% trans "Replace <code>PyQt5</code> imports with <code>PyQt6</code> (or better yet, use the QGIS-provided <code>qgis.PyQt</code> compatibility shim)." %}</li>
+            <p>
+              {% blocktrans trimmed %}
+              When you upload a new version to the
+              <a href="/plugins/">QGIS Plugins repository</a>,
+              an automated Qt6 compatibility check is run on your package using the
+              <a href="https://github.com/qgis/pyqgis4-checker" target="_blank" rel="noopener">pyqgis4-checker</a>
+              tool. Results are available in the <strong>Qt6 Check</strong> tab on your plugin version page,
+              with a detailed list of files and lines that need to be updated.
+              This check is informational only and does not block your plugin from being uploaded or approved.
+              {% endblocktrans %}
+            </p>
             <li>{% trans "Test your plugin with a QGIS 4 nightly or release build." %}</li>
           </ul>
         </div>
