@@ -1,0 +1,776 @@
+{
+  "_source": "https://www.flake8rules.com/",
+  "_pycodestyle_source": "https://pycodestyle.pycqa.org/en/latest/intro.html#error-codes",
+  "_pyflakes_source": "https://flake8.pycqa.org/en/latest/user/error-codes.html",
+  "_severity_note": "critical: syntax/runtime errors that prevent execution or indicate undefined names (E9xx, F821, F823, F831). warning: logic issues, risky constructs, and practices that can introduce bugs or security problems. info: style and formatting rules (disabled by default).",
+  "rules": [
+    {
+      "check_code": "E101",
+      "check_name": "Indentation contains mixed spaces and tabs",
+      "check_description": "Indentation contains mixed spaces and tabs. Mixed indentation is parsed differently by different tools and can cause subtle logic errors.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E111",
+      "check_name": "Indentation not a multiple of four",
+      "check_description": "Indentation is not a multiple of four spaces. Inconsistent indentation reduces code readability.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E112",
+      "check_name": "Expected an indented block",
+      "check_description": "Expected an indented block. Indicates a structural indentation error that may signal missing code.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E113",
+      "check_name": "Unexpected indentation",
+      "check_description": "Unexpected indentation (comment). A line is indented more than expected, indicating a possible structural error.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E114",
+      "check_name": "Indentation not a multiple of four (comment)",
+      "check_description": "Indentation is not a multiple of four spaces (comment). Applies to comment lines in continuation blocks.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E115",
+      "check_name": "Expected an indented block (comment)",
+      "check_description": "Expected an indented block (comment). A comment appears where an indented code block was expected.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E116",
+      "check_name": "Unexpected indentation (comment)",
+      "check_description": "Unexpected indentation (comment). A comment is more indented than the surrounding code block.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E117",
+      "check_name": "Over-indented",
+      "check_description": "Over-indented code. The statement is indented more than expected for the current block.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E121",
+      "check_name": "Continuation line under-indented (hanging indent)",
+      "check_description": "Continuation line is under-indented for a hanging indent. The closing bracket or continuation does not align with the opening delimiter.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E122",
+      "check_name": "Continuation line missing indentation",
+      "check_description": "Continuation line is missing indentation or is outdented relative to its opening bracket.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E123",
+      "check_name": "Closing bracket does not match indentation",
+      "check_description": "Closing bracket does not match the indentation of the opening bracket's line.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E124",
+      "check_name": "Closing bracket does not match visual indentation",
+      "check_description": "Closing bracket does not match visual indentation of the corresponding opening bracket.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E125",
+      "check_name": "Continuation line with same indent as next logical line",
+      "check_description": "Continuation line has the same indentation as the next logical line, making it ambiguous.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E126",
+      "check_name": "Continuation line over-indented (hanging indent)",
+      "check_description": "Continuation line is over-indented for a hanging indent.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E127",
+      "check_name": "Continuation line over-indented (visual indent)",
+      "check_description": "Continuation line is over-indented for a visual indent.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E128",
+      "check_name": "Continuation line under-indented (visual indent)",
+      "check_description": "Continuation line is under-indented for a visual indent.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E129",
+      "check_name": "Visually indented line with same indent as next logical line",
+      "check_description": "Visually indented line with same indentation as the next logical line.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E131",
+      "check_name": "Continuation line unaligned (hanging indent)",
+      "check_description": "Continuation line is unaligned for a block comment.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E133",
+      "check_name": "Closing bracket is missing indentation",
+      "check_description": "Closing bracket is missing indentation. Not all flake8 versions report this code.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E201",
+      "check_name": "Whitespace after opening bracket",
+      "check_description": "Whitespace immediately after an opening parenthesis, bracket, or brace.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E202",
+      "check_name": "Whitespace before closing bracket",
+      "check_description": "Whitespace immediately before a closing parenthesis, bracket, or brace.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E203",
+      "check_name": "Whitespace before punctuation",
+      "check_description": "Whitespace before a colon, semicolon, or comma.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E211",
+      "check_name": "Whitespace before bracket",
+      "check_description": "Whitespace before a parenthesis or bracket (e.g. in function calls or subscripts).",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E221",
+      "check_name": "Multiple spaces before operator",
+      "check_description": "Multiple spaces before an operator, often used for alignment. Reduces readability of diffs.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E222",
+      "check_name": "Multiple spaces after operator",
+      "check_description": "Multiple spaces after an arithmetic or assignment operator.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E223",
+      "check_name": "Whitespace (tab) before operator",
+      "check_description": "A tab character appears before an operator, mixing whitespace types.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E224",
+      "check_name": "Whitespace (tab) after operator",
+      "check_description": "A tab character appears after an operator, mixing whitespace types.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E225",
+      "check_name": "Missing whitespace around operator",
+      "check_description": "Missing whitespace around an operator. Can reduce readability and occasionally cause misparse of complex expressions.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E226",
+      "check_name": "Missing whitespace around arithmetic operator",
+      "check_description": "Missing whitespace around an arithmetic operator (+, -, *, /).",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E227",
+      "check_name": "Missing whitespace around bitwise/shift operator",
+      "check_description": "Missing whitespace around a bitwise or shift operator (|, &, ^, <<, >>).",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E228",
+      "check_name": "Missing whitespace around modulo operator",
+      "check_description": "Missing whitespace around the modulo operator (%).",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E231",
+      "check_name": "Missing whitespace after punctuation",
+      "check_description": "Missing whitespace after a comma, semicolon, or colon.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E241",
+      "check_name": "Multiple spaces after comma",
+      "check_description": "Multiple spaces after a comma, often used for alignment.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E242",
+      "check_name": "Tab after comma",
+      "check_description": "A tab character after a comma, mixing whitespace types.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E251",
+      "check_name": "Unexpected spaces around keyword / parameter equals",
+      "check_description": "Unexpected spaces around keyword or default parameter equals sign.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E261",
+      "check_name": "At least two spaces before inline comment",
+      "check_description": "At least two spaces before an inline comment are required by PEP 8.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E262",
+      "check_name": "Inline comment should start with '# '",
+      "check_description": "Inline comment should start with '# ' (a hash and a single space).",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E265",
+      "check_name": "Block comment should start with '# '",
+      "check_description": "Block comment should start with '# ' (a hash and a single space), not '#!' or other variants.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E266",
+      "check_name": "Too many leading '#' for block comment",
+      "check_description": "Block comment uses too many leading '#' characters (e.g. ## comment).",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E271",
+      "check_name": "Multiple spaces after keyword",
+      "check_description": "Multiple spaces after a keyword (if, for, while, etc.).",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E272",
+      "check_name": "Multiple spaces before keyword",
+      "check_description": "Multiple spaces before a keyword.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E273",
+      "check_name": "Whitespace (tab) after keyword",
+      "check_description": "A tab character after a keyword.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E274",
+      "check_name": "Whitespace (tab) before keyword",
+      "check_description": "A tab character before a keyword.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E275",
+      "check_name": "Missing whitespace after keyword",
+      "check_description": "Missing whitespace after a keyword (e.g. if( instead of if ().",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E301",
+      "check_name": "Expected 1 blank line",
+      "check_description": "Expected 1 blank line before a nested definition, found 0.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E302",
+      "check_name": "Expected 2 blank lines",
+      "check_description": "Expected 2 blank lines between top-level definitions, found fewer.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E303",
+      "check_name": "Too many blank lines",
+      "check_description": "Too many blank lines (3 or more). PEP 8 recommends a maximum of 2 blank lines between definitions.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E304",
+      "check_name": "Blank lines found after function decorator",
+      "check_description": "Blank lines found after a function decorator. There should be no blank lines between a decorator and its function.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E305",
+      "check_name": "Expected 2 blank lines after end of function",
+      "check_description": "Expected 2 blank lines after the end of a function or class definition, found fewer.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E306",
+      "check_name": "Expected 1 blank line before nested definition",
+      "check_description": "Expected 1 blank line before a nested definition (e.g. inner function or class), found 0.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E401",
+      "check_name": "Multiple imports on one line",
+      "check_description": "Multiple module imports on one line (e.g. import os, sys). Each import should be on its own line.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E402",
+      "check_name": "Module level import not at top of file",
+      "check_description": "Module level import is not at the top of the file. Imports after module-level code can cause subtle ordering issues.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E501",
+      "check_name": "Line too long",
+      "check_description": "Line is too long (exceeds the configured maximum line length, default 79). Long lines reduce readability.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E502",
+      "check_name": "Backslash is redundant between brackets",
+      "check_description": "Backslash continuation is redundant when inside brackets (parentheses, square brackets, or curly braces) which already imply line continuation.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E701",
+      "check_name": "Multiple statements on one line (colon)",
+      "check_description": "Multiple statements on one line separated by a colon (e.g. if cond: pass). Each statement should be on its own line.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E702",
+      "check_name": "Multiple statements on one line (semicolon)",
+      "check_description": "Multiple statements on one line separated by a semicolon. Each statement should be on its own line.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E703",
+      "check_name": "Statement ends with a semicolon",
+      "check_description": "Statement ends with an unnecessary semicolon.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E704",
+      "check_name": "Statement on same line as def",
+      "check_description": "Statement on the same line as def (e.g. def f(): return 1). The function body should be on the following line.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E711",
+      "check_name": "Comparison to None using ==",
+      "check_description": "Comparison to None using == or !=. Use 'is None' or 'is not None' instead, as None is a singleton.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E712",
+      "check_name": "Comparison to True/False using ==",
+      "check_description": "Comparison to True or False using == or !=. Use 'if cond:' or 'if not cond:' instead.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E713",
+      "check_name": "Test for membership should use 'not in'",
+      "check_description": "Test for membership should use 'not in x' instead of 'not x in'. The alternative form is clearer and less error-prone.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E714",
+      "check_name": "Test for identity should use 'is not'",
+      "check_description": "Test for object identity should use 'is not' instead of 'not … is'. The alternative form is clearer and less error-prone.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E721",
+      "check_name": "Type comparison using ==",
+      "check_description": "Do not compare types using ==. Use isinstance() to support subclasses and avoid fragile type checks.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E722",
+      "check_name": "Bare except clause",
+      "check_description": "Do not use a bare except clause. Catching all exceptions silently can mask unexpected errors and security-relevant failures.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E731",
+      "check_name": "Lambda assignment",
+      "check_description": "Do not assign a lambda expression to a variable. Use a regular def statement instead, which is clearer and allows proper introspection.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E741",
+      "check_name": "Ambiguous variable name",
+      "check_description": "Do not use single-character ambiguous variable names 'l' (lowercase L), 'O' (uppercase O), or 'I' (uppercase I) which can be visually confused with 1 and 0.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E742",
+      "check_name": "Ambiguous class name",
+      "check_description": "Do not define classes named 'l', 'O', or 'I'. These single-character names are visually ambiguous with numerals.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E743",
+      "check_name": "Ambiguous function name",
+      "check_description": "Do not define functions named 'l', 'O', or 'I'. These single-character names are visually ambiguous with numerals.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "E901",
+      "check_name": "SyntaxError or IndentationError",
+      "check_description": "Python raised a SyntaxError or IndentationError while parsing the file. The file cannot be executed in its current state.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "E902",
+      "check_name": "IOError",
+      "check_description": "The file could not be read (IOError). This usually indicates a file permissions issue or a missing file.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "E999",
+      "check_name": "SyntaxError",
+      "check_description": "A SyntaxError was raised while compiling the file. The file contains invalid Python syntax and cannot be imported or executed.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "W191",
+      "check_name": "Indentation contains tabs",
+      "check_description": "Indentation contains tab characters. PEP 8 requires spaces for indentation, and tabs can cause misalignment across editors.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "W291",
+      "check_name": "Trailing whitespace",
+      "check_description": "Trailing whitespace at the end of a non-blank line. Trailing whitespace produces noisy diffs.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "W292",
+      "check_name": "No newline at end of file",
+      "check_description": "No newline at the end of the file. POSIX tools and version control systems expect a trailing newline.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "W293",
+      "check_name": "Whitespace on blank line",
+      "check_description": "Whitespace characters on a blank line. Produces noisy diffs and is invisible to most editors.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "W391",
+      "check_name": "Blank line at end of file",
+      "check_description": "One or more blank lines at the end of the file.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "W503",
+      "check_name": "Line break before binary operator",
+      "check_description": "Line break occurred before a binary operator. PEP 8 now recommends breaking before the operator (W504 is the conflicting rule).",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "W504",
+      "check_name": "Line break after binary operator",
+      "check_description": "Line break occurred after a binary operator. PEP 8 recommends breaking before the operator (W503 is the conflicting rule).",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "W601",
+      "check_name": ".has_key() deprecated",
+      "check_description": "dict.has_key() is deprecated in Python 3 and removed. Use 'key in dict' instead.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "W602",
+      "check_name": "Deprecated raise with two arguments",
+      "check_description": "Deprecated form of raising an exception (raise ExcType, value). Use 'raise ExcType(value)' instead.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "W603",
+      "check_name": "'<>' is deprecated",
+      "check_description": "Use of '<>' operator which is deprecated and removed in Python 3. Use '!=' instead.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "W604",
+      "check_name": "Backtick repr is deprecated",
+      "check_description": "Use of backtick for repr() is deprecated and removed in Python 3. Use repr() explicitly instead.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "W605",
+      "check_name": "Invalid escape sequence",
+      "check_description": "Invalid escape sequence in a string literal (e.g. '\\d', '\\s'). In Python 3.12+ this is a SyntaxWarning and will become an error. Use raw strings (r'...') or double the backslash.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "F401",
+      "check_name": "Module imported but unused",
+      "check_description": "Module or name imported but never used in the file. Unused imports add noise and can indicate dead code.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "F402",
+      "check_name": "Import shadowed by loop variable",
+      "check_description": "An import from line N was shadowed by a loop variable with the same name. This is likely a bug — the import becomes inaccessible inside the loop.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "F403",
+      "check_name": "Star import used",
+      "check_description": "'from module import *' used. Star imports pollute the namespace and make it impossible to know which names are defined, potentially masking vulnerabilities.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "F404",
+      "check_name": "Future import after other statements",
+      "check_description": "A 'from __future__ import' statement appears after non-future imports or other code. __future__ imports must be at the top of the file to take effect.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "F405",
+      "check_name": "Name may be from star import",
+      "check_description": "A name may be undefined or may come from a star import. Because star imports are used, it is impossible to statically verify the name is defined.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "F811",
+      "check_name": "Redefinition of unused name",
+      "check_description": "Redefinition of an unused name from a previous import. The first import is overwritten before being used, likely indicating a mistake.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "F821",
+      "check_name": "Undefined name",
+      "check_description": "Undefined name used in the code. The name has not been defined in any reachable scope and will raise a NameError at runtime.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "F822",
+      "check_name": "Undefined name in __all__",
+      "check_description": "A name listed in __all__ is not defined in the module. This will cause an AttributeError when the module is imported with 'from module import *'.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "F823",
+      "check_name": "Local variable referenced before assignment",
+      "check_description": "A local variable is referenced before it is assigned. This will always raise an UnboundLocalError at runtime.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "F831",
+      "check_name": "Duplicate argument in function definition",
+      "check_description": "Duplicate argument name in a function definition. Python raises a SyntaxError for duplicate argument names at parse time.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "F841",
+      "check_name": "Local variable assigned but never used",
+      "check_description": "Local variable is assigned to but never used. Often indicates a bug where the result of a computation is discarded unintentionally.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "F901",
+      "check_name": "'raise NotImplemented' should be 'raise NotImplementedError'",
+      "check_description": "'raise NotImplemented' is almost certainly a bug. NotImplemented is a special singleton for use in binary special methods, not an exception. Use 'raise NotImplementedError' instead.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "C901",
+      "check_name": "Function too complex",
+      "check_description": "Function or method exceeds the configured McCabe complexity threshold (default 10). Highly complex functions are harder to test, review, and maintain securely.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    }
+  ]
+}

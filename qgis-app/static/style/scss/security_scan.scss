@@ -1,102 +1,369 @@
 /**
- * Security Scan Results Styles
- * 
- * Styles for displaying security scan results in plugin version details
+ * Security Scan Styles
+ *
+ * 1. Scan results display (plugin version detail page)
+ * 2. Shared security rules card/table styles (upload widget + docs reference)
+ * 3. Upload-form widget overrides (scoped to .security-rules-widget)
+ * 4. Docs rules-reference page extras
  */
 
-// Tab content management
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. Scan results display
+// ─────────────────────────────────────────────────────────────────────────────
+
 .tab-content {
   .tab-pane {
     display: none;
-    
-    &.is-active {
-      display: block;
-    }
+    &.is-active { display: block; }
   }
 }
 
-// Security scan specific styles
 #security-tab {
-  // Details summary styling
   details summary {
     cursor: pointer;
     user-select: none;
-    
-    &:hover {
-      text-decoration: underline;
-    }
+    &:hover { text-decoration: underline; }
   }
-  
-  // Badge in tab
+
   .tabs a .tag {
     font-size: 0.65rem;
     height: 1.2em;
     padding: 0 0.5em;
   }
-  
-  // Scan status colors
-  .badge-success {
-    background-color: #48c78e;
-    color: white;
+
+  .badge-success   { background-color: #48c78e; color: white; }
+  .badge-danger    { background-color: #f14668; color: white; }
+  .badge-warning   { background-color: #ffe08a; color: rgba(0, 0, 0, 0.7); }
+  .badge-config    { background-color: #f97316; color: white; }  // config-files status
+  .badge-info      { background-color: #3e8ed0; color: white; }
+  .badge-secondary { background-color: #b5b5b5; color: white; }
+}
+
+@media screen and (max-width: 768px) {
+  .tabs.is-toggle {
+    li { flex-grow: 1; }
+    a  { font-size: 0.85rem; padding: 0.5em; }
   }
-  
-  .badge-danger {
-    background-color: #f14668;
-    color: white;
-  }
-  
-  .badge-warning {
-    background-color: #ffe08a;
-    color: rgba(0, 0, 0, 0.7);
-  }
-  
-  .badge-info {
-    background-color: #3e8ed0;
-    color: white;
-  }
-  
-  .badge-secondary {
-    background-color: #b5b5b5;
-    color: white;
+
+  #security-tab {
+    .notification .columns { margin-bottom: 0; }
+    .notification .column  { padding-bottom: 0.5rem; }
+    .box                   { padding: 1rem; }
+    .title.is-3            { font-size: 2rem; }
+    .card-header-title     { font-size: 0.9rem; }
+    .card-content .content { font-size: 0.9rem; }
   }
 }
 
-// Mobile optimizations for security scan
-@media screen and (max-width: 768px) {
-  .tabs.is-toggle {
-    li {
-      flex-grow: 1;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. Shared security rules card/table (used in both upload widget & docs page)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Category icon colours
+.srw-icon-bandit        { color: #e53e3e; }
+.srw-icon-secrets       { color: #d97706; }
+.srw-icon-flake8        { color: #3182ce; }
+.srw-icon-file_analysis { color: #38a169; }
+
+// Severity tag styles
+.srw-sev-critical { background: #fff5f5; color: #c53030; border: 1px solid #fc8181; }
+.srw-sev-warning  { background: #fffbeb; color: #92400e; border: 1px solid #fbbf24; }
+.srw-sev-info     { background: #ebf8ff; color: #1e4e8c; border: 1px solid #90cdf4; }
+
+// Category card wrapper
+.srw-cat-card {
+  border: 1px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+
+  &:last-of-type { border-radius: 0 0 6px 6px; }
+}
+
+// Clickable card header
+.srw-cat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.1rem;
+  cursor: pointer;
+  background: #f7fafc;
+  border-radius: 6px 6px 0 0;
+  transition: background 0.15s;
+  user-select: none;
+
+  &:hover { background: #edf2f7; }
+
+  .cat-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .cat-right {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+}
+
+// Chevron toggle indicator
+.srw-chevron {
+  transition: transform 0.2s ease;
+  color: #718096;
+  &.open { transform: rotate(90deg); }
+}
+
+// Collapsible body
+.srw-cat-body {
+  overflow-x: auto;
+}
+
+// Rules table
+.srw-table {
+  font-size: 0.78rem;
+  border-top: none;
+  margin-bottom: 0;
+  border-radius: 0 0 6px 6px;
+  overflow: hidden;
+
+  thead th {
+    background: #edf2f7;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #4a5568;
+    border-bottom: 2px solid #e2e8f0;
+    padding: 0.5rem 0.75rem;
+    white-space: nowrap;
+  }
+
+  td {
+    vertical-align: middle;
+    padding: 0.45rem 0.75rem;
+  }
+
+  tr.row-disabled td { opacity: 0.45; }
+  tr.row-hidden      { display: none !important; }
+}
+
+// Rule code cell
+.srw-rule-code {
+  font-family: monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.sev-critical { color: #c53030; }
+  &.sev-warning  { color: #92400e; }
+  &.sev-info     { color: #1e4e8c; }
+  &.sev-disabled { color: #a0aec0; }
+}
+
+// Rule description cell
+.srw-rule-desc {
+  font-size: 0.68rem;
+  color: #718096;
+  line-height: 1.3;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. Upload-form widget overrides  (scoped to .security-rules-widget)
+// ─────────────────────────────────────────────────────────────────────────────
+
+.security-rules-widget {
+
+  // Dark gradient panel header
+  .srw-header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+    border-radius: 8px 8px 0 0;
+    padding: 1.25rem 1.5rem;
+    .title    { color: #fff;     margin-bottom: 0.25rem; }
+    .subtitle { color: #a0aec0; font-size: 0.82rem; margin-bottom: 0; }
+  }
+
+  // Info bar below header
+  .srw-infobar {
+    background: #ebf8ff;
+    border-left: 4px solid #3182ce;
+    border-right: 1px solid #bee3f8;
+    border-bottom: 1px solid #bee3f8;
+    padding: 0.65rem 1rem;
+    font-size: 0.8rem;
+    color: #2c5282;
+  }
+
+  // Cards are flush (no gap, no top border — previous element provides it)
+  .srw-cat-card {
+    border-top: none;
+    margin-bottom: 0;
+    border-radius: 0;
+  }
+
+  .srw-cat-header { border-radius: 0; }
+
+  // Constrain height and make scrollable inside upload form
+  .srw-cat-body {
+    max-height: 420px;
+    overflow-y: auto;
+  }
+
+  // Sticky header inside the scrollable body
+  .srw-table thead th {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 2;
+  }
+
+  // Clickable rows with hover highlight
+  .srw-table tbody .srw-row {
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.1s;
+
+    &:hover {
+      background: #f0f4ff;
     }
-    
-    a {
-      font-size: 0.85rem;
-      padding: 0.5em 0.5em;
+
+    &:has(.srw-skip-checkbox:not(:checked)) {
+      background: #fffbeb; // amber tint for disabled rows
     }
   }
-  
-  #security-tab {
-    .notification .columns {
-      margin-bottom: 0;
-    }
-    
-    .notification .column {
-      padding-bottom: 0.5rem;
-    }
-    
-    .box {
-      padding: 1rem;
-    }
-    
-    .title.is-3 {
-      font-size: 2rem;
-    }
-    
-    .card-header-title {
-      font-size: 0.9rem;
-    }
-    
-    .card-content .content {
-      font-size: 0.9rem;
+
+  // Modern toggle switch
+  .srw-toggle {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+
+    input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      pointer-events: none;
     }
   }
+
+  .srw-toggle-track {
+    display: inline-block;
+    position: relative;
+    width: 38px;
+    height: 22px;
+    background: #cbd5e0;
+    border-radius: 11px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+
+    .srw-toggle-thumb {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+      transition: transform 0.2s;
+    }
+  }
+
+  .srw-toggle input:checked + .srw-toggle-track {
+    background: $primary1;
+
+    .srw-toggle-thumb {
+      transform: translateX(16px);
+    }
+  }
+
+  // Categories with no skippable rules — greyed out, not interactive
+  .srw-cat-empty {
+    opacity: 0.55;
+  }
+
+  .srw-cat-header-empty {
+    cursor: default;
+    border-radius: 0;
+  }
+
+  .srw-icon-muted {
+    opacity: 0.4;
+  }
+
+  // Per-category enabled counter tag
+  .srw-cat-enabled-count {
+    transition: background 0.15s, color 0.15s;
+  }
+
+  // Global enabled counter in header
+  .srw-enabled-counter {
+    transition: background 0.15s, color 0.15s;
+  }
+
+  // Widget footer
+  .srw-footer {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 0.6rem 1.1rem;
+    font-size: 0.75rem;
+    color: #718096;
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. Docs rules-reference page extras
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Stat cards (override site-wide .box green background)
+.srw-stat-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-top: 4px solid #cbd5e0;
+  border-radius: 6px;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+  &.srw-stat-success { border-top-color: #48bb78; }
+  &.srw-stat-warning { border-top-color: #f6ad55; }
+  &.srw-stat-danger  { border-top-color: #fc8181; }
+  &.srw-stat-info    { border-top-color: #7f9cf5; }
+}
+
+.srw-stat-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #718096;
+  margin-bottom: 0.4rem;
+}
+
+.srw-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #2d3748;
+}
+
+// Active filter tag highlight
+.filter-tag-active {
+  outline: 2px solid #4299e1;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+// Per-category "no results" message (hidden by default, shown by JS)
+.no-results-msg {
+  display: none;
+  font-style: italic;
+  color: #a0aec0;
+  padding: 0.75rem 1rem;
 }
