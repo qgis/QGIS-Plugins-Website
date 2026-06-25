@@ -236,8 +236,12 @@ jobs:
           retention-days: 7
           overwrite: true
 
+      # A PR opened from a fork runs with a read-only GITHUB_TOKEN (the
+      # permissions: block cannot elevate it), so posting a comment 403s. Gate
+      # the comment on the PR coming from a branch in THIS repo; fork PRs still
+      # get the full report in the step summary and the downloadable artifacts.
       - name: Find existing PR comment
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: peter-evans/find-comment@v4
         id: find-comment
         with:
@@ -246,7 +250,7 @@ jobs:
           body-includes: "## Docker Image Build"
 
       - name: Post or update PR comment
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: peter-evans/create-or-update-comment@v5
         with:
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
