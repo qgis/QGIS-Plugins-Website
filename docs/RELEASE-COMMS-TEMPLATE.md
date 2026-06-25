@@ -4,9 +4,7 @@ Reusable templates for pre announcing an **upcoming** planned release of the
 QGIS Plugins Website (plugins.qgis.org). These go out **before** the release
 ships, so the community knows what is coming and plugin developers can review or
 test while there is still time to adjust. Copy the relevant block, replace every
-`{{PLACEHOLDER}}`, and publish. (For a separate "it is live now" announcement on
-release day, swap the upcoming framing for past tense and point at the published
-release notes.)
+`{{PLACEHOLDER}}`, and publish.
 
 There are three channels:
 
@@ -14,8 +12,6 @@ There are three channels:
 2. **Email** to plugin developers pointing at the blog post.
 3. **QGIS Feed** entry (under 500 characters) whose title links to the blog post.
 
-> Style note: avoid em and en dash characters in all three. Use commas,
-> periods, or parentheses instead.
 
 ---
 
@@ -33,8 +29,8 @@ tags: [announcement, upcoming-release, plugins.qgis.org]
 
 We are preparing version **{{VERSION}}** of the QGIS Plugins Website
 (plugins.qgis.org), a planned milestone release scheduled for
-**{{RELEASE_DATE}}**. Below is a preview of what is coming and how it may affect
-plugin developers, so you can review and test ahead of time.
+**{{RELEASE_DATE}}**. Below is a summary of what is coming and how it may affect
+plugin developers, so you can review ahead of time.
 
 ## Highlights
 
@@ -42,7 +38,7 @@ plugin developers, so you can review and test ahead of time.
 
 ## What is changing in {{VERSION}}
 
-The items below are planned for this release and are tracked under "Unreleased"
+The items below are planned for this release and are tracked
 in the changelog until {{VERSION}} ships.
 
 ### Added
@@ -66,7 +62,8 @@ in the changelog until {{VERSION}} ships.
 For most developers no action is needed. If you maintain a plugin, please
 review the planned changes above before {{RELEASE_DATE}} to confirm nothing
 affects your publishing workflow, and tell us about any concerns while there is
-still time to adjust the release.
+still time to adjust the release. For that, please raise an issue at 
+https://github.com/qgis/QGIS-Plugins-Website/issues.
 
 ## When and where
 
@@ -108,7 +105,8 @@ In short:
 The full preview, planned changes, and screenshots are on our blog:
   {{BLOG_URL}}
 
-If anything here is a concern, reply before {{RELEASE_DATE}} while we can still
+If anything here is a concern, please raise an issue at 
+https://github.com/qgis/QGIS-Plugins-Website/issues before {{RELEASE_DATE}} while we can still
 adjust. Thank you for being part of the QGIS plugin community.
 
 Warm regards,
