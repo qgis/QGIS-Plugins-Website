@@ -110,6 +110,10 @@ flowchart TD
 
 ## Planned release (milestone-based)
 
+**Step-by-step runbooks:** [RELEASE-MINOR.md](./RELEASE-MINOR.md) for an
+enhancement/feature release (`vX.Y.0`) and [RELEASE-MAJOR.md](./RELEASE-MAJOR.md)
+for a breaking release (`vX.0.0`).
+
 1. **Plan**: create a GitHub **Milestone** named for the target version
    (e.g. `v3.3.0`) and assign the issues/PRs it will contain. This is where major
    changes are communicated and scheduled ahead of time. For a MAJOR release,
@@ -191,7 +195,8 @@ Release notes are built from your PRs, so day to day:
 
 - **Label your PRs** (`feature`, `enhancement`, `fix`, `bug`, `hotfix`,
   `breaking`, `chore`, `ci`, `infra`, `docs`, `dependencies`) and write a clear
-  title. As PRs merge into `master`,
+  title. See [LABELS.md](./LABELS.md) for what each label does. As PRs merge into
+  `master`,
   [`release-drafter.yml`](../.github/release-drafter.yml) keeps a **draft
   release** updated with grouped notes. Add `skip-changelog` to omit a PR.
 - Labels also decide the next version bump: `breaking` → major,
