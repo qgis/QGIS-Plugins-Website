@@ -1,0 +1,631 @@
+{
+  "_source": "https://bandit.readthedocs.io/en/latest/plugins/index.html",
+  "_blacklists_source": "https://bandit.readthedocs.io/en/latest/blacklists/index.html",
+  "_severity_note": "Severity follows Bandit's internal ratings mapped as LOW→info (disabled), MEDIUM→warning (enabled+skippable), HIGH→critical (enabled+mandatory). Editorial exceptions: B105–B107 (hardcoded credentials) raised to critical regardless of Bandit's MEDIUM rating due to high real-world impact on distributed plugins.",
+  "rules": [
+    {
+      "check_code": "B101",
+      "check_name": "Assert used",
+      "check_description": "Use of assert detected. Assert statements are removed when Python is run in optimised mode (-O), potentially bypassing security-relevant checks.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B102",
+      "check_name": "Exec used",
+      "check_description": "Use of exec() detected. exec() can execute arbitrary code and is a common vector for code injection attacks.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B103",
+      "check_name": "Set bad file permissions",
+      "check_description": "Possible insecure use of chmod() setting overly permissive file or directory permissions (world-writable or setuid/setgid).",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B104",
+      "check_name": "Hardcoded bind all interfaces",
+      "check_description": "Possible binding to all network interfaces (0.0.0.0), which may expose services beyond the intended network boundary.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B105",
+      "check_name": "Hardcoded password string",
+      "check_description": "Possible hardcoded password string detected. Hardcoded credentials are a critical security risk in distributed plugins and can be extracted by end users.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B106",
+      "check_name": "Hardcoded password function argument",
+      "check_description": "Possible hardcoded password in a function argument. Hardcoded credentials are a critical security risk in distributed plugins and can be extracted by end users.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B107",
+      "check_name": "Hardcoded password default",
+      "check_description": "Possible hardcoded password in a function default argument. Hardcoded credentials are a critical security risk in distributed plugins and can be extracted by end users.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B108",
+      "check_name": "Hardcoded temp directory",
+      "check_description": "Probable insecure usage of a temporary file or directory. Using predictable temp paths can lead to TOCTOU (time-of-check/time-of-use) and symlink attacks.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B109",
+      "check_name": "Password config option not marked secret",
+      "check_description": "A password-like configuration option is not marked as secret, potentially exposing it in configuration dumps, logs, or environment listings.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B110",
+      "check_name": "Try/except/pass",
+      "check_description": "Try/Except/Pass detected. Silently swallowing exceptions can hide security-relevant errors and make vulnerabilities harder to detect.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B111",
+      "check_name": "Execute with run_as_root=True",
+      "check_description": "Executing code with run_as_root=True can lead to privilege escalation vulnerabilities if the plugin is used in a privileged context.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B112",
+      "check_name": "Try/except/continue",
+      "check_description": "Try/Except/Continue detected. Silently continuing after an exception can mask security-relevant failures and leave the program in an unsafe state.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B113",
+      "check_name": "Request without timeout",
+      "check_description": "HTTP request made without a timeout. Missing timeouts can lead to resource exhaustion and denial-of-service through hanging connections.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B201",
+      "check_name": "Flask debug=True",
+      "check_description": "Flask app running with debug=True exposes an interactive Werkzeug debugger that allows arbitrary code execution by anyone who can reach the server.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B202",
+      "check_name": "Tarfile unsafe members",
+      "check_description": "tarfile.extractall() called without a filter may allow path traversal (zip-slip) attacks, potentially overwriting arbitrary files outside the extraction directory.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B301",
+      "check_name": "Pickle usage",
+      "check_description": "Use of pickle/cPickle can lead to arbitrary code execution when deserialising untrusted data. Never unpickle data from an untrusted source.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B302",
+      "check_name": "Marshal usage",
+      "check_description": "Use of the marshal module can lead to arbitrary code execution when deserialising untrusted data. Never unmarshal data from an untrusted source.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B303",
+      "check_name": "MD5/SHA1 hash function",
+      "check_description": "Use of insecure MD2, MD4, MD5, or SHA1 hash function. These algorithms are cryptographically broken and must not be used for security purposes.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B304",
+      "check_name": "Insecure cipher",
+      "check_description": "Use of an insecure cipher algorithm (e.g. DES, RC4, Blowfish). Use AES-256-GCM or ChaCha20-Poly1305 instead.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B305",
+      "check_name": "Insecure cipher mode",
+      "check_description": "Use of an insecure cipher mode (e.g. ECB). ECB mode is deterministic and leaks patterns. Use GCM or CBC with proper padding.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B306",
+      "check_name": "Insecure mktemp",
+      "check_description": "Use of insecure tempfile.mktemp(). A race condition (TOCTOU) exists between file name creation and file open, allowing an attacker to substitute the file.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B307",
+      "check_name": "Eval used",
+      "check_description": "Use of eval() is dangerous and a common code injection vector. Avoid eval(); if required, ensure input is strictly controlled and never user-supplied.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B308",
+      "check_name": "Mark_safe used",
+      "check_description": "Use of Django's mark_safe() may expose cross-site scripting (XSS) vulnerabilities by bypassing automatic HTML escaping.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B310",
+      "check_name": "urllib urlopen",
+      "check_description": "urllib.urlopen() may expose audit events and does not verify SSL certificates by default in all contexts.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B311",
+      "check_name": "Random module used",
+      "check_description": "Standard pseudo-random generators (the random module) are not suitable for cryptographic or security purposes. Use the secrets module for security-sensitive random values.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B312",
+      "check_name": "Telnetlib usage",
+      "check_description": "Use of telnetlib detected. Telnet transmits all data, including credentials, in plaintext and is inherently insecure. Use SSH instead.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B313",
+      "check_name": "XML bad cElementTree",
+      "check_description": "XML parsing using cElementTree is vulnerable to XML entity expansion (XXE) and injection attacks. Use defusedxml instead.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B314",
+      "check_name": "XML bad ElementTree",
+      "check_description": "XML parsing using ElementTree is vulnerable to XML entity expansion (XXE) and injection attacks. Use defusedxml instead.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B315",
+      "check_name": "XML bad expatreader",
+      "check_description": "XML parsing using expatreader is vulnerable to XML entity expansion attacks. Use defusedxml instead.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B316",
+      "check_name": "XML bad expatbuilder",
+      "check_description": "XML parsing using expatbuilder is vulnerable to XML entity expansion attacks. Use defusedxml instead.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B317",
+      "check_name": "XML bad sax",
+      "check_description": "XML parsing using sax is vulnerable to XML entity expansion attacks. Use defusedxml instead.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B318",
+      "check_name": "XML bad minidom",
+      "check_description": "XML parsing using minidom is vulnerable to XML entity expansion attacks. Use defusedxml instead.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B319",
+      "check_name": "XML bad pulldom",
+      "check_description": "XML parsing using pulldom is vulnerable to XML entity expansion attacks. Use defusedxml instead.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B320",
+      "check_name": "XML bad etree",
+      "check_description": "XML parsing using lxml.etree is vulnerable to XML entity expansion and injection attacks if not configured correctly. Use defusedxml instead.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B321",
+      "check_name": "FTP usage",
+      "check_description": "Use of ftplib detected. FTP transmits credentials and data in plaintext and is inherently insecure. Use SFTP or FTPS instead.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B323",
+      "check_name": "Unverified SSL context",
+      "check_description": "SSL/TLS context created with certificate verification disabled. This allows man-in-the-middle attacks where traffic can be intercepted and decrypted.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B324",
+      "check_name": "Insecure hash function (hashlib)",
+      "check_description": "Use of an insecure hash function via hashlib.new() or hashlib.md5/sha1 aliases. Use SHA-256 or SHA-3 for security purposes.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B401",
+      "check_name": "Import telnetlib",
+      "check_description": "Import of telnetlib module. Telnet is an insecure protocol that transmits all data including credentials in cleartext.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B402",
+      "check_name": "Import ftplib",
+      "check_description": "Import of ftplib module. FTP is an insecure protocol that transmits credentials in cleartext.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B403",
+      "check_name": "Import pickle",
+      "check_description": "Import of the pickle module. Pickle can execute arbitrary code during deserialisation of untrusted data. Audit all usage carefully.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B404",
+      "check_name": "Import subprocess",
+      "check_description": "Import of the subprocess module. Review all usage to ensure commands are never constructed from untrusted user input.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B405",
+      "check_name": "Import xml.etree",
+      "check_description": "Import of xml.etree for XML processing. Vulnerable to XML entity expansion (XXE) attacks. Consider using defusedxml.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B406",
+      "check_name": "Import xml.sax",
+      "check_description": "Import of xml.sax for XML processing. Vulnerable to XML entity expansion (XXE) attacks. Consider using defusedxml.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B407",
+      "check_name": "Import xml.dom.expatbuilder",
+      "check_description": "Import of xml.dom.expatbuilder for XML processing. Vulnerable to XML entity expansion attacks. Consider using defusedxml.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B408",
+      "check_name": "Import xml.dom.minidom",
+      "check_description": "Import of xml.dom.minidom for XML processing. Vulnerable to XML entity expansion attacks. Consider using defusedxml.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B409",
+      "check_name": "Import xml.dom.pulldom",
+      "check_description": "Import of xml.dom.pulldom for XML processing. Vulnerable to XML entity expansion attacks. Consider using defusedxml.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B410",
+      "check_name": "Import lxml",
+      "check_description": "Import of lxml for XML processing. While lxml has some built-in protections, review usage for XXE vulnerabilities with untrusted XML.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B411",
+      "check_name": "Import xmlrpclib",
+      "check_description": "Import of xmlrpclib (xml.rpc.client in Python 3). XML-RPC can be vulnerable to XML injection if untrusted data is passed as parameters.",
+      "severity": "info",
+      "enabled": false,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B412",
+      "check_name": "Import httpoxy vulnerable module",
+      "check_description": "Import of a module known to be vulnerable to the httpoxy attack, which hijacks HTTP requests by abusing the HTTP_PROXY environment variable.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B413",
+      "check_name": "Import pycrypto",
+      "check_description": "Import of pycrypto, which is unmaintained and has known unpatched vulnerabilities. Replace with the actively maintained cryptography package.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B501",
+      "check_name": "Request with no cert validation",
+      "check_description": "HTTP request made with SSL certificate verification disabled (verify=False). This enables man-in-the-middle attacks where traffic can be intercepted.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B502",
+      "check_name": "SSL with bad version",
+      "check_description": "Use of an insecure SSL/TLS protocol version (SSLv2, SSLv3, TLSv1.0, or TLSv1.1). All of these have known vulnerabilities. Use TLSv1.2 or higher.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B503",
+      "check_name": "SSL with bad defaults",
+      "check_description": "SSL/TLS context created with insecure default settings such as disabled verification or weak cipher suites.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B504",
+      "check_name": "SSL with no version",
+      "check_description": "SSL/TLS context created without specifying a minimum protocol version. Ensure TLS 1.2+ is enforced via ssl.PROTOCOL_TLS_CLIENT.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B505",
+      "check_name": "Weak cryptographic key",
+      "check_description": "Weak cryptographic key detected (e.g. RSA < 2048 bits, DSA < 2048 bits, EC < 224 bits). Minimum recommended sizes are RSA 2048, EC 256.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B506",
+      "check_name": "yaml.load() used",
+      "check_description": "Use of yaml.load() with an arbitrary Loader can execute arbitrary Python code embedded in the YAML. Use yaml.safe_load() instead.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B507",
+      "check_name": "SSH no host key verification",
+      "check_description": "SSH connection made with host key verification disabled (AutoAddPolicy or RejectPolicy removed). This allows man-in-the-middle attacks.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B508",
+      "check_name": "SNMP insecure version",
+      "check_description": "Use of insecure SNMP v1 or v2c. These versions transmit community strings in plaintext and have no authentication or encryption. Use SNMPv3.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B509",
+      "check_name": "SNMP weak cryptography",
+      "check_description": "Use of SNMPv3 with weak or no cryptography (noAuthNoPriv or authNoPriv). Use authPriv security level with AES encryption.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B601",
+      "check_name": "Paramiko shell=True",
+      "check_description": "Paramiko SSH call with shell=True executes commands via a remote shell, enabling shell injection if any part of the command comes from untrusted input.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B602",
+      "check_name": "subprocess.Popen with shell=True",
+      "check_description": "subprocess.Popen() called with shell=True. Shell injection is possible if any part of the command string comes from user input. Pass arguments as a list with shell=False.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B603",
+      "check_name": "subprocess without shell=True",
+      "check_description": "subprocess call without shell=True. Review to confirm arguments are passed as a list and no list element is constructed from untrusted input.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B604",
+      "check_name": "Function call with shell=True",
+      "check_description": "A non-subprocess function was called with shell=True. Shell injection is possible if user-controlled data is involved.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B605",
+      "check_name": "Start process with a shell",
+      "check_description": "Starting a process using a shell (os.system, os.popen, etc.). Shell injection is possible if any user-controlled input forms part of the command.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B606",
+      "check_name": "Start process with no shell",
+      "check_description": "Starting a process without a shell using os.execl, execle, execlp, etc. Review to ensure no argument is constructed from untrusted input.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B607",
+      "check_name": "Start process with partial path",
+      "check_description": "Starting a process with a partial executable path. The executable could be replaced by a malicious one via a PATH hijacking attack.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B608",
+      "check_name": "Hardcoded SQL expression",
+      "check_description": "Possible SQL injection vector through string-based query construction. Use parameterised queries or a query builder rather than string formatting.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B609",
+      "check_name": "Linux wildcard injection",
+      "check_description": "Possible wildcard injection in a Linux shell command (e.g. tar, find, chown with *). Unquoted wildcards can be exploited to run attacker-controlled filenames as arguments.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B610",
+      "check_name": "Django extra() used",
+      "check_description": "Use of Django QuerySet.extra() with raw SQL may lead to SQL injection if any argument contains user-controlled data.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B611",
+      "check_name": "Django RawSQL used",
+      "check_description": "Use of Django RawSQL() may lead to SQL injection if the query string contains user-controlled data.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B612",
+      "check_name": "Logging config insecure listen",
+      "check_description": "logging.config.listen() opens a network socket that can receive and execute arbitrary Python logging configuration. This is a remote code execution risk.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B613",
+      "check_name": "Trojan Source",
+      "check_description": "Unicode bidirectional control characters detected in source code. These can be used to create Trojan Source attacks where code appears different to human reviewers than to the Python interpreter.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B614",
+      "check_name": "PyTorch unsafe load",
+      "check_description": "Use of torch.load() without weights_only=True can execute arbitrary code embedded in the model file when loading from an untrusted source.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B615",
+      "check_name": "HuggingFace unsafe download",
+      "check_description": "Downloading models from HuggingFace without verification can lead to arbitrary code execution via unsafe pickle-based model formats if trust_remote_code=True is set.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B701",
+      "check_name": "Jinja2 autoescape=False",
+      "check_description": "Jinja2 template engine configured with autoescape=False. This disables automatic HTML escaping and will lead to XSS vulnerabilities if any user input is rendered in templates.",
+      "severity": "critical",
+      "enabled": true,
+      "can_be_skipped": false
+    },
+    {
+      "check_code": "B702",
+      "check_name": "Mako templates used",
+      "check_description": "Use of Mako templates detected. Mako does not escape output by default, which can lead to XSS vulnerabilities if user input is rendered without explicit escaping.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B703",
+      "check_name": "Django mark_safe",
+      "check_description": "Use of Django's mark_safe() or SafeData bypasses automatic HTML escaping and can introduce XSS vulnerabilities if called with untrusted content.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    },
+    {
+      "check_code": "B704",
+      "check_name": "MarkupSafe Markup XSS",
+      "check_description": "Use of markupsafe.Markup() without proper sanitisation can introduce XSS vulnerabilities by marking untrusted content as safe HTML.",
+      "severity": "warning",
+      "enabled": true,
+      "can_be_skipped": true
+    }
+  ]
+}

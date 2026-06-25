@@ -9,29 +9,40 @@ Tests cover:
  - Approval blocking for validating/blocked versions
  - Manual re-scan view (version_rescan)
  - Stage 1 (upload confirmation) and Stage 2 (results) email notifications
+ - Security rule skipping: form choices, task integration, audit trail
+ - Config file bypass: .bandit / .secrets.baseline / .flake8 handling
 """
 
+import io
 import os
-from unittest.mock import patch
+import zipfile as zipfile_module
+from unittest.mock import MagicMock, patch
 
 from django.contrib.auth.models import Permission, User
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, RequestFactory, TestCase, override_settings
 from django.urls import reverse
+from plugins.forms import PackageUploadForm
 from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_PENDING,
     VALIDATION_STATUS_VALIDATED,
+    VALIDATION_STATUS_VALIDATED_WITH_CONFIG,
     VALIDATION_STATUS_VALIDATING,
     Plugin,
     PluginVersion,
+    PluginVersionSecurityRuleSkip,
     PluginVersionSecurityScan,
+    SecurityRule,
 )
+from plugins.security_scanner import SECURITY_CONFIG_FILES, PluginSecurityScanner
+from plugins.security_utils import run_security_scan
 from plugins.tasks.run_security_scan import (
     _send_validation_results_email,
     run_security_scan_task,
 )
+from plugins.views import send_upload_confirmation_email
 
 TESTFILE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "testfiles"))
 
@@ -514,8 +525,6 @@ class UploadConfirmationEmailTest(TestCase):
     @override_settings(DEBUG=False)
     def test_upload_confirmation_email_sent(self):
         """Stage 1 email is sent to plugin editors on upload."""
-        from plugins.views import send_upload_confirmation_email
-
         mail.outbox = []
         send_upload_confirmation_email(self.version)
         self.assertEqual(len(mail.outbox), 1)
@@ -526,8 +535,6 @@ class UploadConfirmationEmailTest(TestCase):
     @override_settings(DEBUG=True)
     def test_upload_confirmation_email_not_sent_in_debug(self):
         """Stage 1 email must NOT be sent when DEBUG=True."""
-        from plugins.views import send_upload_confirmation_email
-
         mail.outbox = []
         send_upload_confirmation_email(self.version)
         self.assertEqual(len(mail.outbox), 0)
@@ -535,8 +542,6 @@ class UploadConfirmationEmailTest(TestCase):
     @override_settings(DEBUG=False)
     def test_upload_confirmation_email_body_contains_validating_status(self):
         """Stage 1 email body must mention that validation is in progress."""
-        from plugins.views import send_upload_confirmation_email
-
         mail.outbox = []
         send_upload_confirmation_email(self.version)
         body = mail.outbox[0].body.lower()
@@ -631,3 +636,651 @@ class ValidationResultsEmailTest(TestCase):
         _send_validation_results_email(self.version, scan)
 
         self.assertEqual(len(mail.outbox), 0)
+
+
+# ---------------------------------------------------------------------------
+# Security rule skipping tests
+# ---------------------------------------------------------------------------
+
+
+def _make_security_rule(
+    check_code,
+    check_category="bandit",
+    severity="warning",
+    enabled=True,
+    can_be_skipped=True,
+):
+    """Create a SecurityRule for use in tests."""
+    return SecurityRule.objects.create(
+        check_code=check_code,
+        check_category=check_category,
+        check_name=f"Test rule {check_code}",
+        check_description=f"Description for {check_code}",
+        severity=severity,
+        enabled=enabled,
+        can_be_skipped=can_be_skipped,
+    )
+
+
+class SecurityRuleSkipFormTest(TestCase):
+    """Tests for the skip_security_rules form field on PackageUploadForm."""
+
+    def setUp(self):
+        # Create a mix of rules to verify form choices are filtered correctly
+        self.rule_warning_skippable = _make_security_rule(
+            "B311", severity="warning", enabled=True, can_be_skipped=True
+        )
+        self.rule_critical_mandatory = _make_security_rule(
+            "B102", severity="critical", enabled=True, can_be_skipped=False
+        )
+        self.rule_disabled = _make_security_rule(
+            "B601", severity="info", enabled=False, can_be_skipped=True
+        )
+
+    def _form_choices(self):
+        """Return the choice IDs offered by the form field."""
+        form = PackageUploadForm()
+        return [
+            choice_id for choice_id, _ in form.fields["skip_security_rules"].choices
+        ]
+
+    def test_form_includes_enabled_skippable_rules(self):
+        """Form must include enabled+skippable rules as choices."""
+        choices = self._form_choices()
+        self.assertIn(self.rule_warning_skippable.check_code, choices)
+
+    def test_form_excludes_non_skippable_rules(self):
+        """Form must NOT include critical (non-skippable) rules."""
+        choices = self._form_choices()
+        self.assertNotIn(self.rule_critical_mandatory.check_code, choices)
+
+    def test_form_excludes_disabled_rules(self):
+        """Form must NOT include disabled rules, even if skippable."""
+        choices = self._form_choices()
+        self.assertNotIn(self.rule_disabled.check_code, choices)
+
+    def test_choice_label_format(self):
+        """Choice labels must be in format 'CODE: name (severity)'."""
+        form = PackageUploadForm()
+        choice_dict = dict(form.fields["skip_security_rules"].choices)
+        label = choice_dict.get(self.rule_warning_skippable.check_code, "")
+        self.assertIn("B311", label)
+        self.assertIn("warning", label.lower())
+
+    def test_non_skippable_rule_id_not_valid_choice(self):
+        """Submitting a non-skippable rule code must fail form validation."""
+        form = PackageUploadForm(
+            data={"skip_security_rules": [self.rule_critical_mandatory.check_code]}
+        )
+        # The field uses MultipleChoiceField which validates against choices
+        form.is_valid()
+        self.assertIn("skip_security_rules", form.errors)
+
+
+class SecurityRuleSkipUploadTest(TestCase):
+    """Tests that the upload view passes skipped_rule_ids to the task correctly."""
+
+    fixtures = ["fixtures/auth.json"]
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username="skipruleuser", password="testpass", email="skip@test.com"
+        )
+        self.url = reverse("plugin_upload")
+        # Create a skippable rule
+        self.rule = _make_security_rule(
+            "B311", severity="warning", enabled=True, can_be_skipped=True
+        )
+
+    @override_settings(MEDIA_ROOT="api/tests", DEBUG=True)
+    @patch("plugins.tasks.generate_plugins_xml", new=lambda *a, **kw: None)
+    @patch("plugins.validator._check_url_link", new=lambda *a, **kw: None)
+    @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay")
+    def test_upload_without_skip_passes_empty_list(self, mock_task):
+        """Uploading without skip_security_rules passes an empty list to the task."""
+        self.client.login(username="skipruleuser", password="testpass")
+        valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin.zip_")
+        with open(valid_plugin, "rb") as f:
+            uploaded = SimpleUploadedFile(
+                "valid_plugin.zip_", f.read(), content_type="application/zip"
+            )
+
+        self.client.post(self.url, {"package": uploaded})
+
+        mock_task.assert_called_once()
+        _args, kwargs = mock_task.call_args
+        self.assertEqual(kwargs.get("skipped_rule_ids", []), [])
+
+    @override_settings(MEDIA_ROOT="api/tests", DEBUG=True)
+    @patch("plugins.tasks.generate_plugins_xml", new=lambda *a, **kw: None)
+    @patch("plugins.validator._check_url_link", new=lambda *a, **kw: None)
+    @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay")
+    def test_upload_with_skip_passes_rule_ids_to_task(self, mock_task):
+        """Uploading with skip_security_rules passes matching rule IDs to the task."""
+        self.client.login(username="skipruleuser", password="testpass")
+        valid_plugin = os.path.join(TESTFILE_DIR, "valid_plugin.zip_")
+        with open(valid_plugin, "rb") as f:
+            uploaded = SimpleUploadedFile(
+                "valid_plugin.zip_", f.read(), content_type="application/zip"
+            )
+
+        self.client.post(
+            self.url,
+            {
+                "package": uploaded,
+                "skip_security_rules": [self.rule.check_code],
+            },
+        )
+
+        mock_task.assert_called_once()
+        _args, kwargs = mock_task.call_args
+        self.assertIn(self.rule.id, kwargs.get("skipped_rule_ids", []))
+
+
+class SecurityRuleSkipTaskTest(TestCase):
+    """Tests for skip-rule behavior inside run_security_scan_task."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="skiptaskuser", password="pass", email="skiptask@test.com"
+        )
+        self.plugin, self.version = _make_plugin_version(
+            self.user, VALIDATION_STATUS_VALIDATING
+        )
+        # Create a warning-only rule that is skippable
+        self.warning_rule = _make_security_rule(
+            "B311", severity="warning", enabled=True, can_be_skipped=True
+        )
+        # Create a critical non-skippable rule
+        self.critical_rule = _make_security_rule(
+            "B102", severity="critical", enabled=True, can_be_skipped=False
+        )
+
+    def _make_security_scan(self, critical_count=0, warning_count=0):
+        """Helper: create a PluginVersionSecurityScan."""
+        total = 5
+        passed = total - critical_count - warning_count
+        scan = PluginVersionSecurityScan.objects.create(
+            plugin_version=self.version,
+            scan_report={
+                "checks": [],
+                "summary": {
+                    "total_checks": total,
+                    "passed": passed,
+                    "failed": critical_count + warning_count,
+                    "critical": critical_count,
+                    "warnings": warning_count,
+                    "info": 0,
+                    "files_scanned": 1,
+                    "total_issues": critical_count + warning_count,
+                },
+            },
+            critical_count=critical_count,
+            warning_count=warning_count,
+            passed_checks=passed,
+            total_checks=total,
+            files_scanned=1,
+        )
+        return scan
+
+    @override_settings(DEBUG=True)
+    @patch("plugins.tasks.run_security_scan.run_security_scan")
+    def test_skipped_rule_ids_forwarded_to_scan(self, mock_scan):
+        """Task must forward skipped_rule_ids to run_security_scan."""
+        scan = self._make_security_scan(critical_count=0)
+        mock_scan.return_value = scan
+
+        run_security_scan_task(self.version.pk, skipped_rule_ids=[self.warning_rule.id])
+
+        mock_scan.assert_called_once()
+        _args, kwargs = mock_scan.call_args
+        self.assertIn(self.warning_rule.id, kwargs.get("skipped_rule_ids", []))
+
+    @override_settings(DEBUG=True)
+    @patch("plugins.tasks.run_security_scan.run_security_scan")
+    def test_skipping_warning_rule_does_not_block(self, mock_scan):
+        """Skipping a warning rule leads to validated status (no critical issues)."""
+        # Simulate a scan with no critical issues (warning was skipped)
+        scan = self._make_security_scan(critical_count=0, warning_count=0)
+        mock_scan.return_value = scan
+
+        run_security_scan_task(self.version.pk, skipped_rule_ids=[self.warning_rule.id])
+
+        self.version.refresh_from_db()
+        self.assertEqual(self.version.validation_status, VALIDATION_STATUS_VALIDATED)
+
+    @override_settings(DEBUG=True)
+    @patch("plugins.tasks.run_security_scan.run_security_scan")
+    def test_critical_issue_still_blocks_even_with_skip_list(self, mock_scan):
+        """Critical issues block the version even when a skip list is provided."""
+        # critical_rule is not skippable — it still runs and reports critical
+        scan = self._make_security_scan(critical_count=1)
+        mock_scan.return_value = scan
+
+        run_security_scan_task(self.version.pk, skipped_rule_ids=[self.warning_rule.id])
+
+        self.version.refresh_from_db()
+        self.assertEqual(self.version.validation_status, VALIDATION_STATUS_BLOCKED)
+
+
+class SecurityRuleSkipAuditTest(TestCase):
+    """Tests that skipped rules are recorded via PluginVersionSecurityRuleSkip."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="audituser", password="pass", email="audit@test.com"
+        )
+        self.plugin, self.version = _make_plugin_version(
+            self.user, VALIDATION_STATUS_VALIDATING
+        )
+        self.rule = _make_security_rule(
+            "B311", severity="warning", enabled=True, can_be_skipped=True
+        )
+
+    def test_skip_record_created_in_run_security_scan(self):
+        """run_security_scan must create a PluginVersionSecurityRuleSkip record."""
+        with patch("plugins.security_utils.PluginSecurityScanner") as MockScanner:
+            mock_report = {
+                "summary": {
+                    "total_checks": 1,
+                    "passed": 1,
+                    "failed": 0,
+                    "critical": 0,
+                    "warnings": 0,
+                    "info": 0,
+                    "files_scanned": 1,
+                    "total_issues": 0,
+                },
+                "checks": [],
+            }
+            MockScanner.return_value.scan.return_value = mock_report
+
+            # Use a valid package path (the version's package field is a stub)
+            # Patch package.path so it doesn't hit the filesystem
+            self.version.package = MagicMock()
+            self.version.package.path = "/tmp/fake.zip"
+
+            run_security_scan(self.version, skipped_rule_ids=[self.rule.id])
+
+        skip_records = PluginVersionSecurityRuleSkip.objects.filter(
+            plugin_version=self.version, security_rule=self.rule
+        )
+        self.assertEqual(skip_records.count(), 1)
+
+    def test_non_skippable_rule_not_recorded(self):
+        """Non-skippable rules must not have a skip record even if passed in the list."""
+        critical_rule = _make_security_rule(
+            "B102", severity="critical", enabled=True, can_be_skipped=False
+        )
+
+        with patch("plugins.security_utils.PluginSecurityScanner") as MockScanner:
+            mock_report = {
+                "summary": {
+                    "total_checks": 1,
+                    "passed": 1,
+                    "failed": 0,
+                    "critical": 0,
+                    "warnings": 0,
+                    "info": 0,
+                    "files_scanned": 1,
+                    "total_issues": 0,
+                },
+                "checks": [],
+            }
+            MockScanner.return_value.scan.return_value = mock_report
+            self.version.package = MagicMock()
+            self.version.package.path = "/tmp/fake.zip"
+
+            run_security_scan(self.version, skipped_rule_ids=[critical_rule.id])
+
+        skip_records = PluginVersionSecurityRuleSkip.objects.filter(
+            plugin_version=self.version, security_rule=critical_rule
+        )
+        self.assertEqual(skip_records.count(), 0)
+
+    def test_disabled_rule_not_recorded(self):
+        """Disabled rules must not have a skip record even if passed in the list."""
+        disabled_rule = _make_security_rule(
+            "B601", severity="info", enabled=False, can_be_skipped=True
+        )
+
+        with patch("plugins.security_utils.PluginSecurityScanner") as MockScanner:
+            mock_report = {
+                "summary": {
+                    "total_checks": 1,
+                    "passed": 1,
+                    "failed": 0,
+                    "critical": 0,
+                    "warnings": 0,
+                    "info": 0,
+                    "files_scanned": 1,
+                    "total_issues": 0,
+                },
+                "checks": [],
+            }
+            MockScanner.return_value.scan.return_value = mock_report
+            self.version.package = MagicMock()
+            self.version.package.path = "/tmp/fake.zip"
+
+            run_security_scan(self.version, skipped_rule_ids=[disabled_rule.id])
+
+        skip_records = PluginVersionSecurityRuleSkip.objects.filter(
+            plugin_version=self.version, security_rule=disabled_rule
+        )
+        self.assertEqual(skip_records.count(), 0)
+
+
+# ---------------------------------------------------------------------------
+# Config file bypass tests
+# ---------------------------------------------------------------------------
+
+
+def _make_zip_bytes(files: dict) -> bytes:
+    """
+    Build an in-memory ZIP containing the given files.
+    ``files`` is a mapping of {archive_path: content_bytes}.
+    """
+    buf = io.BytesIO()
+    with zipfile_module.ZipFile(buf, "w", zipfile_module.ZIP_DEFLATED) as zf:
+        for name, data in files.items():
+            zf.writestr(name, data)
+    return buf.getvalue()
+
+
+class ConfigFileDetectionTest(TestCase):
+    """Tests for SECURITY_CONFIG_FILES constant and _detect_config_files()."""
+
+    def test_security_config_files_constant_contains_expected_files(self):
+        """SECURITY_CONFIG_FILES must list all three expected config filenames."""
+        for expected in [".bandit", ".secrets.baseline", ".flake8"]:
+            self.assertIn(expected, SECURITY_CONFIG_FILES)
+
+    def _scanner_for(self, files: dict) -> PluginSecurityScanner:
+        """Return a PluginSecurityScanner pointing at a temp ZIP."""
+        import tempfile
+
+        zip_bytes = _make_zip_bytes(files)
+        tmp = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
+        tmp.write(zip_bytes)
+        tmp.flush()
+        tmp.close()
+        self.addCleanup(os.unlink, tmp.name)
+        return PluginSecurityScanner(tmp.name)
+
+    def test_detect_config_files_returns_empty_when_none_present(self):
+        """No config files in ZIP -> empty list returned."""
+        scanner = self._scanner_for({"myplugin/__init__.py": b"x = 1\n"})
+        self.assertEqual(scanner._detect_config_files(), [])
+
+    def test_detect_bandit_config_file(self):
+        """.bandit present in ZIP is detected."""
+        scanner = self._scanner_for(
+            {
+                "myplugin/__init__.py": b"x = 1\n",
+                "myplugin/.bandit": b"[bandit]\nskips = B311\n",
+            }
+        )
+        self.assertIn(".bandit", scanner._detect_config_files())
+
+    def test_detect_secrets_baseline_file(self):
+        """.secrets.baseline present in ZIP is detected."""
+        scanner = self._scanner_for(
+            {
+                "myplugin/__init__.py": b"x = 1\n",
+                "myplugin/.secrets.baseline": b"{}",
+            }
+        )
+        self.assertIn(".secrets.baseline", scanner._detect_config_files())
+
+    def test_detect_flake8_config_file(self):
+        """.flake8 present in ZIP is detected."""
+        scanner = self._scanner_for(
+            {
+                "myplugin/__init__.py": b"x = 1\n",
+                "myplugin/.flake8": b"[flake8]\nextend-ignore = E501\n",
+            }
+        )
+        self.assertIn(".flake8", scanner._detect_config_files())
+
+    def test_detect_multiple_config_files(self):
+        """All three config files are detected simultaneously."""
+        scanner = self._scanner_for(
+            {
+                "myplugin/__init__.py": b"x = 1\n",
+                "myplugin/.bandit": b"[bandit]\nskips = B311\n",
+                "myplugin/.secrets.baseline": b"{}",
+                "myplugin/.flake8": b"[flake8]\nextend-ignore = E501\n",
+            }
+        )
+        detected = scanner._detect_config_files()
+        for f in [".bandit", ".secrets.baseline", ".flake8"]:
+            self.assertIn(f, detected)
+
+    def test_report_includes_config_files_key(self):
+        """scan() report must include a 'config_files' key."""
+        import tempfile
+
+        zip_bytes = _make_zip_bytes(
+            {
+                "myplugin/__init__.py": b"x = 1\n",
+                "myplugin/.bandit": b"[bandit]\nskips = B311\n",
+            }
+        )
+        tmp = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
+        tmp.write(zip_bytes)
+        tmp.flush()
+        tmp.close()
+        self.addCleanup(os.unlink, tmp.name)
+        scanner = PluginSecurityScanner(tmp.name)
+        report = scanner.scan()
+        self.assertIn("config_files", report)
+        self.assertIn(".bandit", report["config_files"])
+
+
+class ConfigFileNotHiddenTest(TestCase):
+    """Config files must NOT be flagged as hidden files by the scanner."""
+
+    def _run_suspicious_check(self, files: dict) -> dict:
+        """Run the scanner on a ZIP and return the Suspicious Files check result."""
+        import tempfile
+
+        zip_bytes = _make_zip_bytes(files)
+        tmp = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
+        tmp.write(zip_bytes)
+        tmp.flush()
+        tmp.close()
+        self.addCleanup(os.unlink, tmp.name)
+        scanner = PluginSecurityScanner(tmp.name)
+        report = scanner.scan()
+        for check in report["checks"]:
+            if check["name"] == "Suspicious Files":
+                return check
+        return {}
+
+    def test_bandit_config_not_flagged_as_hidden(self):
+        """.bandit must not appear in suspicious-files issues."""
+        check = self._run_suspicious_check(
+            {
+                "myplugin/__init__.py": b"x = 1\n",
+                "myplugin/.bandit": b"[bandit]\nskips = B311\n",
+            }
+        )
+        hidden_files = [
+            d["file"]
+            for d in check.get("details", [])
+            if d.get("rule_code") == "FILE_HIDDEN"
+        ]
+        self.assertFalse(
+            any(".bandit" in f for f in hidden_files),
+            f".bandit incorrectly flagged as hidden: {hidden_files}",
+        )
+
+    def test_secrets_baseline_not_flagged_as_hidden(self):
+        """.secrets.baseline must not appear in suspicious-files issues."""
+        check = self._run_suspicious_check(
+            {
+                "myplugin/__init__.py": b"x = 1\n",
+                "myplugin/.secrets.baseline": b"{}",
+            }
+        )
+        hidden_files = [
+            d["file"]
+            for d in check.get("details", [])
+            if d.get("rule_code") == "FILE_HIDDEN"
+        ]
+        self.assertFalse(
+            any(".secrets.baseline" in f for f in hidden_files),
+            f".secrets.baseline incorrectly flagged as hidden: {hidden_files}",
+        )
+
+    def test_flake8_config_not_flagged_as_hidden(self):
+        """.flake8 must not appear in suspicious-files issues."""
+        check = self._run_suspicious_check(
+            {
+                "myplugin/__init__.py": b"x = 1\n",
+                "myplugin/.flake8": b"[flake8]\nextend-ignore = E501\n",
+            }
+        )
+        hidden_files = [
+            d["file"]
+            for d in check.get("details", [])
+            if d.get("rule_code") == "FILE_HIDDEN"
+        ]
+        self.assertFalse(
+            any(".flake8" in f for f in hidden_files),
+            f".flake8 incorrectly flagged as hidden: {hidden_files}",
+        )
+
+    def test_unknown_hidden_file_still_flagged(self):
+        """.env (not in allowlist) must still be flagged as hidden."""
+        check = self._run_suspicious_check(
+            {
+                "myplugin/__init__.py": b"x = 1\n",
+                "myplugin/.env": b"SECRET=abc\n",
+            }
+        )
+        hidden_files = [
+            d["file"]
+            for d in check.get("details", [])
+            if d.get("rule_code") == "FILE_HIDDEN"
+        ]
+        self.assertTrue(
+            any(".env" in f for f in hidden_files),
+            ".env should have been flagged as hidden",
+        )
+
+
+class ConfigFileValidationStatusTest(TestCase):
+    """Tests for the validated_with_config validation status flow."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="cfguser", password="pass", email="cfg@test.com"
+        )
+        self.plugin, self.version = _make_plugin_version(
+            self.user, VALIDATION_STATUS_VALIDATING
+        )
+
+    def _make_scan(self, critical_count=0, config_files=None):
+        """Create a PluginVersionSecurityScan with optional config_files_detected."""
+        return PluginVersionSecurityScan.objects.create(
+            plugin_version=self.version,
+            critical_count=critical_count,
+            warning_count=0,
+            passed_checks=5,
+            total_checks=5,
+            files_scanned=1,
+            config_files_detected=config_files or [],
+            scan_report={
+                "summary": {
+                    "total_checks": 5,
+                    "passed": 5,
+                    "failed": 0,
+                    "critical": critical_count,
+                    "warnings": 0,
+                    "info": 0,
+                    "files_scanned": 1,
+                    "total_issues": 0,
+                },
+                "checks": [],
+            },
+        )
+
+    def test_is_available_for_validated_with_config(self):
+        """validated_with_config must be treated as available (not blocked)."""
+        self.version.validation_status = VALIDATION_STATUS_VALIDATED_WITH_CONFIG
+        self.version.save()
+        self.version.refresh_from_db()
+        self.assertTrue(self.version.is_available)
+
+    @override_settings(DEBUG=True)
+    @patch("plugins.tasks.run_security_scan.run_security_scan")
+    def test_task_sets_validated_with_config_when_config_files_present(self, mock_scan):
+        """Task must set validated_with_config when config files were detected."""
+        scan = self._make_scan(critical_count=0, config_files=[".bandit"])
+        mock_scan.return_value = scan
+
+        run_security_scan_task(self.version.pk)
+
+        self.version.refresh_from_db()
+        self.assertEqual(
+            self.version.validation_status, VALIDATION_STATUS_VALIDATED_WITH_CONFIG
+        )
+
+    @override_settings(DEBUG=True)
+    @patch("plugins.tasks.run_security_scan.run_security_scan")
+    def test_task_sets_validated_when_no_config_files(self, mock_scan):
+        """Task must set validated (not validated_with_config) when no config files."""
+        scan = self._make_scan(critical_count=0, config_files=[])
+        mock_scan.return_value = scan
+
+        run_security_scan_task(self.version.pk)
+
+        self.version.refresh_from_db()
+        self.assertEqual(self.version.validation_status, VALIDATION_STATUS_VALIDATED)
+
+    @override_settings(DEBUG=True)
+    @patch("plugins.tasks.run_security_scan.run_security_scan")
+    def test_task_blocks_even_with_config_files_when_critical_issues(self, mock_scan):
+        """Config files do not prevent blocking when critical issues are found."""
+        scan = self._make_scan(critical_count=1, config_files=[".bandit"])
+        mock_scan.return_value = scan
+
+        run_security_scan_task(self.version.pk)
+
+        self.version.refresh_from_db()
+        self.assertEqual(self.version.validation_status, VALIDATION_STATUS_BLOCKED)
+
+    def test_config_files_stored_in_scan_record(self):
+        """config_files_detected field must persist the list correctly."""
+        scan = self._make_scan(config_files=[".bandit", ".flake8"])
+        scan.refresh_from_db()
+        self.assertIn(".bandit", scan.config_files_detected)
+        self.assertIn(".flake8", scan.config_files_detected)
+
+    @patch("plugins.security_utils.PluginSecurityScanner")
+    def test_run_security_scan_stores_config_files(self, MockScanner):
+        """run_security_scan() must persist config_files from the report."""
+        mock_report = {
+            "summary": {
+                "total_checks": 1,
+                "passed": 1,
+                "failed": 0,
+                "critical": 0,
+                "warnings": 0,
+                "info": 0,
+                "files_scanned": 1,
+                "total_issues": 0,
+            },
+            "config_files": [".bandit"],
+            "checks": [],
+        }
+        MockScanner.return_value.scan.return_value = mock_report
+        self.version.package = MagicMock()
+        self.version.package.path = "/tmp/fake.zip"
+
+        result = run_security_scan(self.version)
+
+        result.refresh_from_db()
+        self.assertIn(".bandit", result.config_files_detected)

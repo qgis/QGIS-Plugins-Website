@@ -183,7 +183,9 @@ class PluginUploadTestCase(TestCase):
             VALIDATION_STATUS_VALIDATING,
             "New version should be in VALIDATING state immediately after upload.",
         )
-        mock_scan_delay.assert_any_call(new_version.pk, auto_approve=False)
+        mock_scan_delay.assert_any_call(
+            new_version.pk, auto_approve=False, skipped_rule_ids=[]
+        )
 
     @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
     @patch("plugins.validator._check_url_link", new=do_nothing)
@@ -218,7 +220,9 @@ class PluginUploadTestCase(TestCase):
         self.assertFalse(version.approved)
         self.assertEqual(version.validation_status, VALIDATION_STATUS_VALIDATING)
         # Task must be queued with auto_approve=True
-        mock_scan_delay.assert_any_call(version.pk, auto_approve=True)
+        mock_scan_delay.assert_any_call(
+            version.pk, auto_approve=True, skipped_rule_ids=[]
+        )
 
     def tearDown(self):
         self.client.logout()
