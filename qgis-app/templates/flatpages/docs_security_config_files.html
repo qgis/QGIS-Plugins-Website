@@ -1,0 +1,259 @@
+{% extends 'flatpages/docs.html' %}
+{% block content %}
+<div class="responsive-content">
+
+  <h4>Security Config Files</h4>
+
+  <p>
+    The QGIS Plugins security scanner supports standard configuration files that allow you to
+    fine-tune how Bandit, detect-secrets, and Flake8 behave when scanning your plugin. By
+    including these files in your plugin ZIP you can suppress known false positives without
+    having to skip entire rules.
+  </p>
+
+  <p class="notification is-info is-light">
+    <strong>Tip:</strong> Config files are the recommended approach for addressing persistent
+    false positives in <em>non-skippable</em> rules. They provide a transparent, versioned
+    record of intentional suppressions directly inside your plugin package.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       VALIDATION STATUS
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Effect on Validation Status</h5>
+
+  <p>
+    When the scanner detects one or more recognised config files in your plugin ZIP, the version
+    receives a <strong>Validated (configured)</strong> status instead of the plain
+    <strong>Validated</strong> status:
+  </p>
+
+  <div class="content">
+    <ul>
+      <li>
+        <strong>Validated (configured)</strong> — All checks passed <em>and</em> at least one
+        security config file was found. The version is fully available for approval; trusted
+        users are auto-approved exactly as they would be with a plain <em>Validated</em> status.
+      </li>
+      <li>
+        The distinct status makes it easy for administrators to identify versions where scans
+        were influenced by developer-supplied config.
+      </li>
+      <li>
+        Config files do <strong>not</strong> lower the bar for passing — critical issues still
+        block the plugin. They only affect which findings are reported by the underlying tools.
+      </li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SUPPORTED FILES
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Supported Config Files</h5>
+
+  <p>Place any of the following files at the <strong>top level</strong> of your plugin ZIP
+    (next to your plugin's <code>metadata.txt</code>). The scanner will automatically detect
+    and use them.</p>
+
+  <div class="content">
+    <table class="table is-striped is-fullwidth">
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Tool</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>.bandit</code></td>
+          <td>Bandit</td>
+          <td>Skip specific Bandit test IDs or exclude paths from the Bandit scan</td>
+        </tr>
+        <tr>
+          <td><code>.secrets.baseline</code></td>
+          <td>detect-secrets</td>
+          <td>Baseline file listing known/accepted secrets so they are not re-reported</td>
+        </tr>
+        <tr>
+          <td><code>.flake8</code></td>
+          <td>Flake8</td>
+          <td>Ignore specific Flake8 error codes or configure per-file ignores</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PER-TOOL EXAMPLES
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Per-Tool Configuration Examples</h5>
+
+  <!-- BANDIT -->
+  <h6>
+    <span class="icon has-text-warning"><i class="fas fa-shield-alt"></i></span>
+    Bandit — <code>.bandit</code>
+  </h6>
+
+  <p>
+    Create a <code>.bandit</code> INI file at the root of your plugin. Use
+    <code>skips</code> to list test IDs that should be ignored and <code>exclude_dirs</code>
+    to omit vendored or test directories entirely.
+  </p>
+
+  <pre><code>[bandit]
+# Ignore XML-related warnings — XML usage has been audited and is safe
+skips = B405,B314,B318
+
+# Do not scan vendored libraries or test fixtures
+exclude_dirs = vendor,tests/fixtures</code></pre>
+
+  <p class="is-size-7 has-text-grey">
+    Full list of Bandit test IDs:
+    <a href="https://bandit.readthedocs.io/en/latest/plugins/index.html" target="_blank" rel="noopener">
+      bandit.readthedocs.io
+    </a>
+  </p>
+
+  <!-- DETECT-SECRETS -->
+  <h6>
+    <span class="icon has-text-info"><i class="fas fa-key"></i></span>
+    detect-secrets — <code>.secrets.baseline</code>
+  </h6>
+
+  <p>
+    Generate a baseline file locally that captures all <em>accepted</em> findings. The scanner
+    will compare new scan results against this baseline and ignore anything already listed.
+  </p>
+
+  <pre><code># Generate the baseline from your plugin directory
+detect-secrets scan your_plugin_directory/ &gt; .secrets.baseline
+
+# Review the file to ensure only intentional/non-sensitive entries are listed
+# then add it to your plugin ZIP alongside metadata.txt</code></pre>
+
+  <p>
+    Any finding present in the baseline is treated as an accepted known value and is
+    <strong>not</strong> reported as a new issue. Findings that are absent from the baseline
+    are still reported normally.
+  </p>
+
+  <p class="is-size-7 has-text-grey">
+    detect-secrets documentation:
+    <a href="https://github.com/Yelp/detect-secrets" target="_blank" rel="noopener">
+      github.com/Yelp/detect-secrets
+    </a>
+  </p>
+
+  <!-- FLAKE8 -->
+  <h6>
+    <span class="icon has-text-success"><i class="fas fa-code"></i></span>
+    Flake8 — <code>.flake8</code>
+  </h6>
+
+  <p>
+    Create a <code>.flake8</code> INI file to extend the list of ignored error codes or apply
+    per-file ignores.
+  </p>
+
+  <pre><code>[flake8]
+# Ignore line-length and unused-import warnings project-wide
+extend-ignore = E501, F401
+
+# Per-file ignores for generated or vendored code
+per-file-ignores =
+    vendor/*.py: E501,F401,F811
+    *_generated.py: E501</code></pre>
+
+  <p class="is-size-7 has-text-grey">
+    Full Flake8 configuration reference:
+    <a href="https://flake8.pycqa.org/en/latest/user/configuration.html" target="_blank" rel="noopener">
+      flake8.pycqa.org
+    </a>
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       HOW TO INCLUDE IN YOUR ZIP
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Including Config Files in Your Plugin ZIP</h5>
+
+  <p>
+    The config files must be at the <strong>root of the plugin directory inside the ZIP</strong>
+    (i.e. the same level as <code>metadata.txt</code> and <code>__init__.py</code>).
+  </p>
+
+  <pre><code>myplugin.zip
+└── myplugin/
+    ├── metadata.txt
+    ├── __init__.py
+    ├── myplugin.py
+    ├── .bandit          ← recognised
+    ├── .flake8          ← recognised
+    └── .secrets.baseline← recognised</code></pre>
+
+  <p>
+    Files nested deeper in subdirectories are not detected. Make sure your build or packaging
+    script includes dotfiles — some tools exclude hidden files by default.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       FUTURE RESTRICTIONS NOTE
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <p class="notification is-warning is-light">
+    <strong>Note — Future restrictions:</strong> Currently config files are accepted for all
+    plugins without restriction. Future policy changes may limit which rules can be suppressed
+    via config, particularly for non-skippable critical rules. The resulting
+    <em>Validated (configured)</em> status already provides administrators with visibility into
+    which versions rely on config-based suppression so that policy can be enforced
+    retroactively if needed.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SEE ALSO
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <hr>
+  <div class="columns">
+    <div class="column">
+      <div class="notification is-link is-light">
+        <div class="is-flex is-align-items-center" style="gap:1rem;">
+          <span class="icon is-large has-text-link" style="flex-shrink:0;">
+            <i class="fas fa-search fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold mb-1">Security Scanning Overview</p>
+            <p class="mb-2 is-size-7">
+              Understand the full scanning pipeline, validation statuses, and how scans
+              affect plugin availability.
+            </p>
+            <a class="button is-link is-small" href="{% url 'docs_security_scanning' %}">
+              <span class="icon"><i class="fas fa-search"></i></span>
+              <span>Security Scanning</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="notification is-link is-light">
+        <div class="is-flex is-align-items-center" style="gap:1rem;">
+          <span class="icon is-large has-text-link" style="flex-shrink:0;">
+            <i class="fas fa-list-alt fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold mb-1">Security Rules Reference</p>
+            <p class="mb-2 is-size-7">
+              Browse all active security and quality rules with their severity, active
+              status, and skip permissions.
+            </p>
+            <a class="button is-link is-small" href="{% url 'docs_security_rules' %}">
+              <span class="icon"><i class="fas fa-list-alt"></i></span>
+              <span>View All Rules</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /responsive-content -->
+{% endblock %}

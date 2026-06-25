@@ -14,11 +14,12 @@
         {% csrf_token %}
         {% include "plugins/form_snippet.html" with show_upload_checklist=True %}
 
-        <div class="form-actions has-text-right mt-3">
+        {# ── Security Rules Configuration ────────────────────────────── #}
+        {% include "plugins/security_rules_widget.html" %}
+
+        <div class="form-actions has-text-right mt-5">
             <button id="upload-submit-btn" class="button is-success" type="submit" disabled>
-                <span class="icon">
-                    <i class="fas fa-save"></i>
-                </span>
+                <span class="icon"><i class="fas fa-save"></i></span>
                 <span>{% trans "Save" %}</span>
             </button>
         </div>

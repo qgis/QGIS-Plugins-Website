@@ -125,10 +125,38 @@
           </a>
         </li>
         {% url 'docs_security_scanning' as docs_security_scanning_url %}
-        <li class="has-child {% if request.path == docs_security_scanning_url %}is-active{% endif %}">
-          <a href="{{ docs_security_scanning_url }}">
-            Security Scanning
-          </a>
+        {% url 'docs_security_tools' as docs_security_tools_url %}
+        {% url 'docs_security_rules' as docs_security_rules_url %}
+        {% url 'docs_security_skipping' as docs_security_skipping_url %}
+        {% url 'docs_security_config_files' as docs_security_config_files_url %}
+        {% url 'docs_security_troubleshooting' as docs_security_troubleshooting_url %}
+        <li>
+          <div class="has-child">
+            <a onclick="toggleSubMenu('docs-security')">
+              Security Scanning
+            </a>
+            <span onclick="toggleSubMenu('docs-security')" class="drop-arrow"><img src="{% static 'images/arrow.svg' %}"/></span>
+          </div>
+          <ul class="collapsed" id="docs-security">
+            <li class="has-child {% if request.path == docs_security_scanning_url %}is-active{% endif %}">
+              <a href="{{ docs_security_scanning_url }}">Overview</a>
+            </li>
+            <li class="has-child {% if request.path == docs_security_tools_url %}is-active{% endif %}">
+              <a href="{{ docs_security_tools_url }}">Security Tools</a>
+            </li>
+            <li class="has-child {% if request.path == docs_security_rules_url %}is-active{% endif %}">
+              <a href="{{ docs_security_rules_url }}">Rules Reference</a>
+            </li>
+            <li class="has-child {% if request.path == docs_security_skipping_url %}is-active{% endif %}">
+              <a href="{{ docs_security_skipping_url }}">Rule Skipping</a>
+            </li>
+            <li class="has-child {% if request.path == docs_security_config_files_url %}is-active{% endif %}">
+              <a href="{{ docs_security_config_files_url }}">Config Files</a>
+            </li>
+            <li class="has-child {% if request.path == docs_security_troubleshooting_url %}is-active{% endif %}">
+              <a href="{{ docs_security_troubleshooting_url }}">Troubleshooting</a>
+            </li>
+          </ul>
         </li>
         {% url 'docs_migrate_qgis4' as docs_migrate_qgis4_url %}
         <li class="has-child {% if request.path == docs_migrate_qgis4_url %}is-active{% endif %}">

@@ -1,0 +1,254 @@
+{% load i18n %}
+{% if security_rules_grouped %}
+<div class="security-rules-widget mt-6" id="security-rules-section">
+
+  <!-- ── Panel Header ───────────────────────────────────────────────────── -->
+  <div class="srw-header">
+    <div class="level is-mobile mb-2">
+      <div class="level-left">
+        <p class="title is-5">
+          <span class="icon mr-2"><i class="fas fa-shield-alt"></i></span>
+          {% trans "Security Scan Configuration" %}
+        </p>
+      </div>
+      <div class="level-right">
+        <div class="tags mb-0">
+          <span class="tag is-success" id="srw-running-tag">
+            <strong id="srw-running-count">{{ total_enabled_rules }}</strong>&nbsp;{% trans "rules will run" %}
+          </span>
+          <span class="tag is-success is-light srw-enabled-counter" id="srw-enabled-tag">
+            <strong id="srw-enabled-count">{{ total_skippable_rules }}</strong>&nbsp;{% trans "skippable enabled" %}
+          </span>
+        </div>
+      </div>
+    </div>
+    <p class="subtitle">
+      {% blocktrans %}Your plugin will be automatically scanned after upload.
+      All skippable rules are enabled by default. Expand a category to disable rules that produce false positives for your plugin.{% endblocktrans %}
+    </p>
+  </div>
+
+  <!-- ── Info bar ───────────────────────────────────────────────────────── -->
+  <div class="srw-infobar">
+    <span class="icon-text">
+      <span class="icon"><i class="fas fa-info-circle"></i></span>
+      <span>
+        <strong>
+        {% blocktrans with count=total_mandatory_rules %}
+          {{ count }} mandatory rules always run and cannot be skipped.
+        {% endblocktrans %}
+        </strong>
+        {% trans "All skipped rules are logged and visible to administrators." %}
+        <a href="{% url 'docs_security_rules' %}" target="_blank" class="ml-2">{% trans "View full rules reference" %} →</a>
+      </span>
+    </span>
+  </div>
+
+  <!-- ── Category Cards ─────────────────────────────────────────────────── -->
+  {% for category in security_rules_grouped %}
+  <div class="srw-cat-card{% if not category.skippable_count %} srw-cat-empty{% endif %}"
+       id="srw-card-{{ category.key }}">
+
+    <!-- Header (toggle) -->
+    <div class="srw-cat-header{% if not category.skippable_count %} srw-cat-header-empty{% endif %}"
+         {% if category.skippable_count %}
+         onclick="srwToggle('{{ category.key }}')"
+         role="button"
+         aria-expanded="false"
+         aria-controls="srw-body-{{ category.key }}"
+         {% endif %}>
+
+      <div class="cat-title">
+        <span class="icon srw-icon-{{ category.key }}{% if not category.skippable_count %} srw-icon-muted{% endif %}">
+          <i class="{{ category.icon }}"></i>
+        </span>
+        <span{% if not category.skippable_count %} class="has-text-grey-light"{% endif %}>
+          {{ category.label }}
+        </span>
+        <span class="tag is-light is-small ml-1">{{ category.total_count }}</span>
+      </div>
+
+      <div class="cat-right">
+        {% if category.skippable_count %}
+          <span class="tag is-success is-light is-small srw-cat-enabled-count"
+                id="srw-cat-enabled-{{ category.key }}"
+                data-max="{{ category.skippable_count }}">
+            {{ category.skippable_count }} / {{ category.skippable_count }} {% trans "enabled" %}
+          </span>
+          <span class="icon srw-chevron" id="srw-chevron-{{ category.key }}">
+            <i class="fas fa-chevron-right fa-sm"></i>
+          </span>
+        {% else %}
+          <span class="tag is-light is-small has-text-grey-light">{% trans "No skippable rules" %}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Body (expandable) — only rendered when there are skippable rules -->
+    {% if category.skippable_count %}
+    <div class="srw-cat-body" id="srw-body-{{ category.key }}" style="display:none;">
+      <div style="overflow-x: auto;">
+        <table class="table is-fullwidth srw-table">
+          <thead>
+            <tr>
+              <th>{% trans "Code" %}</th>
+              <th>{% trans "Rule" %}</th>
+              <th class="has-text-centered" style="width:110px;">{% trans "Enable" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rule in category.skippable_rules %}
+            <tr class="srw-row" onclick="srwRowClick(event)" title="{{ rule.check_description }}">
+              <td>
+                <span class="srw-rule-code sev-{{ rule.severity }}">
+                  {{ rule.check_code }}
+                </span>
+              </td>
+              <td>
+                <div>{{ rule.check_name }}</div>
+                <div class="srw-rule-desc">{{ rule.check_description|truncatechars:110 }}</div>
+              </td>
+              <td class="has-text-centered">
+                <label class="srw-toggle" onclick="srwToggleSwitcher(event, this)" title="{% trans 'Toggle' %} {{ rule.check_code }} {% trans 'for this upload' %}">
+                  <input type="checkbox"
+                         class="srw-skip-checkbox"
+                         value="{{ rule.check_code }}"
+                         data-category="{{ category.key }}"
+                         tabindex="-1"
+                         checked>
+                  <span class="srw-toggle-track"><span class="srw-toggle-thumb"></span></span>
+                </label>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div><!-- /srw-cat-body -->
+    {% endif %}
+
+  </div><!-- /srw-cat-card -->
+  {% endfor %}
+
+  <!-- ── Footer ─────────────────────────────────────────────────────────── -->
+  <div class="srw-footer">
+    <span class="icon-text">
+      <span class="icon has-text-danger"><i class="fas fa-lock"></i></span>
+      <span>
+        {% blocktrans with count=total_mandatory_rules %}
+          {{ count }} mandatory rules always run and cannot be skipped.
+        {% endblocktrans %}
+        {% trans "All skipped rules are logged and visible to administrators." %}
+      </span>
+    </span>
+  </div>
+
+</div><!-- /security-rules-widget -->
+
+<script>
+(function () {
+  /* ── expand/collapse ─────────────────────────────────────────────── */
+  function srwToggle(catKey) {
+    var body    = document.getElementById('srw-body-' + catKey);
+    var chevron = document.getElementById('srw-chevron-' + catKey);
+    var header  = chevron.closest('[aria-expanded]');
+    var isOpen  = body.style.display !== 'none' && body.style.display !== '';
+
+    if (isOpen) {
+      body.style.display = 'none';
+      chevron.classList.remove('open');
+      if (header) header.setAttribute('aria-expanded', 'false');
+    } else {
+      body.style.display = 'block';
+      chevron.classList.add('open');
+      if (header) header.setAttribute('aria-expanded', 'true');
+    }
+  }
+  window.srwToggle = srwToggle;
+
+  /* ── toggle switcher — prevents browser scroll-to-focus ────────── */
+  function srwToggleSwitcher(event, label) {
+    event.stopPropagation();
+    event.preventDefault();
+    var cb = label.querySelector('.srw-skip-checkbox');
+    if (!cb) return;
+    cb.checked = !cb.checked;
+    updateEnabledCount();
+  }
+  window.srwToggleSwitcher = srwToggleSwitcher;
+
+  /* ── row click — toggles the enable checkbox ────────────────────── */
+  function srwRowClick(event) {
+    if (event.target.closest('.srw-toggle')) return;
+    var cb = event.currentTarget.querySelector('.srw-skip-checkbox');
+    if (!cb) return;
+    cb.checked = !cb.checked;
+    updateEnabledCount();
+  }
+  window.srwRowClick = srwRowClick;
+
+  /* ── live enabled counter ────────────────────────────────────────── */
+  var totalSkippable = parseInt('{{ total_skippable_rules }}', 10) || 0;
+  var totalEnabled   = parseInt('{{ total_enabled_rules }}',   10) || 0;
+
+  function updateEnabledCount() {
+    var checked    = document.querySelectorAll('.srw-skip-checkbox:checked');
+    var enabledCt  = checked.length;
+    var disabledCt = totalSkippable - enabledCt;
+
+    // Update "rules will run" counter
+    var runningCount = document.getElementById('srw-running-count');
+    if (runningCount) runningCount.textContent = totalEnabled - disabledCt;
+
+    // Update global "X of Y skippable enabled" tag
+    var enabledCount = document.getElementById('srw-enabled-count');
+    var enabledTag   = document.getElementById('srw-enabled-tag');
+    if (enabledCount) enabledCount.textContent = enabledCt;
+    if (enabledTag) {
+      var allEnabled = enabledCt === totalSkippable;
+      enabledTag.classList.toggle('is-success', allEnabled);
+      enabledTag.classList.toggle('is-light',   allEnabled);
+      enabledTag.classList.toggle('is-warning', !allEnabled);
+    }
+
+    // Update per-category counters
+    var byCat = {};
+    checked.forEach(function (cb) {
+      var cat = cb.dataset.category;
+      byCat[cat] = (byCat[cat] || 0) + 1;
+    });
+    document.querySelectorAll('.srw-cat-enabled-count').forEach(function (el) {
+      var cat        = el.id.replace('srw-cat-enabled-', '');
+      var catEnabled = byCat[cat] || 0;
+      var max        = parseInt(el.dataset.max, 10) || 0;
+      el.textContent = catEnabled + ' / ' + max + ' {% trans "enabled" %}';
+      var catAll = catEnabled === max;
+      el.classList.toggle('is-success', catAll);
+      el.classList.toggle('is-light',   catAll);
+      el.classList.toggle('is-warning', !catAll);
+    });
+  }
+
+  /* ── form submit: inject skip_security_rules hidden inputs ──────── */
+  // Checkboxes have no name; on submit we add hidden inputs only for the
+  // unchecked (disabled) rules so the backend receives the same format.
+  var container = document.getElementById('security-rules-section');
+  if (container) {
+    var form = container.closest('form');
+    if (form) {
+      form.addEventListener('submit', function () {
+        form.querySelectorAll('input[data-srw-skip]').forEach(function (el) { el.remove(); });
+        container.querySelectorAll('.srw-skip-checkbox:not(:checked)').forEach(function (cb) {
+          var hidden = document.createElement('input');
+          hidden.type  = 'hidden';
+          hidden.name  = 'skip_security_rules';
+          hidden.value = cb.value;
+          hidden.setAttribute('data-srw-skip', '1');
+          form.appendChild(hidden);
+        });
+      });
+    }
+  }
+}());
+</script>
+{% endif %}

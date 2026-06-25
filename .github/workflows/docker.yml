@@ -1,13 +1,16 @@
 # Unified Docker image pipeline.
 #
-#   - On every PR: build the *production* image and scan it (SBOM + CVE), so
-#     Dockerfile/dependency breakage and new vulnerabilities are caught during
-#     review — not at release time. Nothing is pushed.
+#   - On every PR: build the *production* image, scan it (SBOM + CVE), upload the
+#     built image + SBOM + scan as downloadable artifacts, and post/update a
+#     "Docker Image Build" comment on the PR. Nothing is pushed to a registry.
 #   - On a published GitHub Release: build, scan, then push the version-pinned
-#     image (+ latest) to Docker Hub and attach the SBOM/scan to the release.
+#     image (+ latest) to Docker Hub and append the build report (image link,
+#     SBOM + CVE tables) to the release notes with the SBOM/scan attached.
 #
 # Publishing the release is the single event that produces the deployable image.
-# See docs/RELEASING.md.
+# Structure adapted from https://github.com/kartoza/qgis-desktop-docker (we build
+# from our Dockerfile and push to Docker Hub rather than Nix/ghcr). See
+# docs/RELEASING.md.
 name: Docker image
 
 on:
@@ -19,35 +22,39 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write        # attach assets to the release
+  contents: write        # attach assets to / append body of the release
+  pull-requests: write   # post the build report as a PR comment
   security-events: write # upload CVE scan to the Security tab
 
 env:
   IMAGE: qgis/qgis-plugins-uwsgi
+  TARBALL: qgis-plugins-uwsgi.tar.gz
 
 jobs:
   build-scan:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Resolve image tag
         id: meta
         run: |
           if [ "${{ github.event_name }}" = "release" ]; then
             echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "tag=pr-${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
           else
             echo "tag=ci-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
           fi
 
       # Build the prod target (NOT the dev stage, which ships sshd/sudo). Loaded
-      # locally so the exact image can be scanned before any push.
+      # locally so the exact image is the one we scan, push, and ship.
       - name: Build production image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: dockerize/docker/Dockerfile
@@ -57,67 +64,224 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Export image as tarball
+        run: docker save ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }} | gzip > ${{ env.TARBALL }}
+
+      # This action also uploads the SBOM as a workflow artifact. Pin the name
+      # and keep upload on so the `sbom.spdx.json` artifact is guaranteed and
+      # does not depend on the action's default behaviour changing.
       - name: Generate SBOM (syft, SPDX JSON)
         uses: anchore/sbom-action@v0
         with:
           image: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
           format: spdx-json
           output-file: sbom.spdx.json
+          artifact-name: sbom.spdx.json
+          upload-artifact: true
 
-      - name: Scan image for vulnerabilities (Grype)
-        id: scan
-        uses: anchore/scan-action@v6
-        with:
-          image: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
-          # Report-only for now so a fresh CVE never blocks a deploy. Flip to
-          # true (with a severity-cutoff) once the baseline is clean.
-          fail-build: false
-          severity-cutoff: high
-          output-format: sarif
+      - name: Generate SBOM table
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          syft ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }} -o json > sbom-syft.json
+          python3 scripts/sbom_table.py sbom-syft.json > sbom-table.md
+
+      - name: Scan for CVEs (Grype)
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+          # Report-only: never fail the build (no --fail-on). Flip to a severity
+          # cutoff once the CVE baseline is clean. Emit JSON (for the table) and
+          # SARIF (for the Security tab) from the same SBOM.
+          grype sbom:sbom.spdx.json -o json > cve-scan.json 2>/dev/null || echo '{"matches":[]}' > cve-scan.json
+          grype sbom:sbom.spdx.json -o sarif > cve.sarif 2>/dev/null || echo '' > cve.sarif
+          python3 scripts/cve_table.py cve-scan.json > cve-table.md
 
       - name: Upload scan to code scanning
-        if: always() && steps.scan.outputs.sarif != ''
+        if: always() && hashFiles('cve.sarif') != ''
         continue-on-error: true
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: ${{ steps.scan.outputs.sarif }}
+          sarif_file: cve.sarif
 
-      - name: Upload SBOM and scan as build artifacts
-        if: always()
+      - name: Generate build report
+        run: |
+          VERSION="${{ steps.meta.outputs.tag }}"
+          SHA="${{ github.event.pull_request.head.sha }}"
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          IMAGE_ID=$(docker image inspect ${{ env.IMAGE }}:${VERSION} --format '{{.Id}}' | cut -c8-19)
+          IMAGE_SIZE=$(docker image inspect ${{ env.IMAGE }}:${VERSION} --format '{{.Size}}' | numfmt --to=iec-i --suffix=B)
+          TARBALL_SIZE=$(stat --format=%s ${{ env.TARBALL }} | numfmt --to=iec-i --suffix=B)
+          LAYER_COUNT=$(docker image inspect ${{ env.IMAGE }}:${VERSION} --format '{{len .RootFS.Layers}}')
+
+          # Availability and run instructions are event-specific. A release image
+          # is pushed to and pullable from Docker Hub; a PR image is never pushed,
+          # it exists only as the downloadable "docker-image" workflow artifact.
+          if [ "${{ github.event_name }}" = "release" ]; then
+            AVAILABILITY="\`${{ env.IMAGE }}:${VERSION}\` on Docker Hub"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            AVAILABILITY="Workflow artifact \`docker-image\` (not pushed to any registry)"
+          else
+            AVAILABILITY="Local build only (not pushed or uploaded)"
+          fi
+
+          cat > build-report.md <<EOF
+          ## Docker Image Build
+
+          | Property | Value |
+          |----------|-------|
+          | Image | \`${{ env.IMAGE }}\` |
+          | Tag | \`${VERSION}\` |
+          | Availability | ${AVAILABILITY} |
+          | Image ID | \`${IMAGE_ID}\` |
+          | Image Size | ${IMAGE_SIZE} |
+          | Tarball Size | ${TARBALL_SIZE} |
+          | Layers | ${LAYER_COUNT} |
+          | uWSGI Port | 8080 |
+          EOF
+
+          if [ "${{ github.event_name }}" = "release" ]; then
+          cat >> build-report.md <<EOF
+
+          ### Quick Start
+
+          This image is **published on this release** to Docker Hub:
+
+          \`\`\`bash
+          docker pull ${{ env.IMAGE }}:${VERSION}
+          \`\`\`
+
+          The app is not a standalone container. It needs PostgreSQL, RabbitMQ,
+          nginx and Celery. Deploy the full, pinned stack on the server with:
+
+          \`\`\`bash
+          dockerize/scripts/deploy.sh ${VERSION}
+          \`\`\`
+          EOF
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+          cat >> build-report.md <<EOF
+
+          ### Download & Run This Build
+
+          This is a **pull request build**. The image is **not** pushed to any
+          registry. Download the \`docker-image\` artifact from the
+          [workflow run](${RUN_URL}), then load and run it locally:
+
+          \`\`\`bash
+          # Unzip the downloaded artifact, then load it into Docker
+          unzip docker-image.zip
+          docker load < ${{ env.TARBALL }}
+
+          # Point the stack at the loaded image and bring up the app services
+          cd dockerize
+          UWSGI_DOCKER_IMAGE=${{ env.IMAGE }}:${VERSION} \\
+            docker compose up -d db rabbitmq uwsgi web
+          \`\`\`
+          EOF
+          else
+          cat >> build-report.md <<EOF
+
+          ### Build Only
+
+          This is a manual CI build (\`${VERSION}\`). The image was built and
+          scanned but is not pushed to a registry or uploaded as an artifact.
+          EOF
+          fi
+
+          cat >> build-report.md <<EOF
+
+          ### SBOM
+
+          $(cat sbom-table.md)
+
+          ### CVE Scan
+
+          $(cat cve-table.md)
+          EOF
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          cat >> build-report.md <<EOF
+
+          ---
+          Commit: \`${SHA}\`
+          EOF
+          fi
+
+          cat build-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      # ----- PR-only: upload artifacts and post the build report as a comment ---
+
+      - name: Upload image artifact (PR)
+        if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v7
         with:
-          name: image-security-${{ steps.meta.outputs.tag }}
-          path: |
-            sbom.spdx.json
-            ${{ steps.scan.outputs.sarif }}
-          if-no-files-found: ignore
+          name: docker-image
+          path: ${{ env.TARBALL }}
           retention-days: 7
+          overwrite: true
 
-      # ----- Release-only: publish the image and attach security artifacts -----
+      - name: Upload SBOM artifact (PR)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: sbom
+          path: sbom.spdx.json
+          retention-days: 7
+          overwrite: true
+
+      - name: Upload CVE scan artifact (PR)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: cve-scan
+          path: cve-scan.json
+          retention-days: 7
+          overwrite: true
+
+      # A PR opened from a fork runs with a read-only GITHUB_TOKEN (the
+      # permissions: block cannot elevate it), so posting a comment 403s. Gate
+      # the comment on the PR coming from a branch in THIS repo; fork PRs still
+      # get the full report in the step summary and the downloadable artifacts.
+      - name: Find existing PR comment
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: peter-evans/find-comment@v4
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: "## Docker Image Build"
+
+      - name: Post or update PR comment
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body-path: build-report.md
+
+      # ----- Release-only: push the scanned image and enrich the release --------
+
       - name: Log in to Docker Hub
         if: github.event_name == 'release'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Push versioned + latest image
         if: github.event_name == 'release'
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: dockerize/docker/Dockerfile
-          target: prod
-          push: true
-          tags: |
-            ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
-            ${{ env.IMAGE }}:latest
-          cache-from: type=gha
+        run: |
+          VERSION="${{ steps.meta.outputs.tag }}"
+          # Push the exact image we built and scanned (no rebuild).
+          docker tag ${{ env.IMAGE }}:${VERSION} ${{ env.IMAGE }}:latest
+          docker push ${{ env.IMAGE }}:${VERSION}
+          docker push ${{ env.IMAGE }}:latest
 
-      - name: Attach SBOM and scan to the release
+      - name: Append build report + attach security artifacts to the release
         if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
+          append_body: true
+          body_path: build-report.md
           files: |
             sbom.spdx.json
-            ${{ steps.scan.outputs.sarif }}
+            cve-scan.json

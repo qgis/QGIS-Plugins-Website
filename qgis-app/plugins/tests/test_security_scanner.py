@@ -4,6 +4,8 @@ Unit tests for the plugin security scanner
 Tests cover all security check types and edge cases
 """
 
+import hashlib
+import json
 import os
 import tempfile
 import zipfile
@@ -595,3 +597,202 @@ class SecurityScanModelTestCase(TestCase):
         str_repr = str(scan)
         self.assertIn("Test Plugin", str_repr)
         self.assertIn("1.0.0", str_repr)
+
+
+class ConfigFileFunctionalTestCase(TestCase):
+    """
+    Tests that config files shipped inside the plugin ZIP actually influence
+    the corresponding tool's results — not just that they are detected.
+
+    Detection / not-hidden / validation-status tests live in
+    test_security_validator.py (workflow layer). These tests belong here
+    because they exercise PluginSecurityScanner behaviour directly.
+    """
+
+    def _create_test_zip(self, files_content):
+        temp_dir = tempfile.mkdtemp()
+        zip_path = os.path.join(temp_dir, "test_plugin.zip")
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for filename, content in files_content.items():
+                zf.writestr(filename, content)
+        return zip_path
+
+    # ------------------------------------------------------------------
+    # .flake8
+    # ------------------------------------------------------------------
+
+    def test_flake8_without_config_flags_long_lines(self):
+        """Control: without a .flake8 config a 200-char line triggers E501."""
+        long_line = "x = " + '"' + "a" * 200 + '"\n'
+        zip_path = self._create_test_zip({"test_plugin/__init__.py": long_line})
+
+        report = PluginSecurityScanner(zip_path).scan()
+        quality_check = next(
+            (c for c in report["checks"] if c["name"] == "Code Quality (Flake8)"), None
+        )
+
+        self.assertIsNotNone(quality_check)
+        self.assertGreater(
+            quality_check["issues_found"], 0, "Expected E501 without .flake8 config"
+        )
+        os.remove(zip_path)
+
+    def test_flake8_config_suppresses_e501(self):
+        """A .flake8 config with extend-ignore=E501 must suppress E501 findings.
+
+        The scanner hardcodes --max-line-length=120 on the command line, which
+        would override a config-file max-line-length value.  extend-ignore is
+        additive and is not overridden by any command-line option, so it is the
+        correct way for a plugin developer to silence E501 via config.
+        """
+        long_line = "x = " + '"' + "a" * 200 + '"\n'
+        zip_path = self._create_test_zip(
+            {
+                "test_plugin/__init__.py": long_line,
+                "test_plugin/.flake8": "[flake8]\nextend-ignore = E501\n",
+            }
+        )
+
+        report = PluginSecurityScanner(zip_path).scan()
+        quality_check = next(
+            (c for c in report["checks"] if c["name"] == "Code Quality (Flake8)"), None
+        )
+
+        self.assertIsNotNone(quality_check)
+        e501_issues = [
+            d for d in quality_check.get("details", []) if d.get("code") == "E501"
+        ]
+        self.assertEqual(
+            len(e501_issues),
+            0,
+            ".flake8 extend-ignore=E501 should suppress E501 findings",
+        )
+        os.remove(zip_path)
+
+    # ------------------------------------------------------------------
+    # .bandit
+    # ------------------------------------------------------------------
+
+    def test_bandit_without_config_flags_shell_injection(self):
+        """Control: without a .bandit config, subprocess.call(shell=True) triggers B602.
+
+        B602 has HIGH severity and is therefore reported by bandit's default
+        medium/high filter (-ll).  B311 (random) is LOW severity and would be
+        filtered out, making it unsuitable as a control case.
+        """
+        code = (
+            "import subprocess\n"
+            "def run_cmd(cmd):\n"
+            "    subprocess.call(cmd, shell=True)\n"
+        )
+        zip_path = self._create_test_zip({"test_plugin/__init__.py": code})
+
+        report = PluginSecurityScanner(zip_path).scan()
+        bandit_check = next(
+            (c for c in report["checks"] if c["name"] == "Bandit Security Analysis"),
+            None,
+        )
+
+        self.assertIsNotNone(bandit_check)
+        b602_issues = [
+            d for d in bandit_check.get("details", []) if d.get("type") == "B602"
+        ]
+        self.assertGreater(len(b602_issues), 0, "Expected B602 without .bandit config")
+        os.remove(zip_path)
+
+    def test_bandit_config_skips_specified_tests(self):
+        """A .bandit config with skips=B602 must suppress B602 findings."""
+        code = (
+            "import subprocess\n"
+            "def run_cmd(cmd):\n"
+            "    subprocess.call(cmd, shell=True)\n"
+        )
+        zip_path = self._create_test_zip(
+            {
+                "test_plugin/__init__.py": code,
+                "test_plugin/.bandit": "[bandit]\nskips = B602\n",
+            }
+        )
+
+        report = PluginSecurityScanner(zip_path).scan()
+        bandit_check = next(
+            (c for c in report["checks"] if c["name"] == "Bandit Security Analysis"),
+            None,
+        )
+
+        self.assertIsNotNone(bandit_check)
+        b602_issues = [
+            d for d in bandit_check.get("details", []) if d.get("type") == "B602"
+        ]
+        self.assertEqual(
+            len(b602_issues),
+            0,
+            ".bandit skips=B602 should suppress B602 findings",
+        )
+        os.remove(zip_path)
+
+    # ------------------------------------------------------------------
+    # .secrets.baseline
+    # ------------------------------------------------------------------
+
+    def test_secrets_without_baseline_flags_hardcoded_password(self):
+        """Control: without a baseline a hardcoded password is flagged."""
+        code = 'password = "s3cr3tP@ssw0rd!"\n'
+        zip_path = self._create_test_zip({"test_plugin/config.py": code})
+
+        report = PluginSecurityScanner(zip_path).scan()
+        secrets_check = next(
+            (c for c in report["checks"] if c["name"] == "Secrets Detection"), None
+        )
+
+        self.assertIsNotNone(secrets_check)
+        self.assertFalse(
+            secrets_check["passed"], "Expected hardcoded password to be flagged"
+        )
+        os.remove(zip_path)
+
+    def test_secrets_baseline_suppresses_acknowledged_secrets(self):
+        """A .secrets.baseline that acknowledges a secret must suppress that finding."""
+        secret_value = "s3cr3tP@ssw0rd!"
+        code = f'password = "{secret_value}"\n'
+
+        # detect-secrets hashes the raw secret value with SHA-1 (v1.x)
+        hashed = hashlib.sha1(secret_value.encode("UTF-8")).hexdigest()
+        baseline = json.dumps(
+            {
+                "version": "1.0.3",
+                "plugins_used": [{"name": "KeywordDetector"}],
+                "filters_used": [],
+                "results": {
+                    "test_plugin/config.py": [
+                        {
+                            "type": "Secret Keyword",
+                            "filename": "test_plugin/config.py",
+                            "hashed_secret": hashed,
+                            "is_verified": False,
+                            "line_number": 1,
+                        }
+                    ]
+                },
+                "generated_at": "2024-01-01T00:00:00Z",
+            }
+        )
+
+        zip_path = self._create_test_zip(
+            {
+                "test_plugin/config.py": code,
+                "test_plugin/.secrets.baseline": baseline,
+            }
+        )
+
+        report = PluginSecurityScanner(zip_path).scan()
+        secrets_check = next(
+            (c for c in report["checks"] if c["name"] == "Secrets Detection"), None
+        )
+
+        self.assertIsNotNone(secrets_check)
+        self.assertTrue(
+            secrets_check["passed"],
+            "Secret acknowledged in .secrets.baseline must not be re-flagged",
+        )
+        os.remove(zip_path)

@@ -1,0 +1,71 @@
+name: Security Check Issue
+description: >
+  Report a mandatory (non-skippable) security check that you believe is producing a
+  false positive or is overly strict for your plugin.
+labels:
+  - security-check
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please fill in as much detail as possible. Administrators review these requests
+        before making any configuration changes.
+
+  - type: input
+    id: plugin
+    attributes:
+      label: Plugin name and version
+      description: >
+        The exact slug and version number of the affected plugin
+        (e.g. `my_plugin` version `1.2.0`).
+      placeholder: "Plugin slug — version X.Y.Z"
+    validations:
+      required: true
+
+  - type: input
+    id: rule
+    attributes:
+      label: Rule code and tool
+      description: >
+        The check code exactly as shown on the
+        [Security Rules reference page](https://plugins.qgis.org/docs/security-scanning/rules)
+        (e.g. `B311`, `KeywordDetector`, `E722`).
+      placeholder: "e.g. B311 (Bandit)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: false_positive
+    attributes:
+      label: Why is this a false positive or overly strict?
+      description: >
+        Explain the specific code or situation that triggered the finding and why it is
+        safe or intentional. Include relevant code snippets if possible.
+      placeholder: |
+        The finding occurs in … because …
+        The code is safe because …
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround attempted (optional)
+      description: >
+        Have you tried addressing this via a config file (`.bandit`, `.secrets.baseline`,
+        `.flake8`) or by skipping a skippable rule? What happened?
+      placeholder: |
+        I tried … but …
+
+  - type: checkboxes
+    id: acknowledgement
+    attributes:
+      label: Acknowledgement
+      options:
+        - label: >
+            I understand this is a **mandatory** (non-skippable) rule and that the
+            administrators will review the request before making any changes.
+          required: true
+        - label: >
+            I confirm that the finding is **not** a genuine security issue in my plugin.
+          required: true

@@ -6,6 +6,7 @@ volumes:
   media-data:
   backups-data:
   plugins-data:
+  whoosh-index:
 services:
   maindev:
     build:
@@ -68,6 +69,9 @@ services:
       - CURRENT_QGIS_MAJOR_VERSION=${CURRENT_QGIS_MAJOR_VERSION:-3}
       - SENTRY_DSN=${SENTRY_DSN}
       - SENTRY_RATE=${SENTRY_RATE}
+      # Index lives in a SUBDIR of the shared volume (mounted at the parent,
+      # /home/web/search_index) so rebuild_index can rmtree it without EBUSY.
+      - HAYSTACK_WHOOSH_PATH=${HAYSTACK_WHOOSH_PATH:-/home/web/search_index/whoosh_index}
     volumes:
       # NOTE: the application code is NOT bind-mounted here on purpose.
       # Production runs the code baked into ${UWSGI_DOCKER_IMAGE} (immutable,
@@ -79,6 +83,10 @@ services:
       - ${QGISPLUGINS_MEDIA_VOLUME}:/home/web/media:rw
       - celerybeat-schedule:/home/web/celerybeat-schedule:rw
       - plugins-data:/home/web/shared
+      # Shared search index: the celery worker writes it, uwsgi reads it.
+      # Mounted on the PARENT dir (not the index dir itself) so Whoosh's
+      # rebuild_index can rmtree the index subdir without hitting EBUSY.
+      - whoosh-index:/home/web/search_index:rw
     command: bash -c "npm install && npm run build && uwsgi --ini /uwsgi.conf"
     depends_on:
       - db

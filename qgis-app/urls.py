@@ -26,7 +26,12 @@ from docs import (
     docs_faq,
     docs_migrate_qgis4,
     docs_publish,
+    docs_security_config_files,
+    docs_security_rules,
     docs_security_scanning,
+    docs_security_skipping,
+    docs_security_tools,
+    docs_security_troubleshooting,
 )
 
 admin.autodiscover()
@@ -91,6 +96,31 @@ urlpatterns += [
     url(r"^docs/publish", docs_publish, name="docs_publish"),
     url(r"^docs/approval", docs_approval, name="docs_approval"),
     url(r"^docs/faq", docs_faq, name="docs_faq"),
+    url(
+        r"^docs/security-scanning/config-files",
+        docs_security_config_files,
+        name="docs_security_config_files",
+    ),
+    url(
+        r"^docs/security-scanning/rules",
+        docs_security_rules,
+        name="docs_security_rules",
+    ),
+    url(
+        r"^docs/security-scanning/tools",
+        docs_security_tools,
+        name="docs_security_tools",
+    ),
+    url(
+        r"^docs/security-scanning/skipping",
+        docs_security_skipping,
+        name="docs_security_skipping",
+    ),
+    url(
+        r"^docs/security-scanning/troubleshooting",
+        docs_security_troubleshooting,
+        name="docs_security_troubleshooting",
+    ),
     url(
         r"^docs/security-scanning",
         docs_security_scanning,
