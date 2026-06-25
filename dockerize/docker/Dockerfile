@@ -42,6 +42,26 @@ WORKDIR /home/web/django_project
 COPY qgis-app/package.json /home/web/django_project/package.json
 RUN npm install --unsafe-perm -g npm@10.2.1 && npm install --unsafe-perm -g webpack@5.89.0 && npm install --unsafe-perm -g webpack-cli@5.1.4 && npm install --unsafe-perm
 
+# Build webpack bundles at image build time — no runtime npm needed.
+RUN npm run build
+
+# Preserve webpack-stats.json outside django_project so the devweb bind-mount
+# (../qgis-app:/home/web/django_project) doesn't hide it. The startup command
+# copies it back into the project dir at container start.
+RUN cp /home/web/django_project/webpack-stats.json /home/web/webpack-stats.json
+
+# Collect all static files (including webpack bundles) into a baked directory inside
+# the image. DATABASE_* and RABBITMQ_HOST are required by settings.py/settings_docker.py
+# at import time (os.environ[] with no default), but collectstatic never uses them.
+RUN STATIC_ROOT=/home/web/static_baked/ \
+    DATABASE_NAME=build \
+    DATABASE_USERNAME=build \
+    DATABASE_PASSWORD=build \
+    DATABASE_HOST=build \
+    RABBITMQ_HOST=build \
+    DJANGO_SETTINGS_MODULE=settings_docker \
+    python manage.py collectstatic --noinput --skip-checks
+
 RUN mkdir -p /var/log/uwsgi
 
 WORKDIR /home/web/django_project

@@ -62,16 +62,13 @@ cd "$DOCKERIZE_DIR"
 echo "==> Pulling image ${IMAGE_REPO}:${VERSION}"
 docker compose -p "$PROJECT_ID" pull uwsgi
 
-# Bring up the app container on the new image first so migrate/collectstatic
-# (which exec/run inside uwsgi) use the new code. Reuses Makefile targets.
+# Bring up the app container on the new image first so migrations run against
+# the new code. Static assets are copied from the baked image on container start.
 echo "==> Recreating uwsgi on the new image"
 docker compose -p "$PROJECT_ID" up -d --no-deps uwsgi
 
 echo "==> Running database migrations (auth first)"
 make migrate
-
-echo "==> Collecting static files"
-make collectstatic
 
 echo "==> Recreating remaining application services"
 docker compose -p "$PROJECT_ID" up -d --scale uwsgi=2 web worker beat dbbackups
