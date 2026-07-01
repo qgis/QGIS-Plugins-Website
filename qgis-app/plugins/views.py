@@ -5,6 +5,7 @@ import logging
 import os
 import time
 from collections import defaultdict
+from typing import Optional
 
 from django.conf import settings
 from django.contrib import messages
@@ -17,7 +18,7 @@ from django.core.exceptions import FieldDoesNotExist
 from django.core.mail import EmailMessage, EmailMultiAlternatives, send_mail
 from django.core.paginator import Paginator
 from django.db import IntegrityError, connection, transaction
-from django.db.models import F, Q
+from django.db.models import F, Q, QuerySet
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Lower
 from django.http import (
@@ -98,7 +99,7 @@ from plugins.tasks.send_email_communication import (
 NOTIFICATION_RECIPIENTS_GROUP_NAME = settings.NOTIFICATION_RECIPIENTS_GROUP_NAME
 
 
-def send_upload_confirmation_email(plugin_version):
+def send_upload_confirmation_email(plugin_version: PluginVersion) -> None:
     """
     Send Stage 1 email: immediate upload confirmation to the plugin maintainer(s).
 
@@ -115,7 +116,7 @@ def send_upload_confirmation_email(plugin_version):
     version_url = f"https://{domain}{plugin_version.get_absolute_url()}"
     docs_url = f"https://{domain}/docs/security-scanning"
 
-    subject = _("Plugin Upload Confirmation: %(name)s v%(version)s") % {
+    subject = _("Plugin Upload Confirmation: %(name)s %(version)s") % {
         "name": plugin.name,
         "version": plugin_version.version,
     }
@@ -143,14 +144,20 @@ def send_upload_confirmation_email(plugin_version):
     )
 
 
-def send_mail_wrapper(subject, message, mail_from, recipients, fail_silently=True):
+def send_mail_wrapper(
+    subject: str,
+    message: str,
+    mail_from: str,
+    recipients: list,
+    fail_silently: bool = True,
+) -> None:
     if settings.DEBUG:
         logging.debug("Mail not sent (DEBUG=True)")
     else:
         send_mail(subject, message, mail_from, recipients, fail_silently)
 
 
-def _format_expiry(value):
+def _format_expiry(value: datetime.datetime) -> str:
     """
     Format a confirmation-expiry datetime in UTC with an explicit zone label.
 
@@ -164,7 +171,7 @@ def _format_expiry(value):
     return value.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M %Z")
 
 
-def send_confirmation_email(confirmation):
+def send_confirmation_email(confirmation: PluginEmailConfirmation) -> None:
     """
     Send one HTML+plaintext confirmation email for a PluginEmailConfirmation.
     Builds the plugin list from the M2M relation.
@@ -226,7 +233,9 @@ def send_confirmation_email(confirmation):
         )
 
 
-def notify_editors_of_pending_confirmation(confirmation):
+def notify_editors_of_pending_confirmation(
+    confirmation: PluginEmailConfirmation,
+) -> None:
     """
     Send a tokenless heads-up to the account holders responsible for the
     plugins in *confirmation* (``plugin.editors`` — owners + creator).
@@ -321,8 +330,13 @@ def notify_editors_of_pending_confirmation(confirmation):
 
 
 def send_mail_with_attachments(
-    subject, message, mail_from, recipients, attachments=None, fail_silently=True
-):
+    subject: str,
+    message: str,
+    mail_from: str,
+    recipients: list,
+    attachments: Optional[QuerySet] = None,
+    fail_silently: bool = True,
+) -> None:
     """
     Send email with optional file attachments
     """
@@ -350,7 +364,7 @@ def send_mail_with_attachments(
         email.send(fail_silently=fail_silently)
 
 
-def plugin_notify(plugin):
+def plugin_notify(plugin: Plugin) -> None:
     """
     Sends a message to staff that are in
     the notification recipients group on new plugins
@@ -379,14 +393,14 @@ def plugin_notify(plugin):
             fail_silently=True,
         )
         logging.debug(
-            "Sending email notification for %s plugin, recipients:  %s"
-            % (plugin, recipients)
+            f"Sending email notification for {plugin} plugin, "
+            f"recipients:  {recipients}"
         )
     else:
-        logging.warning("No recipients found for %s plugin notification" % plugin)
+        logging.warning(f"No recipients found for {plugin} plugin notification")
 
 
-def version_notify(plugin_version):
+def version_notify(plugin_version: PluginVersion) -> None:
     """
     Sends a message to staff that are in
     the notification recipients group on new plugin versions
@@ -422,16 +436,16 @@ def version_notify(plugin_version):
             fail_silently=True,
         )
         logging.debug(
-            "Sending email notification for %s plugin version, recipients:  %s"
-            % (plugin_version, recipients)
+            f"Sending email notification for {plugin_version} plugin version, "
+            f"recipients:  {recipients}"
         )
     else:
         logging.warning(
-            "No recipients found for %s plugin version notification" % plugin_version
+            f"No recipients found for {plugin_version} plugin version notification"
         )
 
 
-def plugin_approve_notify(plugin, msg, user):
+def plugin_approve_notify(plugin: Plugin, msg: str, user: User) -> None:
     """
     Sends a message when a plugin is approved or unapproved.
     """
@@ -449,8 +463,8 @@ def plugin_approve_notify(plugin, msg, user):
         domain = Site.objects.get_current().domain
         mail_from = settings.DEFAULT_FROM_EMAIL
         logging.debug(
-            "Sending email %s notification for %s plugin, recipients:  %s"
-            % (approval_state, plugin, recipients)
+            f"Sending email {approval_state} notification for {plugin} plugin, "
+            f"recipients:  {recipients}"
         )
         send_mail_wrapper(
             _("Plugin %s %s notification.") % (plugin, approval_state),
@@ -469,12 +483,11 @@ def plugin_approve_notify(plugin, msg, user):
         )
     else:
         logging.warning(
-            "No recipients found for %s plugin %s notification"
-            % (plugin, approval_state)
+            f"No recipients found for {plugin} plugin {approval_state} notification"
         )
 
 
-def version_feedback_notify(version, user):
+def version_feedback_notify(version: PluginVersion, user: User) -> None:
     """
     Sends a message when a version is receiving feedback.
     """
@@ -486,8 +499,8 @@ def version_feedback_notify(version, user):
         domain = Site.objects.get_current().domain
         mail_from = settings.DEFAULT_FROM_EMAIL
         logging.debug(
-            "Sending email feedback notification for %s plugin version %s, recipients:  %s"
-            % (plugin, version.version, recipients)
+            f"Sending email feedback notification for {plugin} plugin version "
+            f"{version.version}, recipients:  {recipients}"
         )
 
         # Get latest feedback attachments for this version
@@ -522,11 +535,13 @@ def version_feedback_notify(version, user):
         )
     else:
         logging.warning(
-            "No recipients found for %s plugin feedback notification" % (plugin,)
+            f"No recipients found for {plugin} plugin feedback notification"
         )
 
 
-def version_feedback_resolved_notify(version, user, all_tasks):
+def version_feedback_resolved_notify(
+    version: PluginVersion, user: User, all_tasks: QuerySet
+) -> None:
     """
     Sends a message when a version feedback is resolved.
     """
@@ -540,8 +555,8 @@ def version_feedback_resolved_notify(version, user, all_tasks):
         mail_from = settings.DEFAULT_FROM_EMAIL
 
         logging.debug(
-            "Sending email feedback resolved notification for %s plugin version %s, recipients:  %s"
-            % (plugin, version.version, reviewers_emails)
+            f"Sending email feedback resolved notification for {plugin} plugin "
+            f"version {version.version}, recipients:  {reviewers_emails}"
         )
         send_mail_wrapper(
             _("Plugin %s feedback resolved notification.") % (plugin,),
@@ -560,19 +575,18 @@ def version_feedback_resolved_notify(version, user, all_tasks):
         )
     else:
         logging.warning(
-            "No recipients found for %s plugin feedback resolved notification"
-            % (plugin,)
+            f"No recipients found for {plugin} plugin feedback resolved notification"
         )
 
 
-def user_trust_notify(user):
+def user_trust_notify(user: User) -> None:
     """
     Sends a message when an author is trusted or untrusted.
     """
     if settings.DEBUG:
         return
     if user.is_staff:
-        logging.debug("Skipping trust notification for staff user %s" % user)
+        logging.debug(f"Skipping trust notification for staff user {user}")
     else:
         if user.email:
             recipients = [user.email]
@@ -587,20 +601,20 @@ def user_trust_notify(user):
                 subject = _("User untrust notification.")
                 message = _("\r\nYou cannot approve any plugin.\r\n")
 
-            logging.debug("Sending email trust change notification to %s" % recipients)
+            logging.debug(f"Sending email trust change notification to {recipients}")
             send_mail_wrapper(
                 subject, message, mail_from, recipients, fail_silently=True
             )
         else:
             logging.warning(
-                "No email found for %s user trust change notification" % user
+                f"No email found for {user} user trust change notification"
             )
 
 
 ## Access control ##
 
 
-def check_plugin_access(user, plugin):
+def check_plugin_access(user: User, plugin: Plugin) -> bool:
     """
     Returns true if the user can modify the plugin:
 
@@ -611,7 +625,7 @@ def check_plugin_access(user, plugin):
     return user.is_staff or user in plugin.editors
 
 
-def check_plugin_token_access(user, plugin):
+def check_plugin_token_access(user: User, plugin: Plugin) -> bool:
     """
     Returns true if the user can access all the plugin's token:
 
@@ -622,7 +636,7 @@ def check_plugin_token_access(user, plugin):
     return user.is_staff or user.pk == plugin.created_by.pk
 
 
-def check_plugin_version_approval_rights(user, plugin):
+def check_plugin_version_approval_rights(user: User, plugin: Plugin) -> bool:
     """
     Returns true if the user can approve the plugin version:
 
@@ -636,7 +650,7 @@ def check_plugin_version_approval_rights(user, plugin):
 
 
 @login_required
-def plugin_create(request):
+def plugin_create(request: HttpRequest) -> HttpResponse:
     """
     The form will automatically set published flag according to user permissions.
     There is a more "automatic" alternative for creating new Plugins in a single step
@@ -670,7 +684,7 @@ def plugin_create(request):
 
 @staff_required
 @require_POST
-def plugin_set_featured(request, package_name):
+def plugin_set_featured(request: HttpRequest, package_name: str) -> HttpResponse:
     """
     Set as featured
     """
@@ -684,7 +698,7 @@ def plugin_set_featured(request, package_name):
 
 @staff_required
 @require_POST
-def plugin_unset_featured(request, package_name):
+def plugin_unset_featured(request: HttpRequest, package_name: str) -> HttpResponse:
     """
     Sets as not featured
     """
@@ -697,7 +711,7 @@ def plugin_unset_featured(request, package_name):
 
 
 @login_required
-def plugin_upload(request):
+def plugin_upload(request: HttpRequest) -> HttpResponse:
     """
     This is the "single step" way to create new plugins:
     uploads a package and creates a new Plugin with a new PluginVersion
@@ -933,7 +947,7 @@ def plugin_upload(request):
 
 
 @login_required
-def plugin_create_empty(request):
+def plugin_create_empty(request: HttpRequest) -> HttpResponse:
     """
     Create a new plugin entry without any versions.
     """
@@ -1108,7 +1122,7 @@ COMMUNICATION_SORT_FIELDS = {"subject", "created_at", "recipient_count", "status
 
 
 @superuser_required
-def plugin_email_communicate(request):
+def plugin_email_communicate(request: HttpRequest) -> HttpResponse:
     """
     Superuser-only form to compose and queue a news/announcement email to every
     confirmed plugin contact address and the account emails of those plugins'
@@ -1145,7 +1159,7 @@ def plugin_email_communicate(request):
 
 
 @superuser_required
-def plugin_email_communication_list(request):
+def plugin_email_communication_list(request: HttpRequest) -> HttpResponse:
     """
     Superuser-only paginated list of past email communications, with free-text
     search, status filtering and column sorting.
@@ -1208,7 +1222,7 @@ def plugin_email_communication_list(request):
 
 
 @superuser_required
-def plugin_email_communication_detail(request, pk):
+def plugin_email_communication_detail(request: HttpRequest, pk: str) -> HttpResponse:
     """Superuser-only view of a single past communication's full content."""
     communication = get_object_or_404(PluginEmailCommunication, pk=pk)
     return render(
@@ -1218,7 +1232,7 @@ def plugin_email_communication_detail(request, pk):
     )
 
 
-def confirm_plugin_email(request, key):
+def confirm_plugin_email(request: HttpRequest, key: str) -> HttpResponse:
     """
     Handles the one-time email confirmation link sent to a plugin's author email.
 
@@ -1253,7 +1267,7 @@ def confirm_plugin_email(request, key):
 
 
 @login_required
-def plugin_email_token_confirm(request, package_name):
+def plugin_email_token_confirm(request: HttpRequest, package_name: str) -> HttpResponse:
     """
     Presents a form where a logged-in plugin editor can paste the confirmation
     token from the email they received.  On submit, redirects to the existing
@@ -1293,7 +1307,9 @@ def plugin_email_token_confirm(request, package_name):
 
 
 @login_required
-def resend_plugin_email_confirmation(request, package_name):
+def resend_plugin_email_confirmation(
+    request: HttpRequest, package_name: str
+) -> HttpResponse:
     """
     Staff/superuser-only view that creates or replaces a pending email
     confirmation for a plugin's author email address.
@@ -1344,7 +1360,7 @@ def resend_plugin_email_confirmation(request, package_name):
 
 
 @login_required
-def plugin_delete(request, package_name):
+def plugin_delete(request: HttpRequest, package_name: str) -> HttpResponse:
     """
     Marks a plugin for deletion (soft delete).
     The plugin will be hidden from public lists but visible in 'My Plugins'.
@@ -1365,7 +1381,7 @@ def plugin_delete(request, package_name):
 
 
 @login_required
-def plugin_restore(request, package_name):
+def plugin_restore(request: HttpRequest, package_name: str) -> HttpResponse:
     """
     Restores a soft-deleted plugin.
     """
@@ -1385,7 +1401,7 @@ def plugin_restore(request, package_name):
 
 
 @login_required
-def plugin_permanent_delete(request, package_name):
+def plugin_permanent_delete(request: HttpRequest, package_name: str) -> HttpResponse:
     """
     Permanently deletes a soft-deleted plugin.
     Only staff users can permanently delete plugins.
@@ -1414,7 +1430,7 @@ def plugin_permanent_delete(request, package_name):
     )
 
 
-def _check_optional_metadata(form, request):
+def _check_optional_metadata(form, request: HttpRequest) -> None:
     """
     Checks for the presence of optional metadata
     """
@@ -1429,7 +1445,7 @@ def _check_optional_metadata(form, request):
 
 
 @login_required
-def plugin_update(request, package_name):
+def plugin_update(request: HttpRequest, package_name: str) -> HttpResponse:
     """
     Plugin update form
     """
@@ -1483,7 +1499,7 @@ class PluginTokenListView(ListView):
     def dispatch(self, *args, **kwargs):
         return super(PluginTokenListView, self).dispatch(*args, **kwargs)
 
-    def get_filtered_queryset(self, qs):
+    def get_filtered_queryset(self, qs: QuerySet) -> QuerySet:
         package_name = self.kwargs.get("package_name")
         plugin = get_object_or_404(Plugin, package_name=package_name)
         if not check_plugin_token_access(self.request.user, plugin):
@@ -1571,7 +1587,7 @@ class PluginTokenDetailView(DetailView):
 
 @login_required
 @transaction.atomic
-def plugin_token_create(request, package_name):
+def plugin_token_create(request: HttpRequest, package_name: str) -> HttpResponse:
     if request.method == "POST":
         plugin = get_object_or_404(Plugin, package_name=package_name)
         user = request.user
@@ -1601,7 +1617,9 @@ def plugin_token_create(request, package_name):
 
 @login_required
 @transaction.atomic
-def plugin_token_update(request, package_name, token_id):
+def plugin_token_update(
+    request: HttpRequest, package_name: str, token_id: str
+) -> HttpResponse:
     plugin = get_object_or_404(Plugin, package_name=package_name)
     outstanding_token = get_object_or_404(OutstandingToken, pk=token_id)
     if not check_plugin_token_access(request.user, plugin):
@@ -1632,7 +1650,9 @@ def plugin_token_update(request, package_name, token_id):
 
 @login_required
 @transaction.atomic
-def plugin_token_delete(request, package_name, token_id):
+def plugin_token_delete(
+    request: HttpRequest, package_name: str, token_id: str
+) -> HttpResponse:
     plugin = get_object_or_404(Plugin, package_name=package_name)
     outstanding_token = get_object_or_404(OutstandingToken, pk=token_id)
     if not check_plugin_token_access(request.user, plugin):
@@ -1677,7 +1697,7 @@ class PluginsList(ListView):
     additional_context = {}
     paginate_by = settings.PAGINATION_DEFAULT_PAGINATION
 
-    def get_paginate_by(self, queryset):
+    def get_paginate_by(self, queryset: QuerySet) -> int:
         """
         Paginate by specified value in querystring, or use default class property value.
         """
@@ -1690,7 +1710,7 @@ class PluginsList(ListView):
             paginate_by = self.paginate_by
         return paginate_by
 
-    def get_filtered_queryset(self, qs):
+    def get_filtered_queryset(self, qs: QuerySet) -> QuerySet:
         return qs
 
     def get_queryset(self):
@@ -1718,7 +1738,7 @@ class PluginsList(ListView):
 
         return qs
 
-    def _is_valid_field(self, field_name):
+    def _is_valid_field(self, field_name: str) -> bool:
         try:
             self.model._meta.get_field(field_name)
             return True
@@ -1765,12 +1785,12 @@ class PluginsList(ListView):
         context["any_deprecated"] = self.any_deprecated
         return context
 
-    def get_sortstring(self):
+    def get_sortstring(self) -> str:
         if self.request.GET.get("sort", None):
-            return "sort=%s" % self.request.GET.get("sort")
+            return f"sort={self.request.GET.get('sort')}"
         return ""
 
-    def get_querystring(self):
+    def get_querystring(self) -> str:
         """
         Clean existing query string (GET parameters) by removing
         arguments that we don't want to preserve (sort parameter, 'page')
@@ -1834,7 +1854,7 @@ class MyPluginsList(PluginsList):
 
         return qs
 
-    def get_filtered_queryset(self, qs):
+    def get_filtered_queryset(self, qs: QuerySet) -> QuerySet:
         return (
             qs.filter(owners=self.request.user).distinct()
             | qs.filter(created_by=self.request.user).distinct()
@@ -1846,7 +1866,7 @@ class UserPluginsList(PluginsList):
     List of plugins created by a specific user
     """
 
-    def get_filtered_queryset(self, qs):
+    def get_filtered_queryset(self, qs: QuerySet) -> QuerySet:
         user = get_object_or_404(User, username=self.kwargs["username"])
         return qs.filter(created_by=user)
 
@@ -1856,7 +1876,7 @@ class AuthorPluginsList(PluginsList):
     List of plugins created by a specific author
     """
 
-    def get_filtered_queryset(self, qs):
+    def get_filtered_queryset(self, qs: QuerySet) -> QuerySet:
         return qs.filter(author=unquote(self.kwargs["author"]))
 
     def get_context_data(self, **kwargs):
@@ -1876,7 +1896,7 @@ class UserDetailsPluginsList(PluginsList):
 
     template_name = "plugins/user.html"
 
-    def get_filtered_queryset(self, qs):
+    def get_filtered_queryset(self, qs: QuerySet) -> QuerySet:
         user = get_object_or_404(User, username=self.kwargs["username"])
         return qs.filter(Q(created_by=user) | Q(owners=user))
 
@@ -1895,7 +1915,7 @@ class UserDetailsPluginsList(PluginsList):
 
 
 class TagsPluginsList(PluginsList):
-    def get_filtered_queryset(self, qs):
+    def get_filtered_queryset(self, qs: QuerySet) -> QuerySet:
         response = qs.filter(tagged_items__tag__slug=unquote(self.kwargs["tags"]))
         return response
 
@@ -1919,7 +1939,7 @@ class FeedbackCompletedPluginsList(PluginsList):
 
     queryset = Plugin.feedback_completed_objects.all().order_by("-latest_version_date")
 
-    def get_filtered_queryset(self, qs):
+    def get_filtered_queryset(self, qs: QuerySet) -> QuerySet:
         user = get_object_or_404(User, username=self.request.user)
         if not user.is_staff:
             raise Http404
@@ -1935,7 +1955,7 @@ class FeedbackReceivedPluginsList(PluginsList):
 
     queryset = Plugin.feedback_received_objects.all().order_by("-latest_version_date")
 
-    def get_filtered_queryset(self, qs):
+    def get_filtered_queryset(self, qs: QuerySet) -> QuerySet:
         user = get_object_or_404(User, username=self.request.user)
         if not user.is_staff:
             raise Http404
@@ -1950,7 +1970,7 @@ class FeedbackPendingPluginsList(PluginsList):
 
     queryset = Plugin.feedback_pending_objects.all().order_by("-latest_version_date")
 
-    def get_filtered_queryset(self, qs):
+    def get_filtered_queryset(self, qs: QuerySet) -> QuerySet:
         user = get_object_or_404(User, username=self.request.user)
         if not user.is_staff:
             raise Http404
@@ -1965,7 +1985,7 @@ class AwaitingDeletionPluginsList(PluginsList):
 
     queryset = Plugin.objects.filter(is_deleted=True).order_by("-deleted_on")
 
-    def get_filtered_queryset(self, qs):
+    def get_filtered_queryset(self, qs: QuerySet) -> QuerySet:
         user = get_object_or_404(User, username=self.request.user)
         if not user.is_staff:
             raise Http404
@@ -1974,7 +1994,7 @@ class AwaitingDeletionPluginsList(PluginsList):
 
 @login_required
 @require_POST
-def plugin_manage(request, package_name):
+def plugin_manage(request: HttpRequest, package_name: str) -> HttpResponse:
     """
     Entry point for the plugin management functions
     """
@@ -1997,7 +2017,7 @@ def plugin_manage(request, package_name):
 
 @staff_required
 @require_POST
-def user_block(request, username):
+def user_block(request: HttpRequest, username: str) -> HttpResponse:
     """
     Completely blocks a user
     """
@@ -2012,7 +2032,7 @@ def user_block(request, username):
 
 @staff_required
 @require_POST
-def user_unblock(request, username):
+def user_unblock(request: HttpRequest, username: str) -> HttpResponse:
     """
     unblocks a user
     """
@@ -2027,7 +2047,7 @@ def user_unblock(request, username):
 
 @staff_required
 @require_POST
-def user_trust(request, username):
+def user_trust(request: HttpRequest, username: str) -> HttpResponse:
     """
     Assigns can_approve permission to the plugin creator
     """
@@ -2046,7 +2066,7 @@ def user_trust(request, username):
 
 @staff_required
 @require_POST
-def user_untrust(request, username):
+def user_untrust(request: HttpRequest, username: str) -> HttpResponse:
     """
     Revokes can_approve permission to the plugin creator
     """
@@ -2065,7 +2085,7 @@ def user_untrust(request, username):
 
 @staff_required
 @require_POST
-def user_permissions_manage(request, username):
+def user_permissions_manage(request: HttpRequest, username: str) -> HttpResponse:
     """
     Entry point for the user management functions
     """
@@ -2088,7 +2108,7 @@ def user_permissions_manage(request, username):
 ###############################################
 
 
-def _main_plugin_update(request, plugin, form):
+def _main_plugin_update(request: HttpRequest, plugin: Plugin, form) -> None:
     """
     Updates the main plugin object from version metadata
     """
@@ -2135,7 +2155,7 @@ def _main_plugin_update(request, plugin, form):
 
 @has_valid_token
 @csrf_exempt
-def version_create_api(request, package_name):
+def version_create_api(request: HttpRequest, package_name: str) -> HttpResponse:
     """
     Create a new version using a valid token.
     We make sure that the token is valid before
@@ -2149,7 +2169,7 @@ def version_create_api(request, package_name):
 
 
 @login_required
-def version_create(request, package_name):
+def version_create(request: HttpRequest, package_name: str) -> HttpResponse:
     plugin = get_object_or_404(Plugin, package_name=package_name)
     if not check_plugin_access(request.user, plugin):
         return render(
@@ -2159,7 +2179,9 @@ def version_create(request, package_name):
     return _version_create(request, plugin, version)
 
 
-def _version_create(request, plugin, version):
+def _version_create(
+    request: HttpRequest, plugin: Plugin, version: PluginVersion
+) -> HttpResponse:
     """
     The form will create versions according to permissions,
     plugin name and description are updated according to the info
@@ -2369,7 +2391,9 @@ def _version_create(request, plugin, version):
 
 @has_valid_token
 @csrf_exempt
-def version_update_api(request, package_name, version):
+def version_update_api(
+    request: HttpRequest, package_name: str, version: str
+) -> HttpResponse:
     """
     Update a version using a valid token.
     We make sure that the token is valid before
@@ -2388,7 +2412,9 @@ def version_update_api(request, package_name, version):
 
 
 @login_required
-def version_update(request, package_name, version):
+def version_update(
+    request: HttpRequest, package_name: str, version: str
+) -> HttpResponse:
     plugin = get_object_or_404(Plugin, package_name=package_name)
     version = get_object_or_404(PluginVersion, plugin=plugin, version=version)
     if not check_plugin_access(request.user, plugin):
@@ -2406,7 +2432,12 @@ def version_update(request, package_name, version):
     return _version_update(request, plugin, version, is_trusted=is_trusted)
 
 
-def _version_update(request, plugin, version, is_trusted=False):
+def _version_update(
+    request: HttpRequest,
+    plugin: Plugin,
+    version: PluginVersion,
+    is_trusted: bool = False,
+) -> HttpResponse:
     """
     The form will update versions according to permissions
     """
@@ -2534,7 +2565,9 @@ def _version_update(request, plugin, version, is_trusted=False):
 
 
 @login_required
-def version_delete(request, package_name, version):
+def version_delete(
+    request: HttpRequest, package_name: str, version: str
+) -> HttpResponse:
     plugin = get_object_or_404(Plugin, package_name=package_name)
     version = get_object_or_404(PluginVersion, plugin=plugin, version=version)
     if not check_plugin_access(request.user, plugin):
@@ -2555,7 +2588,7 @@ def version_delete(request, package_name, version):
 
 @login_required
 @transaction.atomic
-def versions_bulk_delete(request, package_name):
+def versions_bulk_delete(request: HttpRequest, package_name: str) -> HttpResponse:
     """
     Bulk delete selected plugin versions with confirmation.
     """
@@ -2596,7 +2629,9 @@ def versions_bulk_delete(request, package_name):
 
 @login_required
 @require_POST
-def version_approve(request, package_name, version):
+def version_approve(
+    request: HttpRequest, package_name: str, version: str
+) -> HttpResponse:
     """
     Approves the plugin version
     """
@@ -2642,7 +2677,9 @@ def version_approve(request, package_name, version):
 
 @login_required
 @require_POST
-def version_unapprove(request, package_name, version):
+def version_unapprove(
+    request: HttpRequest, package_name: str, version: str
+) -> HttpResponse:
     """
     unapproves the plugin version
     """
@@ -2666,7 +2703,9 @@ def version_unapprove(request, package_name, version):
 
 @login_required
 @require_POST
-def version_manage(request, package_name, version):
+def version_manage(
+    request: HttpRequest, package_name: str, version: str
+) -> HttpResponse:
     """
     Entry point for the user management functions
     """
@@ -2680,7 +2719,9 @@ def version_manage(request, package_name, version):
 
 @login_required
 @never_cache
-def version_feedback(request, package_name, version):
+def version_feedback(
+    request: HttpRequest, package_name: str, version: str
+) -> HttpResponse:
     """
     The form will add a comment/ feedback for the package version.
     """
@@ -2744,7 +2785,9 @@ def version_feedback(request, package_name, version):
 
 @login_required
 @require_POST
-def version_feedback_update(request, package_name, version):
+def version_feedback_update(
+    request: HttpRequest, package_name: str, version: str
+) -> JsonResponse:
     plugin = get_object_or_404(Plugin, package_name=package_name)
     version = get_object_or_404(PluginVersion, plugin=plugin, version=version)
     has_update_permission: bool = (
@@ -2773,7 +2816,9 @@ def version_feedback_update(request, package_name, version):
 
 @login_required
 @require_POST
-def version_feedback_edit(request, package_name, version, feedback):
+def version_feedback_edit(
+    request: HttpRequest, package_name: str, version: str, feedback: str
+) -> JsonResponse:
     feedback = get_object_or_404(
         PluginVersionFeedback,
         version__plugin__package_name=package_name,
@@ -2847,7 +2892,9 @@ def version_feedback_edit(request, package_name, version, feedback):
 
 @login_required
 @require_POST
-def version_feedback_delete(request, package_name, version, feedback):
+def version_feedback_delete(
+    request: HttpRequest, package_name: str, version: str, feedback: str
+) -> JsonResponse:
     feedback = get_object_or_404(
         PluginVersionFeedback,
         version__plugin__package_name=package_name,
@@ -2873,7 +2920,9 @@ def version_feedback_delete(request, package_name, version, feedback):
     return JsonResponse({"success": is_update_succeed})
 
 
-def version_download(request, package_name, version):
+def version_download(
+    request: HttpRequest, package_name: str, version: str
+) -> HttpResponse:
     """
     Update download counter(s) using atomic operations to prevent race conditions
     and improve performance under high concurrent load.
@@ -2948,14 +2997,15 @@ def version_download(request, package_name, version):
     zipfile = open(version.package.file.name, "rb")
     file_content = zipfile.read()
     response = HttpResponse(file_content, content_type="application/zip")
-    response["Content-Disposition"] = "attachment; filename=%s-%s.zip" % (
-        version.plugin.package_name,
-        version.version,
+    response["Content-Disposition"] = (
+        f"attachment; filename={version.plugin.package_name}-{version.version}.zip"
     )
     return response
 
 
-def version_detail(request, package_name, version):
+def version_detail(
+    request: HttpRequest, package_name: str, version: str
+) -> HttpResponse:
     """
     Show version details
     """
@@ -2983,7 +3033,9 @@ def version_detail(request, package_name, version):
 
 @login_required
 @require_POST
-def version_rescan(request, package_name, version):
+def version_rescan(
+    request: HttpRequest, package_name: str, version: str
+) -> HttpResponse:
     """
     Trigger a manual (informational) security re-scan for an existing plugin version.
 
@@ -3010,7 +3062,7 @@ def version_rescan(request, package_name, version):
         request,
         mark_safe(
             _(
-                "A security re-scan has been queued for <strong>%(plugin)s v%(version)s</strong>. "
+                "A security re-scan has been queued for <strong>%(plugin)s %(version)s</strong>. "
                 "Results are informational only and will not change the plugin's current status. "
                 "Refresh the Security Scan tab in a few minutes to see the results."
             )
@@ -3050,7 +3102,12 @@ def _add_patch_version(version: str, additional_patch: str) -> str:
 
 
 @cache_page(60 * 15)
-def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
+def xml_plugins(
+    request: HttpRequest,
+    qg_version: Optional[str] = None,
+    stable_only: Optional[str] = None,
+    package_name: Optional[str] = None,
+) -> HttpResponse:
     """
     The XML file
 
@@ -3117,7 +3174,7 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
 
         # Checked the cached plugins
         qgis_version = request.GET.get("qgis", None)
-        qgis_filename = "plugins_{}.xml".format(qgis_version)
+        qgis_filename = f"plugins_{qgis_version}.xml"
         folder_name = os.path.join(settings.MEDIA_ROOT, "cached_xmls")
         path_file = os.path.join(folder_name, qgis_filename)
         if os.path.exists(path_file):
@@ -3136,13 +3193,10 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
                 .values_list("id")
             )
         )[0]
+        trusted_ids_csv = ",".join(str(tu) for tu in trusted_users_ids)
         qs = Plugin.approved_objects.filter(**filters).annotate(
             is_trusted=RawSQL(
-                "%s.created_by_id in (%s)"
-                % (
-                    Plugin._meta.db_table,
-                    (",").join([str(tu) for tu in trusted_users_ids]),
-                ),
+                f"{Plugin._meta.db_table}.created_by_id in ({trusted_ids_csv})",
                 (),
             )
         )
@@ -3174,7 +3228,12 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
 
 
 @cache_page(60 * 15)
-def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=None):
+def xml_plugins_new(
+    request: HttpRequest,
+    qg_version: Optional[str] = None,
+    stable_only: Optional[str] = None,
+    package_name: Optional[str] = None,
+) -> HttpResponse:
     """
     The XML file
 
