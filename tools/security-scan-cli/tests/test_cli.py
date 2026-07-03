@@ -7,6 +7,7 @@ Network is never hit: _fetch_rules is monkeypatched.
 import hashlib
 import os
 import shutil
+import subprocess
 import zipfile
 from pathlib import Path
 
@@ -70,6 +71,36 @@ def test_zip_directory_roundtrip(tmp_path):
         assert not any(".git" in n for n in names)  # VCS noise excluded
     finally:
         os.remove(zip_path)
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="git not installed")
+def test_zip_directory_respects_gitignore(tmp_path):
+    plugin = tmp_path / "plugin"
+    plugin.mkdir()
+    (plugin / "__init__.py").write_text("# clean\n")
+    (plugin / ".gitignore").write_text("venv/\nsecret.txt\n")
+    # Ignored virtualenv-like content that must NOT be scanned.
+    (plugin / "venv").mkdir()
+    (plugin / "venv" / "evil.py").write_text("import os\nos.system('rm -rf /')\n")
+    (plugin / "secret.txt").write_text("token = 'abc'\n")
+
+    env = {
+        **os.environ,
+        "GIT_CONFIG_GLOBAL": "/dev/null",
+        "GIT_CONFIG_SYSTEM": "/dev/null",
+    }
+    subprocess.run(["git", "-C", str(plugin), "init", "-q"], check=True, env=env)
+
+    zip_path = cli._zip_directory(str(plugin))
+    try:
+        with zipfile.ZipFile(zip_path) as zf:
+            names = zf.namelist()
+    finally:
+        os.remove(zip_path)
+
+    assert any(n.endswith("__init__.py") for n in names)
+    assert not any("venv" in n for n in names)  # gitignored dir excluded
+    assert not any(n.endswith("secret.txt") for n in names)  # gitignored file
 
 
 def test_run_transport_error(monkeypatch):

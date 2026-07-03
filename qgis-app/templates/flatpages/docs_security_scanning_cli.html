@@ -141,11 +141,31 @@ qgis-plugin-security --json</code></pre>
   </div>
 
   <p>
-    Keep these files at the top level of your plugin (next to <code>metadata.txt</code>). When
-    the CLI scans a directory it includes dotfiles automatically (only <code>.git</code>,
-    <code>__pycache__</code> and <code>.mypy_cache</code> are excluded), so your config files
-    are picked up without any extra flags. See the
+    Keep these files at the top level of your plugin (next to <code>metadata.txt</code>).
+    Dotfiles are included automatically, so your config files are picked up without any extra
+    flags. See the
     <a href="{% url 'docs_security_config_files' %}">Config Files guide</a> for examples.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       WHAT GETS SCANNED
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>What Gets Scanned</h5>
+
+  <p>
+    When you point the CLI at a <strong>git working tree</strong>, it scans exactly the files
+    git would ship: tracked files plus untracked ones, minus everything matched by your
+    <code>.gitignore</code> (and <code>.git/info/exclude</code> or your global excludes). A
+    virtualenv, build output, or any other ignored folder inside your plugin directory is
+    <strong>not</strong> zipped or scanned, so local results match what actually ends up in the
+    uploaded plugin, without noise or false positives from third-party code.
+  </p>
+
+  <p class="notification is-info is-light">
+    <strong>Not using git?</strong> If the target directory is not a git repository, the CLI
+    falls back to a plain scan that only skips <code>.git</code>, <code>__pycache__</code> and
+    <code>.mypy_cache</code>. Point <code>--path</code> at a clean copy of your plugin (or an
+    already-built <code>.zip</code>) to avoid scanning a bundled environment.
   </p>
 
   <!-- ═══════════════════════════════════════════════════════════════════════

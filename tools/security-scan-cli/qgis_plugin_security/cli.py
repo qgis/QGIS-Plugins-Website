@@ -12,6 +12,7 @@ Exit codes:
 import argparse
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import zipfile
@@ -76,21 +77,68 @@ def _build_enabled_rules(rules: list, skip_codes: set) -> list:
     return enabled
 
 
+# Non-git fallback only: drop obvious VCS/cache noise. When the target is a git
+# work tree we rely entirely on .gitignore instead of this list.
+_EXCLUDED_DIRS = frozenset({".git", "__pycache__", ".mypy_cache"})
+
+
+def _git_listed_files(path: str):
+    """Return files git would ship for *path*, honouring .gitignore.
+
+    Uses ``git ls-files --cached --others --exclude-standard`` so tracked files
+    plus untracked-but-not-ignored files are included, while anything matched by
+    .gitignore, .git/info/exclude or the global excludes is dropped. Returns a
+    list of paths relative to *path*, or ``None`` when *path* is not a git work
+    tree or git is unavailable.
+    """
+    try:
+        proc = subprocess.run(
+            [
+                "git",
+                "-C",
+                path,
+                "ls-files",
+                "--cached",
+                "--others",
+                "--exclude-standard",
+                "-z",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    except (OSError, ValueError):
+        return None
+    if proc.returncode != 0:
+        return None
+    return [entry for entry in proc.stdout.decode("utf-8").split("\0") if entry]
+
+
 def _zip_directory(path: str) -> str:
-    """Zip a plugin source directory into a temporary .zip; return its path."""
+    """Zip a plugin source directory into a temporary .zip; return its path.
+
+    When *path* is a git work tree, only the files git would track/ship are
+    included (respecting .gitignore) so the scan mirrors what actually gets
+    uploaded. Otherwise a plain walk is used, skipping only VCS/cache noise.
+    """
     fd, zip_path = tempfile.mkstemp(suffix=".zip")
     os.close(fd)
     base = os.path.basename(os.path.abspath(path.rstrip(os.sep))) or "plugin"
+    git_files = _git_listed_files(path)
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        for root, dirs, files in os.walk(path):
-            # Skip VCS and cache noise that would never ship in a plugin zip.
-            dirs[:] = [
-                d for d in dirs if d not in (".git", "__pycache__", ".mypy_cache")
-            ]
-            for name in files:
-                abs_path = os.path.join(root, name)
-                rel = os.path.relpath(abs_path, path)
-                zf.write(abs_path, os.path.join(base, rel))
+        if git_files is not None:
+            for rel in git_files:
+                abs_path = os.path.join(path, rel)
+                # ls-files may list deleted-but-staged paths; skip missing ones.
+                if os.path.isfile(abs_path) and not os.path.islink(abs_path):
+                    zf.write(abs_path, os.path.join(base, rel))
+        else:
+            for root, dirs, files in os.walk(path):
+                dirs[:] = [d for d in dirs if d not in _EXCLUDED_DIRS]
+                for name in files:
+                    abs_path = os.path.join(root, name)
+                    rel = os.path.relpath(abs_path, path)
+                    zf.write(abs_path, os.path.join(base, rel))
     return zip_path
 
 

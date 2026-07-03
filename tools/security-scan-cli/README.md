@@ -44,6 +44,9 @@ qgis-plugin-security --strict
 
 # Machine-readable output
 qgis-plugin-security --json
+
+# List all available options
+qgis-plugin-security --help
 ```
 
 Point at a different platform host with `--api-url` or the `QGIS_PLUGINS_URL` env var
@@ -94,9 +97,17 @@ plugin are honoured locally, exactly as they are on upload:
 - `.secrets.baseline` — acknowledge known/reviewed secrets so they are not re-reported.
 - `.flake8` — ignore specific Flake8 codes or set per-file ignores.
 
-Keep them at the top level of your plugin (next to `metadata.txt`). When the CLI scans a
-directory it includes dotfiles automatically (only `.git`, `__pycache__` and `.mypy_cache`
-are excluded), so your config files are picked up with no extra flags.
+Keep them at the top level of your plugin (next to `metadata.txt`). Dotfiles are included
+automatically, so your config files are picked up with no extra flags.
+
+## What gets scanned
+
+When you point the CLI at a **git working tree**, it scans exactly the files git would
+ship: tracked files plus untracked ones, minus everything matched by your `.gitignore`
+(and `.git/info/exclude` / global excludes). So a virtualenv, build output or any other
+ignored folder in your plugin directory is **not** zipped or scanned — matching what
+actually ends up in the uploaded plugin. If the directory is not a git repository, the CLI
+falls back to a plain scan that only skips `.git`, `__pycache__` and `.mypy_cache`.
 
 ## How rule parity works
 
