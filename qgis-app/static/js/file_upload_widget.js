@@ -11,8 +11,22 @@
     var input = zone.querySelector('input[type="file"]');
     var selectedEl = zone.querySelector('.file-upload-selected');
     var selectedName = zone.querySelector('.file-upload-selected-name');
+    var isImage = zone.getAttribute('data-is-image') === 'true';
+    var previewWrap = zone.querySelector('.file-upload-preview');
+    var previewImg = zone.querySelector('.file-upload-preview-image');
 
     if (!input) return;
+
+    function showPreview(file) {
+      if (!isImage || !previewImg || !file) return;
+      if (!file.type || file.type.indexOf('image/') !== 0) return;
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        previewImg.src = e.target.result;
+        if (previewWrap) previewWrap.hidden = false;
+      };
+      reader.readAsDataURL(file);
+    }
 
     function setFile(fileName) {
       if (fileName) {
@@ -28,6 +42,7 @@
     input.addEventListener('change', function () {
       if (input.files && input.files.length > 0) {
         setFile(input.files[0].name);
+        showPreview(input.files[0]);
       } else {
         setFile(null);
       }
@@ -77,6 +92,7 @@
         dt.items.add(files[0]);
         input.files = dt.files;
         setFile(files[0].name);
+        showPreview(files[0]);
         input.dispatchEvent(new Event('change', { bubbles: true }));
       } catch (err) {
         // DataTransfer not supported — silently ignore

@@ -1,5 +1,7 @@
-{% load i18n %}
-<div class="file-upload-zone" role="button" tabindex="0"
+{% load i18n plugin_utils %}
+{% with is_image=field|is_image_field %}
+<div class="file-upload-zone{% if is_image %} is-image{% endif %}" role="button" tabindex="0"
+     data-is-image="{% if is_image %}true{% else %}false{% endif %}"
      aria-label="{% trans 'Upload file' %}">
   <input
     class="file-input"
@@ -7,19 +9,36 @@
     id="{{ field.html_name }}"
     name="{{ field.html_name }}"
     aria-label="{{ field.label }}"
-    accept=".zip,.zip_,application/zip,application/x-zip-compressed"
+    accept="{% if is_image %}image/*{% else %}.zip,.zip_,application/zip,application/x-zip-compressed{% endif %}"
   />
+  {% if is_image and field.value %}
+  <div class="file-upload-preview">
+    <img class="file-upload-preview-image" src="{{ field.value.url }}"
+         alt="{% trans 'Current image preview' %}" />
+  </div>
+  {% elif is_image %}
+  <div class="file-upload-preview" hidden>
+    <img class="file-upload-preview-image" src="" alt="{% trans 'Image preview' %}" />
+  </div>
+  {% endif %}
   <span class="file-upload-icon">
-    <i class="fas fa-cloud-upload-alt"></i>
+    <i class="fas {% if is_image %}fa-image{% else %}fa-cloud-upload-alt{% endif %}"></i>
   </span>
   <p class="file-upload-label">
+    {% if is_image %}
+    {% trans "Drag & drop your image here, or" %}&nbsp;<span class="browse-link">{% trans "browse" %}</span>
+    {% else %}
     {% trans "Drag & drop your plugin ZIP here, or" %}&nbsp;<span class="browse-link">{% trans "browse" %}</span>
+    {% endif %}
   </p>
-  <p class="file-upload-hint">{% trans "Accepted format: .zip" %}</p>
+  <p class="file-upload-hint">
+    {% if is_image %}{% trans "Accepted formats: PNG, JPG, WebP" %}{% else %}{% trans "Accepted format: .zip" %}{% endif %}
+  </p>
   <div class="file-upload-selected">
     <span class="file-upload-selected-icon">
-      <i class="fas fa-file-archive"></i>
+      <i class="fas {% if is_image %}fa-image{% else %}fa-file-archive{% endif %}"></i>
     </span>
     <span class="file-upload-selected-name"></span>
   </div>
 </div>
+{% endwith %}
