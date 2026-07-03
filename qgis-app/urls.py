@@ -29,6 +29,7 @@ from docs import (
     docs_security_config_files,
     docs_security_rules,
     docs_security_scanning,
+    docs_security_scanning_cli,
     docs_security_skipping,
     docs_security_tools,
     docs_security_troubleshooting,
@@ -120,6 +121,11 @@ urlpatterns += [
         r"^docs/security-scanning/troubleshooting",
         docs_security_troubleshooting,
         name="docs_security_troubleshooting",
+    ),
+    url(
+        r"^docs/security-scanning/cli",
+        docs_security_scanning_cli,
+        name="docs_security_scanning_cli",
     ),
     url(
         r"^docs/security-scanning",

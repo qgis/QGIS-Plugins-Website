@@ -1,0 +1,221 @@
+{% extends 'flatpages/docs.html' %}
+{% block content %}
+<div class="responsive-content">
+
+  <h4>Run Security Checks Locally (Before Upload)</h4>
+
+  <p>
+    Instead of discovering security-check failures only after you upload a plugin version,
+    you can run the <strong>exact same checks</strong> on your own machine while you develop.
+    A small command-line tool fetches the platform's currently-enabled rules and runs
+    Bandit, detect-secrets and Flake8 locally.
+  </p>
+
+  <p class="notification is-info is-light">
+    <strong>No rule drift:</strong> the tool fetches the enabled rules live from the platform
+    (<code>/plugins/api/security-rules/</code>), so what runs locally always matches what the
+    platform enforces. Your plugin source is <strong>never uploaded</strong> — everything runs
+    on your machine.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       INSTALL
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Install</h5>
+
+  <p>
+    The tool lives in the QGIS Plugins Website repository (under
+    <code>tools/security-scan-cli/</code>) and installs directly from GitHub — no PyPI account
+    needed:
+  </p>
+
+  <pre><code>pipx install "git+https://github.com/qgis/QGIS-Plugins-Website.git#subdirectory=tools/security-scan-cli"
+# or with pip
+pip install "git+https://github.com/qgis/QGIS-Plugins-Website.git#subdirectory=tools/security-scan-cli"</code></pre>
+
+  <p>
+    This installs the <code>qgis-plugin-security</code> command together with the analysis
+    tools (Bandit, detect-secrets, Flake8), pinned to the same versions the platform runs.
+    Pin a specific release by appending <code>@&lt;tag-or-sha&gt;</code> to the repository URL.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       USAGE
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Usage</h5>
+
+  <pre><code># Scan the current directory
+qgis-plugin-security
+
+# Scan a specific plugin directory or an existing .zip
+qgis-plugin-security --path path/to/plugin
+qgis-plugin-security --path path/to/plugin.zip
+
+# Ignore skippable rules you have reviewed
+# (mandatory / critical rules can never be skipped)
+qgis-plugin-security --skip B101,E501
+
+# Fail on warnings too, not just critical issues
+qgis-plugin-security --strict
+
+# Machine-readable output
+qgis-plugin-security --json</code></pre>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       EXIT CODES
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Exit Codes</h5>
+
+  <div class="content">
+    <table class="table is-striped is-fullwidth">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Meaning</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>0</code></td>
+          <td>Scan ran, no critical issues — safe to upload.</td>
+        </tr>
+        <tr>
+          <td><code>1</code></td>
+          <td>Scan ran, at least one critical issue — blocked, exactly as the platform would
+            block it. Also returned with <code>--strict</code> when warnings are present.</td>
+        </tr>
+        <tr>
+          <td><code>2</code></td>
+          <td>Transport/usage error (network, bad <code>--path</code>, invalid response).</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       CI
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Use in CI (GitHub Actions)</h5>
+
+  <pre><code>- name: QGIS plugin security check
+  run: |
+    pipx install "git+https://github.com/qgis/QGIS-Plugins-Website.git#subdirectory=tools/security-scan-cli"
+    qgis-plugin-security --path .</code></pre>
+
+  <p>The job fails automatically when critical issues are found (exit code 1).</p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PRE-COMMIT
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Use as a Pre-Commit Hook</h5>
+
+  <p>Add a local hook to your plugin repository's <code>.pre-commit-config.yaml</code>:</p>
+
+  <pre><code>repos:
+  - repo: local
+    hooks:
+      - id: qgis-plugin-security
+        name: QGIS plugin security check
+        entry: qgis-plugin-security
+        language: system
+        pass_filenames: false
+        always_run: true</code></pre>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       CONFIG FILES
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Config Files Are Respected</h5>
+
+  <p>
+    Because the CLI runs the same scanner as the platform, any tool config files you bundle in
+    your plugin are honoured locally, exactly as they are on upload:
+  </p>
+
+  <div class="content">
+    <ul>
+      <li><code>.bandit</code> — skip specific Bandit test IDs or exclude paths.</li>
+      <li><code>.secrets.baseline</code> — acknowledge known/reviewed secrets so they are not
+        re-reported.</li>
+      <li><code>.flake8</code> — ignore specific Flake8 codes or set per-file ignores.</li>
+    </ul>
+  </div>
+
+  <p>
+    Keep these files at the top level of your plugin (next to <code>metadata.txt</code>). When
+    the CLI scans a directory it includes dotfiles automatically (only <code>.git</code>,
+    <code>__pycache__</code> and <code>.mypy_cache</code> are excluded), so your config files
+    are picked up without any extra flags. See the
+    <a href="{% url 'docs_security_config_files' %}">Config Files guide</a> for examples.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PARITY
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>How Parity With the Platform Is Guaranteed</h5>
+
+  <div class="content">
+    <ul>
+      <li><strong>Rules</strong> are fetched live from the platform, so there is no local
+        rule list to fall out of date.</li>
+      <li><strong>Scanner code</strong> shipped by the tool is the same single source file
+        used by the platform.</li>
+      <li><strong>Tool versions</strong> are pinned to match the platform; the endpoint also
+        reports the platform's actual versions, so the tool warns you if your locally-installed
+        Bandit, detect-secrets or Flake8 differ.</li>
+    </ul>
+  </div>
+
+  <p class="notification is-warning is-light">
+    <strong>Note:</strong> local results are a faithful preview, not a guarantee of approval.
+    The authoritative scan still runs when you upload the version.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SEE ALSO
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <hr>
+  <div class="columns">
+    <div class="column">
+      <div class="notification is-link is-light">
+        <div class="is-flex is-align-items-center" style="gap:1rem;">
+          <span class="icon is-large has-text-link" style="flex-shrink:0;">
+            <i class="fas fa-search fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold mb-1">Security Scanning Overview</p>
+            <p class="mb-2 is-size-7">
+              Understand the full scanning pipeline, validation statuses, and how scans
+              affect plugin availability.
+            </p>
+            <a class="button is-link is-small" href="{% url 'docs_security_scanning' %}">
+              <span class="icon"><i class="fas fa-search"></i></span>
+              <span>Security Scanning</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="notification is-link is-light">
+        <div class="is-flex is-align-items-center" style="gap:1rem;">
+          <span class="icon is-large has-text-link" style="flex-shrink:0;">
+            <i class="fas fa-list-alt fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold mb-1">Security Rules Reference</p>
+            <p class="mb-2 is-size-7">
+              Browse all active security and quality rules with their severity, active
+              status, and skip permissions.
+            </p>
+            <a class="button is-link is-small" href="{% url 'docs_security_rules' %}">
+              <span class="icon"><i class="fas fa-list-alt"></i></span>
+              <span>View All Rules</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /responsive-content -->
+{% endblock %}
