@@ -29,8 +29,7 @@
     needed:
   </p>
 
-  <pre><code>pipx install "git+https://github.com/qgis/QGIS-Plugins-Website.git#subdirectory=tools/security-scan-cli"
-# or with pip
+  <pre><code>
 pip install "git+https://github.com/qgis/QGIS-Plugins-Website.git#subdirectory=tools/security-scan-cli"</code></pre>
 
   <p>
@@ -99,7 +98,7 @@ qgis-plugin-security --json</code></pre>
 
   <pre><code>- name: QGIS plugin security check
   run: |
-    pipx install "git+https://github.com/qgis/QGIS-Plugins-Website.git#subdirectory=tools/security-scan-cli"
+    pip install "git+https://github.com/qgis/QGIS-Plugins-Website.git#subdirectory=tools/security-scan-cli"
     qgis-plugin-security --path .</code></pre>
 
   <p>The job fails automatically when critical issues are found (exit code 1).</p>

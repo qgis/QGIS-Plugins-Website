@@ -18,8 +18,6 @@ The tool lives in the QGIS Plugins Website repository (this directory) and insta
 from GitHub — no PyPI account needed:
 
 ```bash
-pipx install "git+https://github.com/qgis/QGIS-Plugins-Website.git#subdirectory=tools/security-scan-cli"
-# or with pip
 pip install "git+https://github.com/qgis/QGIS-Plugins-Website.git#subdirectory=tools/security-scan-cli"
 ```
 
@@ -65,7 +63,7 @@ Point at a different platform host with `--api-url` or the `QGIS_PLUGINS_URL` en
 ```yaml
 - name: QGIS plugin security check
   run: |
-    pipx install "git+https://github.com/qgis/QGIS-Plugins-Website.git#subdirectory=tools/security-scan-cli"
+    pip install "git+https://github.com/qgis/QGIS-Plugins-Website.git#subdirectory=tools/security-scan-cli"
     qgis-plugin-security --path .
 ```
 
