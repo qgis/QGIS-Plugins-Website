@@ -14,6 +14,9 @@
             <p><strong>{% trans "Recipients" %}:</strong> {{ communication.recipient_count }}</p>
             <p><strong>{% trans "Created" %}:</strong> {{ communication.created_at }}</p>
             <p><strong>{% trans "Sent" %}:</strong> {{ communication.sent_at|default:"—" }}</p>
+            {% if communication.error %}
+            <p><strong>{% trans "Error" %}:</strong> {{ communication.error }}</p>
+            {% endif %}
         </div>
     </div>
 
@@ -22,9 +25,20 @@
         <pre style="white-space: pre-wrap; word-wrap: break-word;">{{ communication.body }}</pre>
     </div>
 
-    <a class="button is-light" href="{% url 'plugin_email_communication_list' %}">
-        <span class="icon"><i class="fas fa-arrow-left"></i></span>
-        <span>{% trans "Back to list" %}</span>
-    </a>
+    <div class="buttons">
+        <a class="button is-light" href="{% url 'plugin_email_communication_list' %}">
+            <span class="icon"><i class="fas fa-arrow-left"></i></span>
+            <span>{% trans "Back to list" %}</span>
+        </a>
+        {% if communication.status == 'failed' %}
+        <form method="post" action="{% url 'plugin_email_communication_resend' communication.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="button is-warning"
+                    title="{% trans 'Resend' %}" aria-label="{% trans 'Resend' %}">
+                <span class="icon"><i class="fas fa-redo"></i></span>
+            </button>
+        </form>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

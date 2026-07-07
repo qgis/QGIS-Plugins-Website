@@ -1218,6 +1218,39 @@ def plugin_email_communication_detail(request, pk):
     )
 
 
+@superuser_required
+@require_POST
+def plugin_email_communication_resend(request, pk):
+    """
+    Superuser-only action to re-queue a previously *failed* communication.  The
+    original record is reused (status reset to queued, error cleared) and handed
+    back to Celery, so the send history stays a single row per announcement.
+    """
+    communication = get_object_or_404(PluginEmailCommunication, pk=pk)
+    if communication.status != PluginEmailCommunication.STATUS_FAILED:
+        messages.error(
+            request,
+            _("Only failed communications can be resent."),
+            fail_silently=True,
+        )
+        return HttpResponseRedirect(
+            reverse("plugin_email_communication_detail", args=[communication.pk])
+        )
+
+    communication.status = PluginEmailCommunication.STATUS_QUEUED
+    communication.error = ""
+    communication.save(update_fields=["status", "error"])
+    send_email_communication.delay(communication.pk)
+    messages.success(
+        request,
+        _("The communication has been re-queued and will be sent again shortly."),
+        fail_silently=True,
+    )
+    return HttpResponseRedirect(
+        reverse("plugin_email_communication_detail", args=[communication.pk])
+    )
+
+
 def confirm_plugin_email(request, key):
     """
     Handles the one-time email confirmation link sent to a plugin's author email.
