@@ -4,10 +4,11 @@ import datetime
 import os
 import re
 import secrets
+from typing import Iterable, Optional, Tuple
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count, F, OuterRef, Subquery
 from django.urls import reverse
 from django.utils import timezone
@@ -627,6 +628,35 @@ class Plugin(models.Model):
         return self.pluginversion_set.filter(approved=True).count() > 0
 
     @property
+    def is_email_confirmed(self) -> bool:
+        """
+        Returns True if the plugin's current contact email has at least one
+        confirmed confirmation record. Used to gate manual approval.
+
+        Confirmation is tracked per *email address*, not per plugin: proving
+        control of a mailbox verifies it for every plugin using that address.
+        A plugin therefore inherits confirmed status from any record for its
+        email — e.g. one created by another plugin sharing the address.
+
+        A confirmation retired by a later verification round (the annual
+        re-check) no longer counts, so status lapses until re-confirmed.
+        """
+        return PluginEmailConfirmation.address_is_confirmed(self.email)
+
+    @property
+    def first_published_on(self):
+        """
+        Datetime the plugin was first published, derived from the earliest
+        approved version. Returns None if the plugin has no approved version.
+        """
+        return (
+            self.pluginversion_set.filter(approved=True)
+            .order_by("created_on")
+            .values_list("created_on", flat=True)
+            .first()
+        )
+
+    @property
     def trusted(self):
         """
         Returns True if the plugin's author has plugins.can_approve permission
@@ -797,12 +827,14 @@ class Plugin(models.Model):
             self.modified_on = datetime.datetime.now()
         if not self.maintainer:
             self.maintainer = self.created_by
+        email_changed = False
         if self.pk:
             try:
                 old_email = Plugin.objects.values_list("email", flat=True).get(
                     pk=self.pk
                 )
                 if old_email != self.email:
+                    email_changed = True
                     # Remove this plugin from every *pending* confirmation that
                     # was sent to the old address.  Confirmed records are
                     # historical and must not be touched.  If the pending
@@ -816,6 +848,14 @@ class Plugin(models.Model):
             except Plugin.DoesNotExist:
                 pass
         super(Plugin, self).save(*args, **kwargs)
+        if email_changed and self.email:
+            # Inline import: trigger_email_confirmation imports Plugin from this module,
+            # so a top-level import would create a circular dependency.
+            from plugins.tasks.trigger_email_confirmation import (
+                check_and_send_confirmation,
+            )
+
+            transaction.on_commit(lambda: check_and_send_confirmation.delay(self.pk))
 
 
 # Plugin version managers
@@ -1596,6 +1636,10 @@ class PluginEmailConfirmation(models.Model):
     sent_at = models.DateTimeField(_("Sent at"), auto_now_add=True)
     confirmed_at = models.DateTimeField(_("Confirmed at"), null=True, blank=True)
     expires_at = models.DateTimeField(_("Expires at"))
+    # Set when a later verification round (e.g. the annual re-check) retires
+    # this confirmation. The record is kept as history but no longer counts
+    # towards the address being verified.
+    superseded_at = models.DateTimeField(_("Superseded at"), null=True, blank=True)
 
     class Meta:
         verbose_name = _("Plugin Email Confirmation")
@@ -1625,14 +1669,32 @@ class PluginEmailConfirmation(models.Model):
         self.save(update_fields=["confirmed_at"])
 
     @classmethod
-    def create_for_email(cls, email, plugins):
+    def address_is_confirmed(cls, email: str) -> bool:
+        """
+        True if *email* has a live confirmation: a confirmed record that has
+        not been superseded by a later verification round. Confirmation is
+        tracked per address, so this holds for every plugin using it.
+        """
+        if not email:
+            return False
+        return cls.objects.filter(
+            email=email,
+            confirmed_at__isnull=False,
+            superseded_at__isnull=True,
+        ).exists()
+
+    @classmethod
+    def create_for_email(
+        cls, email: str, plugins: Iterable["Plugin"]
+    ) -> Tuple[Optional["PluginEmailConfirmation"], bool]:
         """
         Create (or reuse) a pending confirmation for *email* covering *plugins*.
 
         Only plugins whose current ``email`` field still matches are included.
         Returns ``(confirmation, created)``.  If no valid plugins remain,
-        returns ``(None, False)``.  If all valid plugins are already confirmed
-        for this address, also returns ``(None, False)``.
+        returns ``(None, False)``.  Confirmation is tracked per email address:
+        if this address already has any confirmed record it is considered
+        verified, so ``(None, False)`` is returned without sending again.
         """
         now = timezone.now()
         expiry = now + datetime.timedelta(days=PLUGIN_EMAIL_CONFIRMATION_EXPIRY_DAYS)
@@ -1642,26 +1704,23 @@ class PluginEmailConfirmation(models.Model):
         if not valid_plugins:
             return None, False
 
-        # If every valid plugin already has a confirmed record for this email, skip.
-        all_confirmed = all(
-            cls.objects.filter(
-                email=email,
-                confirmed_at__isnull=False,
-                plugins=plugin,
-            ).exists()
-            for plugin in valid_plugins
-        )
-        if all_confirmed:
+        # Confirmation is per email address: if this address is already
+        # verified (a confirmed, non-superseded record exists), the mailbox is
+        # proven and nothing needs sending — regardless of which plugin
+        # originally confirmed it.
+        if cls.address_is_confirmed(email):
             return None, False
 
-        # Reuse an existing unexpired pending confirmation for this email.
+        # Reuse an existing unexpired pending confirmation for this email,
+        # *adding* these plugins rather than replacing the set, so an address
+        # shared by several plugins accumulates them all on one token.
         existing = cls.objects.filter(
             email=email,
             confirmed_at__isnull=True,
             expires_at__gt=now,
         ).first()
         if existing:
-            existing.plugins.set(valid_plugins)
+            existing.plugins.add(*valid_plugins)
             return existing, False
 
         # Create a fresh confirmation.
@@ -1672,6 +1731,33 @@ class PluginEmailConfirmation(models.Model):
         )
         confirmation.plugins.set(valid_plugins)
         return confirmation, True
+
+    @classmethod
+    def force_new_for_email(
+        cls, email: str, plugins: Iterable["Plugin"]
+    ) -> Optional["PluginEmailConfirmation"]:
+        """
+        Start a fresh confirmation round for *email*, regardless of whether it
+        was already confirmed. Past confirmed/expired records are left intact
+        as history; this only ever creates a brand-new pending record.
+
+        Returns the new confirmation, or ``None`` if no plugin's current email
+        still matches *email*.
+        """
+        valid_plugins = [p for p in plugins if p.email == email]
+        if not valid_plugins:
+            return None
+
+        expiry = timezone.now() + datetime.timedelta(
+            days=PLUGIN_EMAIL_CONFIRMATION_EXPIRY_DAYS
+        )
+        confirmation = cls.objects.create(
+            email=email,
+            key=secrets.token_urlsafe(48),
+            expires_at=expiry,
+        )
+        confirmation.plugins.set(valid_plugins)
+        return confirmation
 
 
 class PluginEmailConfirmationError(models.Model):
