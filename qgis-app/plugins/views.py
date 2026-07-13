@@ -16,7 +16,7 @@ from django.core.exceptions import FieldDoesNotExist
 from django.core.mail import EmailMessage, EmailMultiAlternatives, send_mail
 from django.core.paginator import Paginator
 from django.db import IntegrityError, connection, transaction
-from django.db.models import Q
+from django.db.models import F, Q
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Lower
 from django.http import (
@@ -67,9 +67,10 @@ from plugins.models import (
     PluginVersionFeedback,
     PluginVersionFeedbackAttachment,
     PluginVersionSecurityScan,
+    SecurityRule,
     vjust,
 )
-from plugins.security_utils import get_scan_badge_info
+from plugins.security_utils import get_scan_badge_info, get_security_rules_grouped
 from plugins.utils import parse_remote_addr
 from plugins.validator import PLUGIN_REQUIRED_METADATA
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -651,13 +652,29 @@ def plugin_upload(request):
                 # Send Stage 1: Upload confirmation email
                 send_upload_confirmation_email(new_version)
 
+                # Extract skipped security rule IDs from form
+                skipped_rule_codes = form.cleaned_data.get("skip_security_rules", [])
+                # Resolve check_codes to DB IDs
+                if skipped_rule_codes:
+                    skipped_rule_ids = list(
+                        SecurityRule.objects.filter(
+                            check_code__in=skipped_rule_codes, enabled=True, can_be_skipped=True
+                        ).values_list("id", flat=True)
+                    )
+                else:
+                    skipped_rule_ids = []
+
                 # Queue async security scan task.
                 # auto_approve=True only when a trusted user explicitly opts in via
                 # the "Publish immediately" checkbox on the upload form.
                 auto_approve = is_trusted and form.cleaned_data.get(
                     "auto_approve_after_scan", False
                 )
-                run_security_scan_task.delay(new_version.pk, auto_approve=auto_approve)
+                run_security_scan_task.delay(
+                    new_version.pk,
+                    auto_approve=auto_approve,
+                    skipped_rule_ids=skipped_rule_ids
+                )
 
                 # Update plugins cached xml
                 generate_plugins_xml.delay()
@@ -720,12 +737,29 @@ def plugin_upload(request):
                 connection.close()
                 messages.error(request, e, fail_silently=True)
                 if not plugin.pk:
-                    return render(request, "plugins/plugin_upload.html", {"form": form})
+                    _srg = get_security_rules_grouped()
+                    return render(request, "plugins/plugin_upload.html", {
+                        "form": form,
+                        "security_rules_grouped": _srg,
+                        "total_enabled_rules": sum(g["enabled_count"] for g in _srg),
+                        "total_skippable_rules": sum(g["skippable_count"] for g in _srg),
+                        "total_mandatory_rules": sum(g["mandatory_count"] for g in _srg),
+                    })
             return HttpResponseRedirect(plugin.get_absolute_url())
     else:
         form = PackageUploadForm(is_trusted=is_trusted)
 
-    return render(request, "plugins/plugin_upload.html", {"form": form})
+    security_rules_grouped = get_security_rules_grouped()
+    total_enabled_rules = sum(g["enabled_count"] for g in security_rules_grouped)
+    total_skippable_rules = sum(g["skippable_count"] for g in security_rules_grouped)
+    total_mandatory_rules = sum(g["mandatory_count"] for g in security_rules_grouped)
+    return render(request, "plugins/plugin_upload.html", {
+        "form": form,
+        "security_rules_grouped": security_rules_grouped,
+        "total_enabled_rules": total_enabled_rules,
+        "total_skippable_rules": total_skippable_rules,
+        "total_mandatory_rules": total_mandatory_rules,
+    })
 
 
 @login_required
@@ -1011,6 +1045,39 @@ def plugin_email_communication_detail(request, pk):
         request,
         "plugins/email_communication_detail.html",
         {"communication": communication},
+    )
+
+  
+@superuser_required
+@require_POST
+def plugin_email_communication_resend(request, pk):
+    """
+    Superuser-only action to re-queue a previously *failed* communication.  The
+    original record is reused (status reset to queued, error cleared) and handed
+    back to Celery, so the send history stays a single row per announcement.
+    """
+    communication = get_object_or_404(PluginEmailCommunication, pk=pk)
+    if communication.status != PluginEmailCommunication.STATUS_FAILED:
+        messages.error(
+            request,
+            _("Only failed communications can be resent."),
+            fail_silently=True,
+        )
+        return HttpResponseRedirect(
+            reverse("plugin_email_communication_detail", args=[communication.pk])
+        )
+
+    communication.status = PluginEmailCommunication.STATUS_QUEUED
+    communication.error = ""
+    communication.save(update_fields=["status", "error"])
+    send_email_communication.delay(communication.pk)
+    messages.success(
+        request,
+        _("The communication has been re-queued and will be sent again shortly."),
+        fail_silently=True,
+    )
+    return HttpResponseRedirect(
+        reverse("plugin_email_communication_detail", args=[communication.pk])
     )
 
 
@@ -2001,6 +2068,18 @@ def _version_create(request, plugin, version):
                 # Send Stage 1: Upload confirmation email
                 send_upload_confirmation_email(new_object)
 
+                # Extract skipped security rule IDs from form
+                skipped_rule_codes = form.cleaned_data.get("skip_security_rules", [])
+                # Resolve check_codes to DB IDs
+                if skipped_rule_codes:
+                    skipped_rule_ids = list(
+                        SecurityRule.objects.filter(
+                            check_code__in=skipped_rule_codes, enabled=True, can_be_skipped=True
+                        ).values_list("id", flat=True)
+                    )
+                else:
+                    skipped_rule_ids = []
+
                 # Queue async security scan task.
                 # auto_approve=True only when a trusted user explicitly opts in:
                 # web form users tick "Publish immediately"; token/API users
@@ -2008,7 +2087,11 @@ def _version_create(request, plugin, version):
                 auto_approve = is_trusted and form.cleaned_data.get(
                     "auto_approve_after_scan", False
                 )
-                run_security_scan_task.delay(new_object.pk, auto_approve=auto_approve)
+                run_security_scan_task.delay(
+                    new_object.pk,
+                    auto_approve=auto_approve,
+                    skipped_rule_ids=skipped_rule_ids
+                )
 
                 scan_url = f"{new_object.get_absolute_url()}#security-tab"
                 response_data["validation_status"] = VALIDATION_STATUS_VALIDATING
@@ -2130,10 +2213,22 @@ def _version_create(request, plugin, version):
             )
         form = PluginVersionForm(is_trusted=is_trusted)
 
+    security_rules_grouped = get_security_rules_grouped()
+    total_enabled_rules = sum(g["enabled_count"] for g in security_rules_grouped)
+    total_skippable_rules = sum(g["skippable_count"] for g in security_rules_grouped)
+    total_mandatory_rules = sum(g["mandatory_count"] for g in security_rules_grouped)
     return render(
         request,
         "plugins/version_form.html",
-        {"form": form, "plugin": plugin, "form_title": _("New version for plugin")},
+        {
+            "form": form,
+            "plugin": plugin,
+            "form_title": _("New version for plugin"),
+            "security_rules_grouped": security_rules_grouped,
+            "total_enabled_rules": total_enabled_rules,
+            "total_skippable_rules": total_skippable_rules,
+            "total_mandatory_rules": total_mandatory_rules,
+        },
     )
 
 
@@ -2585,8 +2680,6 @@ def version_feedback_edit(request, package_name, version, feedback):
             # Extract attachment ID or filename from URL to identify the attachment
             # Assuming URL format like /media/feedback_attachments/filename.jpg
             try:
-                import os
-
                 filename = os.path.basename(url)
                 attachment = PluginVersionFeedbackAttachment.objects.filter(
                     feedback=feedback, image__endswith=filename
@@ -2660,8 +2753,6 @@ def version_download(request, package_name, version):
     Update download counter(s) using atomic operations to prevent race conditions
     and improve performance under high concurrent load.
     """
-    from django.db.models import F
-
     plugin = get_object_or_404(Plugin, package_name=package_name)
     version = get_object_or_404(PluginVersion, plugin=plugin, version=version)
 

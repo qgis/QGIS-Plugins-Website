@@ -63,6 +63,7 @@
                         {% trans "Status" %}{% if sort == 'status' %} <i class="fas fa-caret-{% if order == 'asc' %}up{% else %}down{% endif %}"></i>{% endif %}
                     </a>
                 </th>
+                <th>{% trans "Actions" %}</th>
             </tr>
         </thead>
         <tbody>
@@ -72,6 +73,19 @@
                 <td>{% if c.created_by %}{{ c.created_by.get_full_name|default:c.created_by.username }}{% else %}&mdash;{% endif %}</td>
                 <td>{{ c.sent_at|default:c.created_at }}</td>
                 <td>{{ c.get_status_display }}</td>
+                <td>
+                    {% if c.status == 'failed' %}
+                    <form method="post" action="{% url 'plugin_email_communication_resend' c.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="button is-small is-warning"
+                                title="{% trans 'Resend' %}" aria-label="{% trans 'Resend' %}">
+                            <span class="icon"><i class="fas fa-redo"></i></span>
+                        </button>
+                    </form>
+                    {% else %}
+                    &mdash;
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>

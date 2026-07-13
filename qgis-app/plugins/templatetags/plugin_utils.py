@@ -19,6 +19,12 @@ def klass(ob):
 
 
 @register.filter
+def is_image_field(bound_field):
+    """Return True if a bound form field wraps an ImageField."""
+    return bound_field.field.__class__.__name__ == "ImageField"
+
+
+@register.filter
 def add_days(value, days):
     """Add days to a datetime value"""
     if value is None:

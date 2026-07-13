@@ -1,6 +1,8 @@
 {% load i18n plugin_utils %}
 <fieldset class="box-content">
   {% for field in form %}
+  {# skip_security_rules is rendered by the security_rules_widget.html partial #}
+  {% if field.html_name != 'skip_security_rules' %}
   <div class="field {{ field.css_classes }}">
     {% if field.field.widget|klass == 'CheckboxInput' %}
     <div class="control">
@@ -23,6 +25,7 @@
         {% endif %}
     </div>
     {% elif field.field.widget|klass == 'ClearableFileInput' %}
+    <label class="label" for="{{ field.html_name }}">{{ field.label }}:</label>
     {% include "plugins/file_input_widget.html" with field=field %}
     {% if field.errors %}
       {% for error in field.errors  %}
@@ -115,6 +118,7 @@
     {% endif %}
     <div class="help has-text-grey">{{ field.help_text | safe }}</div>
   </div>
+  {% endif %}{# /if field.html_name != 'skip_security_rules' #}
   {% endfor %}
   {% if show_upload_checklist %}
   <div class="mt-5">

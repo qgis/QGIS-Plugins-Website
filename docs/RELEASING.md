@@ -35,15 +35,16 @@ A single tag `vX.Y.Z` defines a complete release in two parts:
 | Part | Source | How it reaches production |
 | --- | --- | --- |
 | **Application** (`qgis-app/`, Python deps, `uwsgi.conf`) | baked into the Docker image at tag-build time (see [`Dockerfile`](../dockerize/docker/Dockerfile)) | `docker compose pull` of the pinned image |
+| **Static assets** (webpack bundles, CSS, images) | built by `npm run build` + `collectstatic` inside the Dockerfile `prod` stage | copied from the image to the static volume on container start |
 | **Deployment config** (compose, nginx `sites-enabled/*`, scripts, Makefile) | the repo at that tag | `git checkout vX.Y.Z` on the server |
 
 This answers the common question *"what about code outside `qgis-app/`?"* — it is
 **not** in the image, but it is still versioned by the same tag and applied by
 checking that tag out on the server. So nothing is left ungoverned.
 
-> Note: `dockerize/docker/REQUIREMENTS.txt` and `dockerize/docker/uwsgi.conf` **are**
-> baked into the image, so changing them produces a new image and therefore
-> requires a new tag/release, just like app code.
+> Note: `dockerize/docker/REQUIREMENTS.txt`, `dockerize/docker/uwsgi.conf`, and all
+> static assets (webpack bundles + Django statics) **are** baked into the image.
+> Changing any of these produces a new image and therefore requires a new tag/release.
 
 ### Immutable deploys
 
@@ -110,6 +111,10 @@ flowchart TD
 
 ## Planned release (milestone-based)
 
+**Step-by-step runbooks:** [RELEASE-MINOR.md](./RELEASE-MINOR.md) for an
+enhancement/feature release (`vX.Y.0`) and [RELEASE-MAJOR.md](./RELEASE-MAJOR.md)
+for a breaking release (`vX.0.0`).
+
 1. **Plan**: create a GitHub **Milestone** named for the target version
    (e.g. `v3.3.0`) and assign the issues/PRs it will contain. This is where major
    changes are communicated and scheduled ahead of time. For a MAJOR release,
@@ -164,9 +169,10 @@ dockerize/scripts/deploy.sh v3.3.0
 1. Fetch tags and check out the deployment config at `v3.3.0`.
 2. Pin `UWSGI_DOCKER_IMAGE=qgis/qgis-plugins-uwsgi:v3.3.0` in `dockerize/.env`.
 3. `docker compose pull` the image and recreate `uwsgi` on it.
-4. Run migrations (auth first) and `collectstatic` via the existing Makefile
-   targets.
-5. Recreate the remaining app services (`web`, `worker`, `beat`, `dbbackups`).
+4. On container start, `uwsgi` copies the baked static assets from the image into
+   the static volume (nginx reads from there). No separate `collectstatic` step.
+5. Run migrations (auth first).
+6. Recreate the remaining app services (`web`, `worker`, `beat`, `dbbackups`).
 
 ### Rollback
 
@@ -191,7 +197,8 @@ Release notes are built from your PRs, so day to day:
 
 - **Label your PRs** (`feature`, `enhancement`, `fix`, `bug`, `hotfix`,
   `breaking`, `chore`, `ci`, `infra`, `docs`, `dependencies`) and write a clear
-  title. As PRs merge into `master`,
+  title. See [LABELS.md](./LABELS.md) for what each label does. As PRs merge into
+  `master`,
   [`release-drafter.yml`](../.github/release-drafter.yml) keeps a **draft
   release** updated with grouped notes. Add `skip-changelog` to omit a PR.
 - Labels also decide the next version bump: `breaking` → major,

@@ -1,0 +1,258 @@
+{% extends 'flatpages/docs.html' %}
+{% block content %}
+<div class="responsive-content">
+
+  <h4>
+    <span class="icon-text">
+      <span class="icon has-text-danger"><i class="fas fa-shield-alt"></i></span>
+      <span>Security Tools</span>
+    </span>
+  </h4>
+
+  <p>
+    Every plugin version is automatically scanned using four complementary checks. The results
+    are available on the version detail page under the <strong>Security</strong> tab.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SEVERITY LEVELS
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Severity Levels</h5>
+
+  <div class="content">
+    <ul>
+      <li>
+        <strong class="has-text-danger">CRITICAL</strong>
+        <span class="tag is-danger is-light ml-1">BLOCKING</span> — Security
+        vulnerabilities that must be fixed before the plugin can be published (e.g. hardcoded
+        credentials, shell injection). The version cannot be downloaded or approved until a
+        new, clean version is uploaded.
+      </li>
+      <li>
+        <strong class="has-text-warning">WARNING</strong>
+        <span class="tag is-warning is-light ml-1">NON-BLOCKING</span> — Issues that could
+        lead to problems and should be addressed (e.g. suspicious files, executable
+        permissions). Results are informational only.
+      </li>
+      <li>
+        <strong class="has-text-info">INFO</strong>
+        <span class="tag is-info is-light ml-1">NON-BLOCKING</span> — Code quality
+        suggestions (e.g. PEP 8 violations, unused imports). Results are informational only.
+      </li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       TOOLS
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Tools</h5>
+
+  <h6>
+    <span class="icon has-text-danger"><i class="fas fa-bug"></i></span>
+    1. Bandit
+    <span class="tag is-danger is-light ml-2">BLOCKING — CRITICAL</span>
+  </h6>
+
+  <p>
+    <a href="https://github.com/PyCQA/bandit" target="_blank" rel="noopener">Bandit</a>
+    performs static analysis for Python security issues. Findings at CRITICAL severity block
+    the plugin.
+  </p>
+
+  <div class="content">
+    <ul>
+      <li>Shell injection (<code>subprocess</code> with <code>shell=True</code>)</li>
+      <li>Use of unsafe built-ins (<code>eval</code>, <code>exec</code>, <code>pickle</code>)</li>
+      <li>SQL injection risks</li>
+      <li>Hardcoded passwords and weak cryptography</li>
+      <li>100+ additional checks</li>
+    </ul>
+  </div>
+
+  <p class="is-size-7 has-text-grey">
+    Full Bandit test catalogue:
+    <a href="https://bandit.readthedocs.io/en/latest/plugins/index.html" target="_blank" rel="noopener">
+      bandit.readthedocs.io
+    </a>
+  </p>
+
+  <h6>
+    <span class="icon has-text-danger"><i class="fas fa-key"></i></span>
+    2. detect-secrets
+    <span class="tag is-danger is-light ml-2">BLOCKING — CRITICAL</span>
+  </h6>
+
+  <p>
+    <a href="https://github.com/Yelp/detect-secrets" target="_blank" rel="noopener">detect-secrets</a>
+    scans for hardcoded secrets and high-entropy strings that resemble credentials.
+  </p>
+
+  <div class="content">
+    <ul>
+      <li>AWS / cloud provider credentials</li>
+      <li>API keys and OAuth tokens</li>
+      <li>Private SSH keys</li>
+      <li>Database connection strings</li>
+      <li>High-entropy strings that resemble secrets</li>
+    </ul>
+  </div>
+
+  <p class="is-size-7 has-text-grey">
+    detect-secrets documentation:
+    <a href="https://github.com/Yelp/detect-secrets#readme" target="_blank" rel="noopener">
+      github.com/Yelp/detect-secrets
+    </a>
+  </p>
+
+  <h6>
+    <span class="icon has-text-info"><i class="fas fa-code"></i></span>
+    3. Flake8
+    <span class="tag is-info is-light ml-2">INFORMATIONAL</span>
+  </h6>
+
+  <p>
+    <a href="https://flake8.pycqa.org/" target="_blank" rel="noopener">Flake8</a>
+    checks Python code quality. Results never block the plugin.
+  </p>
+
+  <div class="content">
+    <ul>
+      <li>PEP 8 style violations</li>
+      <li>Syntax errors and undefined names</li>
+      <li>Unused imports and variables</li>
+    </ul>
+  </div>
+
+  <h6>
+    <span class="icon has-text-warning"><i class="fas fa-folder-open"></i></span>
+    4. File Analysis
+    <span class="tag is-warning is-light ml-2">INFORMATIONAL</span>
+  </h6>
+
+  <p>
+    Built-in package structure checks that flag potentially unsafe file inclusions.
+  </p>
+
+  <div class="content">
+    <ul>
+      <li>Executable and hidden files</li>
+      <li>Suspicious file types (e.g. compiled binaries, scripts)</li>
+      <li>Unusual file permissions</li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       UNDERSTANDING RESULTS
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Understanding Scan Results</h5>
+
+  <p>
+    The <strong>Security</strong> tab on every version detail page shows:
+  </p>
+
+  <div class="content">
+    <ul>
+      <li><strong>Summary card</strong> — Overall status, pass rate, and scan timestamp</li>
+      <li><strong>Stats grid</strong> — Total checks, passed checks, warnings, critical issues, files scanned</li>
+      <li>
+        <strong>Per-check details</strong> — Expandable cards for each check showing:
+        <ul>
+          <li>Affected file names and line numbers</li>
+          <li>Issue descriptions and code snippets</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       MANUAL RESCAN
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Manual Re-scan</h5>
+
+  <p>
+    Plugin editors can trigger a manual re-scan at any time from the <strong>Security</strong>
+    tab. Re-scans are <strong>informational only</strong> — they refresh the displayed results
+    and scan timestamp but do <strong>not</strong> change the version's validation status or
+    approval state. To clear a <em>Blocked</em> status, upload a new version with the issues
+    resolved.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       CHECK LOCALLY
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <h5>Check Your Plugin Locally</h5>
+
+  <p>Run the same tools locally before uploading to catch issues early:</p>
+
+  <pre><code># Install the security tools
+pip install bandit detect-secrets flake8
+
+# Run checks on your plugin directory
+bandit -r your_plugin_directory/
+detect-secrets scan your_plugin_directory/
+flake8 your_plugin_directory/</code></pre>
+
+  <p class="notification is-info is-light">
+    <strong>Tip:</strong> You can suppress persistent false positives by bundling config files
+    (<code>.bandit</code>, <code>.secrets.baseline</code>, <code>.flake8</code>) inside your
+    plugin ZIP — see the
+    <a href="{% url 'docs_security_config_files' %}">Config Files guide</a>.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SEE ALSO
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <hr>
+  <div class="columns">
+    <div class="column">
+      <div class="notification is-link is-light">
+        <div class="is-flex is-align-items-center" style="gap:1rem;">
+          <span class="icon is-large has-text-link" style="flex-shrink:0;">
+            <i class="fas fa-search fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold mb-1">Security Scanning Overview</p>
+            <a class="button is-link is-small" href="{% url 'docs_security_scanning' %}">
+              <span class="icon"><i class="fas fa-search"></i></span>
+              <span>Overview</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="notification is-link is-light">
+        <div class="is-flex is-align-items-center" style="gap:1rem;">
+          <span class="icon is-large has-text-link" style="flex-shrink:0;">
+            <i class="fas fa-toggle-off fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold mb-1">Rule Skipping</p>
+            <a class="button is-link is-small" href="{% url 'docs_security_skipping' %}">
+              <span class="icon"><i class="fas fa-toggle-off"></i></span>
+              <span>Rule Skipping Guide</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="notification is-warning is-light">
+        <div class="is-flex is-align-items-center" style="gap:1rem;">
+          <span class="icon is-large has-text-warning" style="flex-shrink:0;">
+            <i class="fas fa-cog fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold mb-1">Config Files</p>
+            <a class="button is-warning is-small" href="{% url 'docs_security_config_files' %}">
+              <span class="icon"><i class="fas fa-cog"></i></span>
+              <span>Config Files Guide</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /responsive-content -->
+{% endblock %}

@@ -26,6 +26,7 @@ from django.utils.translation import gettext_lazy as _
 from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_VALIDATED,
+    VALIDATION_STATUS_VALIDATED_WITH_CONFIG,
     PluginVersion,
     PluginVersionSecurityScan,
 )
@@ -37,7 +38,11 @@ logger = get_task_logger(__name__)
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def run_security_scan_task(
-    self, plugin_version_pk, is_manual=False, auto_approve=False
+    self,
+    plugin_version_pk,
+    is_manual=False,
+    auto_approve=False,
+    skipped_rule_ids=None
 ):
     """
     Run security scan on a plugin version asynchronously.
@@ -52,6 +57,7 @@ def run_security_scan_task(
                       user explicitly opts in via the "Publish immediately"
                       checkbox on the upload form. Defaults to False so that
                       the normal two-step approval flow applies to everyone.
+        skipped_rule_ids: List of SecurityRule IDs that the developer chose to skip (optional)
     """
     try:
         plugin_version = PluginVersion.objects.select_related(
@@ -64,11 +70,11 @@ def run_security_scan_task(
     plugin = plugin_version.plugin
     logger.info(
         f"Starting security scan for {plugin.package_name} v{plugin_version.version} "
-        f"(manual={is_manual})"
+        f"(manual={is_manual}, skipped_rules={len(skipped_rule_ids or [])})"
     )
 
     # Run the security scan (synchronous scan running in the worker)
-    security_scan = run_security_scan(plugin_version)
+    security_scan = run_security_scan(plugin_version, skipped_rule_ids=skipped_rule_ids)
 
     if security_scan is None:
         # Scan failed to run — treat as validated to avoid blocking on tool errors
@@ -111,7 +117,17 @@ def run_security_scan_task(
             f"{security_scan.critical_count} critical issue(s) found"
         )
     else:
-        plugin_version.validation_status = VALIDATION_STATUS_VALIDATED
+        if security_scan.config_files_detected:
+            plugin_version.validation_status = VALIDATION_STATUS_VALIDATED_WITH_CONFIG
+            logger.info(
+                f"Plugin {plugin.package_name} v{plugin_version.version} validated "
+                f"(config files used: {security_scan.config_files_detected})"
+            )
+        else:
+            plugin_version.validation_status = VALIDATION_STATUS_VALIDATED
+            logger.info(
+                f"Plugin {plugin.package_name} v{plugin_version.version} validated successfully"
+            )
         if auto_approve:
             plugin_version.approved = True
             logger.info(
@@ -133,7 +149,11 @@ def run_security_scan_task(
 
     # Notify staff approvers when a non-trusted plugin is ready for review
     if (
-        plugin_version.validation_status == VALIDATION_STATUS_VALIDATED
+        plugin_version.validation_status
+        in (
+            VALIDATION_STATUS_VALIDATED,
+            VALIDATION_STATUS_VALIDATED_WITH_CONFIG,
+        )
         and not plugin_version.approved
     ):
         _notify_staff_for_review(plugin_version)

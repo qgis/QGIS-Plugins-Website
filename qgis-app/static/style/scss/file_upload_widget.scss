@@ -79,6 +79,19 @@
     }
   }
 
+  .file-upload-preview {
+    pointer-events: none;
+
+    .file-upload-preview-image {
+      max-width: 160px;
+      max-height: 160px;
+      border-radius: 8px;
+      border: 1px solid $grey-light;
+      background: $white;
+      object-fit: contain;
+    }
+  }
+
   // Drag-over state
   &.is-dragover {
     border-color: $success;

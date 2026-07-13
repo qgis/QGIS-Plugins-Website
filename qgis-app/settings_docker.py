@@ -163,6 +163,12 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "automation")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "docker")
 EMAIL_USE_TLS = ast.literal_eval(os.environ.get("EMAIL_USE_TLS", "False"))
 EMAIL_SUBJECT_PREFIX = os.environ.get("EMAIL_SUBJECT_PREFIX", "[QGIS Plugins]")
+# Max BCC recipients per message when broadcasting a plugin email communication.
+# Many SMTP providers reject messages with more than ~50 BCC recipients, so the
+# recipient list is split into batches of this size.
+EMAIL_COMMUNICATION_BATCH_SIZE = int(
+    os.environ.get("EMAIL_COMMUNICATION_BATCH_SIZE", "50")
+)
 
 # django uploaded file permission
 FILE_UPLOAD_PERMISSIONS = 0o644

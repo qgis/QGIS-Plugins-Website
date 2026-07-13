@@ -10,6 +10,7 @@ from plugins.models import (
     PluginEmailCommunication,
     PluginOutstandingToken,
     PluginVersion,
+    SecurityRule,
 )
 from plugins.validator import validator
 from taggit.forms import TagField
@@ -116,6 +117,14 @@ class PluginVersionForm(ModelForm):
         ),
         widget=forms.Textarea,
     )
+    skip_security_rules = forms.MultipleChoiceField(
+        label=_("Skip Security Rules"),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        help_text=_(
+            "Select security rules you wish to skip for this upload. Only rules marked as skippable by administrators can be selected. Use this when you're confident that flagged issues are false positives."
+        ),
+    )
 
     def __init__(self, *args, **kwargs):
         is_trusted = kwargs.pop("is_trusted", False)
@@ -131,6 +140,21 @@ class PluginVersionForm(ModelForm):
                     "Leave unchecked to follow the normal two-step approval process."
                 ),
             )
+
+        # Populate skip_security_rules choices with enabled and skippable rules
+        skippable_rules = SecurityRule.objects.filter(
+            enabled=True, can_be_skipped=True
+        ).order_by("check_category", "check_code")
+
+        # Group choices by category for better UX
+        choices = []
+        for rule in skippable_rules:
+            label = (
+                f"{rule.check_code}: {rule.check_name} ({rule.get_severity_display()})"
+            )
+            choices.append((rule.check_code, label))
+
+        self.fields["skip_security_rules"].choices = choices
 
     class Meta:
         model = PluginVersion
@@ -267,10 +291,19 @@ class PackageUploadForm(forms.Form):
         label=_("Plugin Package"),
         help_text=_("Select the zipped plugin file (maximum size: 25MB)."),
     )
+    skip_security_rules = forms.MultipleChoiceField(
+        label=_("Skip Security Rules"),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        help_text=_(
+            "Select security rules you wish to skip for this upload. Only rules marked as skippable by administrators can be selected. Use this when you're confident that flagged issues are false positives."
+        ),
+    )
 
     def __init__(self, *args, **kwargs):
         is_trusted = kwargs.pop("is_trusted", False)
         super(PackageUploadForm, self).__init__(*args, **kwargs)
+
         if is_trusted:
             self.fields["auto_approve_after_scan"] = forms.BooleanField(
                 required=False,
@@ -282,6 +315,20 @@ class PackageUploadForm(forms.Form):
                     "Leave unchecked to follow the normal two-step approval process."
                 ),
             )
+
+        # Populate skip_security_rules choices with enabled and skippable rules
+        skippable_rules = SecurityRule.objects.filter(
+            enabled=True, can_be_skipped=True
+        ).order_by("check_category", "check_code")
+
+        choices = []
+        for rule in skippable_rules:
+            label = (
+                f"{rule.check_code}: {rule.check_name} ({rule.get_severity_display()})"
+            )
+            choices.append((rule.check_code, label))
+
+        self.fields["skip_security_rules"].choices = choices
 
     def clean(self):
         clean_data = super(PackageUploadForm, self).clean()

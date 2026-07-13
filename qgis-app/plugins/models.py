@@ -904,12 +904,14 @@ class ExperimentalPluginVersions(ApprovedPluginVersions):
 VALIDATION_STATUS_PENDING = "pending"
 VALIDATION_STATUS_VALIDATING = "validating"
 VALIDATION_STATUS_VALIDATED = "validated"
+VALIDATION_STATUS_VALIDATED_WITH_CONFIG = "validated_with_config"
 VALIDATION_STATUS_BLOCKED = "blocked"
 
 VALIDATION_STATUS_CHOICES = [
     (VALIDATION_STATUS_PENDING, _("Pending")),
     (VALIDATION_STATUS_VALIDATING, _("Validating")),
     (VALIDATION_STATUS_VALIDATED, _("Validated")),
+    (VALIDATION_STATUS_VALIDATED_WITH_CONFIG, _("Validated (configured)")),
     (VALIDATION_STATUS_BLOCKED, _("Blocked")),
 ]
 
@@ -1066,7 +1068,7 @@ class PluginVersion(models.Model):
     # Validation status for security and QA checks
     validation_status = models.CharField(
         _("Validation status"),
-        max_length=20,
+        max_length=25,
         choices=VALIDATION_STATUS_CHOICES,
         default=VALIDATION_STATUS_PENDING,
         db_index=True,
@@ -1369,6 +1371,84 @@ class PluginVersionDownload(models.Model):
         )
 
 
+class SecurityRule(models.Model):
+    """
+    Configurable security and quality check rules.
+    Administrators can enable/disable specific rules and mark them as skippable.
+    """
+
+    CATEGORY_CHOICES = [
+        ("bandit", _("Bandit Security")),
+        ("secrets", _("Detect Secrets")),
+        ("flake8", _("Flake8 Quality")),
+        ("file_analysis", _("File Analysis")),
+    ]
+
+    SEVERITY_CHOICES = [
+        ("info", _("Info")),
+        ("warning", _("Warning")),
+        ("critical", _("Critical")),
+    ]
+
+    check_category = models.CharField(
+        _("Category"),
+        max_length=50,
+        choices=CATEGORY_CHOICES,
+        db_index=True,
+        help_text=_("Security/quality tool category"),
+    )
+    check_code = models.CharField(
+        _("Code"),
+        max_length=50,
+        unique=True,
+        db_index=True,
+        help_text=_("Unique check identifier (e.g., B101, E501)"),
+    )
+    check_name = models.CharField(
+        _("Name"),
+        max_length=200,
+        help_text=_("Human-readable check name"),
+    )
+    check_description = models.TextField(
+        _("Description"),
+        help_text=_("Detailed description of what this check does"),
+    )
+    severity = models.CharField(
+        _("Severity"),
+        max_length=20,
+        choices=SEVERITY_CHOICES,
+        default="info",
+        help_text=_("Severity level of issues found by this check"),
+    )
+    enabled = models.BooleanField(
+        _("Enabled"),
+        default=False,
+        db_index=True,
+        help_text=_("Whether this check is active (disabled by default)"),
+    )
+    can_be_skipped = models.BooleanField(
+        _("Can be skipped"),
+        default=True,
+        help_text=_("Whether plugin developers can skip this check during upload"),
+    )
+    created_on = models.DateTimeField(
+        _("Created on"), default=timezone.now, editable=False
+    )
+    updated_on = models.DateTimeField(_("Updated on"), auto_now=True)
+
+    class Meta:
+        verbose_name = _("Security Rule")
+        verbose_name_plural = _("Security Rules")
+        ordering = ["check_category", "check_code"]
+        indexes = [
+            models.Index(fields=["check_category", "enabled"]),
+            models.Index(fields=["enabled", "can_be_skipped"]),
+        ]
+
+    def __str__(self):
+        return f"{self.check_code}: {self.check_name}"
+
+
 class PluginVersionSecurityScan(models.Model):
     """
     Security and quality scan results for plugin versions
@@ -1390,6 +1470,28 @@ class PluginVersionSecurityScan(models.Model):
     info_count = models.IntegerField(_("Info items"), default=0)
     files_scanned = models.IntegerField(_("Files scanned"), default=0)
     total_issues = models.IntegerField(_("Total issues"), default=0)
+
+    # Rule tracking
+    enabled_rules_count = models.IntegerField(
+        _("Enabled rules count"),
+        default=0,
+        help_text=_("Number of rules that were enabled when this scan ran"),
+    )
+    skipped_rules = models.JSONField(
+        _("Skipped rules"),
+        default=list,
+        blank=True,
+        help_text=_("List of rule codes that were skipped by the developer"),
+    )
+    config_files_detected = models.JSONField(
+        _("Config files detected"),
+        default=list,
+        blank=True,
+        help_text=_(
+            "Config files found in the plugin ZIP that may have influenced scan results "
+            "(e.g. .bandit, .secrets.baseline, .flake8)"
+        ),
+    )
 
     # Full scan report (JSON field)
     scan_report = models.JSONField(
@@ -1446,6 +1548,48 @@ class PluginVersionSecurityScan(models.Model):
             data["total_issues"] = self.total_issues
             data["scan_report"] = self.scan_report
         return data
+
+
+class PluginVersionSecurityRuleSkip(models.Model):
+    """
+    Tracks which security rules were skipped by developers during upload.
+    Allows auditing of developer decisions and understanding why scans were bypassed.
+    """
+
+    plugin_version = models.ForeignKey(
+        PluginVersion,
+        on_delete=models.CASCADE,
+        related_name="skipped_security_rules",
+    )
+    security_rule = models.ForeignKey(
+        SecurityRule,
+        on_delete=models.CASCADE,
+        related_name="skipped_by_versions",
+    )
+    skipped_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="skipped_security_rules",
+    )
+    skipped_on = models.DateTimeField(
+        _("Skipped on"), default=timezone.now, editable=False
+    )
+    reason = models.TextField(
+        _("Reason"),
+        blank=True,
+        help_text=_("Optional reason for skipping this rule"),
+    )
+
+    class Meta:
+        verbose_name = _("Plugin Version Security Rule Skip")
+        verbose_name_plural = _("Plugin Version Security Rule Skips")
+        ordering = ["-skipped_on"]
+        unique_together = [("plugin_version", "security_rule")]
+
+    def __str__(self):
+        return f"{self.plugin_version} skipped {self.security_rule.check_code}"
 
 
 models.signals.post_delete.connect(delete_version_package, sender=PluginVersion)
