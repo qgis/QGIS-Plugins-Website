@@ -21,13 +21,16 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core.mail import send_mail
+from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_VALIDATED,
     PluginVersion,
+    PluginVersionSecurityScan,
 )
 from plugins.security_utils import run_security_scan
+from plugins.tasks.trigger_email_confirmation import check_and_send_confirmation
 
 logger = get_task_logger(__name__)
 
@@ -82,6 +85,9 @@ def run_security_scan_task(
                     "(scan tool error, uploader opted in)"
                 )
             plugin_version.save()
+            # Send the email confirmation as soon as validation passes, so the
+            # author can verify before an approver acts (approval is gated on it).
+            _fire_confirmation_task(plugin_version.plugin_id)
             _send_validation_results_email(plugin_version, security_scan=None)
             if not plugin_version.approved:
                 _notify_staff_for_review(plugin_version)
@@ -117,6 +123,10 @@ def run_security_scan_task(
         )
 
     plugin_version.save()
+    # Send the email confirmation as soon as validation passes, so the author
+    # can verify before an approver acts (manual approval is gated on it).
+    if plugin_version.validation_status == VALIDATION_STATUS_VALIDATED:
+        _fire_confirmation_task(plugin_version.plugin_id)
 
     # Send validation results email to maintainer(s)
     _send_validation_results_email(plugin_version, security_scan)
@@ -129,7 +139,14 @@ def run_security_scan_task(
         _notify_staff_for_review(plugin_version)
 
 
-def _send_validation_results_email(plugin_version, security_scan):
+def _fire_confirmation_task(plugin_id: int):
+    """Queue a confirmation-email check after the current transaction commits."""
+    transaction.on_commit(lambda: check_and_send_confirmation.delay(plugin_id))
+
+
+def _send_validation_results_email(
+    plugin_version: PluginVersion, security_scan: PluginVersionSecurityScan | None
+) -> None:
     """
     Send Stage 2 email: validation results to the plugin maintainer(s).
     """
@@ -209,7 +226,7 @@ Security best practices: {docs_url}
         logger.error(f"Failed to send validation results email: {e}")
 
 
-def _build_critical_issues_text(security_scan):
+def _build_critical_issues_text(security_scan: PluginVersionSecurityScan) -> str:
     """Build a text summary of critical issues from the scan report."""
     lines = []
     for check in security_scan.scan_report.get("checks", []):
@@ -226,7 +243,7 @@ def _build_critical_issues_text(security_scan):
     return "\n".join(lines) if lines else "No details available."
 
 
-def _notify_staff_for_review(plugin_version):
+def _notify_staff_for_review(plugin_version: PluginVersion) -> None:
     """
     Notify staff approvers that a plugin is ready for review
     (equivalent to version_notify but triggered from the task).

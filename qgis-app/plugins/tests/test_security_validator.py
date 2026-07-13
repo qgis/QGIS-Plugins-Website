@@ -11,6 +11,7 @@ Tests cover:
  - Stage 1 (upload confirmation) and Stage 2 (results) email notifications
 """
 
+import datetime
 import os
 from unittest.mock import patch
 
@@ -19,12 +20,14 @@ from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, RequestFactory, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from plugins.models import (
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_PENDING,
     VALIDATION_STATUS_VALIDATED,
     VALIDATION_STATUS_VALIDATING,
     Plugin,
+    PluginEmailConfirmation,
     PluginVersion,
     PluginVersionSecurityScan,
 )
@@ -399,9 +402,19 @@ class VersionApproveBlockingTest(TestCase):
         return self.client.post(url)
 
     def test_approve_allowed_when_validated(self):
-        """Staff can approve a validated version."""
+        """Staff can approve a validated version with a confirmed email."""
         self.version.validation_status = VALIDATION_STATUS_VALIDATED
         self.version.save()
+        # A verified contact email is required for approval.
+        self.plugin.email = "owner2@test.com"
+        self.plugin.save()
+        conf = PluginEmailConfirmation.objects.create(
+            email=self.plugin.email,
+            key="approve-test-key",
+            expires_at=timezone.now() + datetime.timedelta(days=30),
+            confirmed_at=timezone.now(),
+        )
+        conf.plugins.set([self.plugin])
         response = self._post_approve()
         # Should redirect (302) after success
         self.assertEqual(response.status_code, 302)

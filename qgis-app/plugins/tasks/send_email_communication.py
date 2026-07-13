@@ -9,12 +9,12 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.utils import timezone
-from plugins.models import Plugin, PluginEmailCommunication
+from plugins.models import Plugin, PluginEmailCommunication, PluginEmailConfirmation
 
 logger = get_task_logger(__name__)
 
 
-def get_communication_recipients():
+def get_communication_recipients() -> list:
     """
     Build the deduped recipient list for an email communication.
 
@@ -40,24 +40,26 @@ def get_communication_recipients():
         seen.add(key)
         recipients.append(addr)
 
+    # Confirmation is tracked per email address: an address is eligible if any
+    # plugin has confirmed it, so collect the full set of confirmed addresses.
+    confirmed_emails = set(
+        PluginEmailConfirmation.objects.filter(
+            confirmed_at__isnull=False,
+            superseded_at__isnull=True,
+        ).values_list("email", flat=True)
+    )
+
     plugins = (
-        Plugin.approved_objects.filter(
-            is_deleted=False,
-            email_confirmations__confirmed_at__isnull=False,
-        )
-        .distinct()
+        Plugin.approved_objects.filter(is_deleted=False)
+        .exclude(email="")
         .select_related("created_by")
-        .prefetch_related("owners", "email_confirmations")
+        .prefetch_related("owners")
     )
 
     for plugin in plugins:
-        # Only target the plugin's *current* address, and only if it is among
-        # the confirmed ones (a plugin may retain confirmed records for an old
-        # address after its email changed).
-        confirmed_emails = {
-            c.email for c in plugin.email_confirmations.all() if c.confirmed_at
-        }
-        if not plugin.email or plugin.email not in confirmed_emails:
+        # Only target the plugin's *current* address, and only if that address
+        # has been confirmed by any plugin sharing it.
+        if plugin.email not in confirmed_emails:
             continue
         for part in plugin.email.split(","):
             add(part)
