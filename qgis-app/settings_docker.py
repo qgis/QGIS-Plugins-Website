@@ -112,8 +112,8 @@ PAGINATION_DEFAULT_PAGINATION_HUB = 30
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
-ACCOUNT_SIGNUP_FIELDS = ['email', 'username*', 'password1*', 'password2*']
-ACCOUNT_LOGIN_METHODS = {'username'}
+ACCOUNT_SIGNUP_FIELDS = ["email", "username*", "password1*", "password2*"]
+ACCOUNT_LOGIN_METHODS = {"username"}
 ACCOUNT_EMAIL_VERIFICATION = "none"
 ACCOUNT_SIGNUP_ENABLED = False
 
@@ -163,6 +163,12 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "automation")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "docker")
 EMAIL_USE_TLS = ast.literal_eval(os.environ.get("EMAIL_USE_TLS", "False"))
 EMAIL_SUBJECT_PREFIX = os.environ.get("EMAIL_SUBJECT_PREFIX", "[QGIS Plugins]")
+# Max BCC recipients per message when broadcasting a plugin email communication.
+# Many SMTP providers reject messages with more than ~50 BCC recipients, so the
+# recipient list is split into batches of this size.
+EMAIL_COMMUNICATION_BATCH_SIZE = int(
+    os.environ.get("EMAIL_COMMUNICATION_BATCH_SIZE", "50")
+)
 
 # django uploaded file permission
 FILE_UPLOAD_PERMISSIONS = 0o644
@@ -200,6 +206,18 @@ CELERY_BEAT_SCHEDULE = {
         "task": "plugins.tasks.delete_marked_plugins.delete_marked_plugins",
         "schedule": crontab(minute=0, hour=2),  # Execute every day at 2 AM.
         "kwargs": {"days": 30},  # Delete items marked for 30+ days
+    },
+    "send_pending_email_confirmations": {
+        "task": "plugins.tasks.trigger_email_confirmation.send_pending_email_confirmations",
+        "schedule": crontab(
+            minute=0, hour=4, day_of_month=1
+        ),  # 04:00 on 1st of every month
+    },
+    "send_anniversary_reverifications": {
+        "task": "plugins.tasks.trigger_annual_reverification.send_anniversary_reverifications",
+        "schedule": crontab(
+            minute=30, hour=4
+        ),  # 04:30 daily, staggered by first-publish anniversary
     },
 }
 CELERY_IMPORTS = ("plugins.tasks",)

@@ -25,6 +25,7 @@
         {% endif %}
     </div>
     {% elif field.field.widget|klass == 'ClearableFileInput' %}
+    <label class="label" for="{{ field.html_name }}">{{ field.label }}:</label>
     {% include "plugins/file_input_widget.html" with field=field %}
     {% if field.errors %}
       {% for error in field.errors  %}

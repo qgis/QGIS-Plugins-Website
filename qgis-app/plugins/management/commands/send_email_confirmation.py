@@ -23,8 +23,8 @@ Usage examples:
 from collections import defaultdict
 
 from django.core.management.base import BaseCommand
+from plugins.email_utils import send_confirmation_email
 from plugins.models import Plugin, PluginEmailConfirmation, PluginEmailConfirmationError
-from plugins.views import send_confirmation_email
 
 
 class Command(BaseCommand):

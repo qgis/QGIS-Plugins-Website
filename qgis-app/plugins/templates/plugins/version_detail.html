@@ -662,6 +662,14 @@
                     {% trans "Validation in progress: approval not available yet" %}
                     {% endif %}
                 </p>
+                {% elif not version.plugin.is_email_confirmed %}
+                <button class="button is-success is-outlined" disabled title="{% trans 'The author email must be verified before this version can be approved' %}">
+                    <span class="icon"><i class="fas fa-check"></i></span>
+                    <span>{% trans "Approve this version" %}</span>
+                </button>
+                <p class="is-size-7 has-text-danger mt-1">
+                    {% trans "Author email not yet verified: approval blocked until the confirmation link is clicked" %}
+                </p>
                 {% else %}
                 <button class="button is-success is-outlined" type="submit" name="version_approve" id="version_approve">
                     <span class="icon"><i class="fas fa-check"></i></span>

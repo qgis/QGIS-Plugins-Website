@@ -179,8 +179,9 @@ class TestCreateForEmail(SetupMixin, TestCase):
         self.assertTrue(created)
         self.assertNotEqual(conf.pk, expired.pk)
 
-    def test_creates_new_when_existing_plugin_not_yet_confirmed(self):
-        """All old plugins confirmed but a new plugin was added — must re-send."""
+    def test_confirmed_email_skips_new_plugin(self):
+        """Per-email: once an address is confirmed, a brand-new plugin using
+        that address inherits the verified status — no new round is sent."""
         make_confirmed_confirmation(
             "author@example.com",
             [self.plugin_a, self.plugin_b],
@@ -191,8 +192,11 @@ class TestCreateForEmail(SetupMixin, TestCase):
             "author@example.com",
             [self.plugin_a, self.plugin_b, new_plugin],
         )
-        self.assertTrue(created)
-        self.assertIn(new_plugin, conf.plugins.all())
+        self.assertIsNone(conf)
+        self.assertFalse(created)
+        # The new plugin is verified by virtue of the address being confirmed,
+        # even though it was never linked to the confirmed record.
+        self.assertTrue(new_plugin.is_email_confirmed)
 
 
 # ---------------------------------------------------------------------------
@@ -532,7 +536,7 @@ class TestEditorNotificationBackstop(SetupMixin, TestCase):
             "author@example.com", [self.plugin_a]
         )
         with patch(
-            "plugins.views.notify_editors_of_pending_confirmation",
+            "plugins.email_utils.notify_editors_of_pending_confirmation",
             side_effect=Exception("boom"),
         ):
             send_confirmation_email(conf)  # must not raise

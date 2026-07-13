@@ -7,4 +7,11 @@ from plugins.tasks.rebuild_search_index import rebuild_search_index
 from plugins.tasks.save_qt6_result import save_qt6_result
 from plugins.tasks.update_qgis_versions import update_qgis_versions
 from plugins.tasks.send_email_communication import send_email_communication
+from plugins.tasks.trigger_annual_reverification import (
+    send_anniversary_reverifications,
+)
+from plugins.tasks.trigger_email_confirmation import (
+    check_and_send_confirmation,
+    send_pending_email_confirmations,
+)
 from plugins.tasks.update_qgis_versions import update_qgis_versions
