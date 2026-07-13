@@ -167,15 +167,21 @@ class TestSendEmailCommunicationTask(TestCase):
         self.assertEqual(comm.recipient_count, 2)
         self.assertIsNotNone(comm.sent_at)
 
+    @override_settings(EMAIL_COMMUNICATION_BATCH_SIZE=50)
     @patch("plugins.tasks.send_email_communication.get_communication_recipients")
-    def test_sends_single_email_with_all_recipients_in_bcc(self, mock_recipients):
+    def test_batches_bcc_recipients(self, mock_recipients):
         addrs = [f"u{i}@org.com" for i in range(250)]
         mock_recipients.return_value = addrs
         comm = self._make_comm()
         send_email_communication(comm.pk)
-        # One single email, everyone in BCC (no batching).
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].bcc, addrs)
+        # Cap of 50 total recipients minus the single To leaves 49 BCC per
+        # message: 250 / 49 -> 6 messages (49*5 + 5).
+        self.assertEqual(len(mail.outbox), 6)
+        for msg in mail.outbox:
+            # To + Bcc must never exceed the provider cap.
+            self.assertLessEqual(len(msg.to) + len(msg.bcc), 50)
+        sent = [addr for msg in mail.outbox for addr in msg.bcc]
+        self.assertEqual(sent, addrs)  # every address once, in order
         comm.refresh_from_db()
         self.assertEqual(comm.recipient_count, 250)
 
@@ -305,3 +311,60 @@ class TestEmailCommunicationDetailView(TestCase):
             reverse("plugin_email_communication_detail", args=[999999])
         )
         self.assertEqual(resp.status_code, 404)
+
+
+# ---------------------------------------------------------------------------
+# Resend action
+# ---------------------------------------------------------------------------
+
+
+class TestEmailCommunicationResend(TestCase):
+
+    fixtures = ["fixtures/auth.json"]
+
+    def setUp(self):
+        self.superuser = User.objects.get(id=1)
+        self.staff_user = User.objects.get(id=3)
+
+    def _make(self, status):
+        return PluginEmailCommunication.objects.create(
+            subject="Retry me",
+            body="body",
+            created_by=self.superuser,
+            status=status,
+            error="boom",
+        )
+
+    def _url(self, pk):
+        return reverse("plugin_email_communication_resend", args=[pk])
+
+    def test_get_not_allowed(self):
+        comm = self._make(PluginEmailCommunication.STATUS_FAILED)
+        self.client.force_login(self.superuser)
+        self.assertEqual(self.client.get(self._url(comm.pk)).status_code, 405)
+
+    def test_staff_non_superuser_is_redirected(self):
+        comm = self._make(PluginEmailCommunication.STATUS_FAILED)
+        self.client.force_login(self.staff_user)
+        self.assertEqual(self.client.post(self._url(comm.pk)).status_code, 302)
+
+    @patch("plugins.views.send_email_communication.delay")
+    def test_failed_communication_is_requeued(self, mock_delay):
+        comm = self._make(PluginEmailCommunication.STATUS_FAILED)
+        self.client.force_login(self.superuser)
+        resp = self.client.post(self._url(comm.pk))
+        self.assertEqual(resp.status_code, 302)
+        comm.refresh_from_db()
+        self.assertEqual(comm.status, PluginEmailCommunication.STATUS_QUEUED)
+        self.assertEqual(comm.error, "")
+        mock_delay.assert_called_once_with(comm.pk)
+
+    @patch("plugins.views.send_email_communication.delay")
+    def test_non_failed_communication_is_not_requeued(self, mock_delay):
+        comm = self._make(PluginEmailCommunication.STATUS_SENT)
+        self.client.force_login(self.superuser)
+        resp = self.client.post(self._url(comm.pk))
+        self.assertEqual(resp.status_code, 302)
+        comm.refresh_from_db()
+        self.assertEqual(comm.status, PluginEmailCommunication.STATUS_SENT)
+        mock_delay.assert_not_called()

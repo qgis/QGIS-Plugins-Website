@@ -18,6 +18,7 @@ from plugins.views import (
     plugin_email_communicate,
     plugin_email_communication_detail,
     plugin_email_communication_list,
+    plugin_email_communication_resend,
 )
 from rest_framework import permissions
 
@@ -152,6 +153,11 @@ urlpatterns += [
         r"^communicate/(?P<pk>\d+)/$",
         plugin_email_communication_detail,
         name="plugin_email_communication_detail",
+    ),
+    url(
+        r"^communicate/(?P<pk>\d+)/resend/$",
+        plugin_email_communication_resend,
+        name="plugin_email_communication_resend",
     ),
 ]
 
