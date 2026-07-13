@@ -220,6 +220,7 @@ CELERY_BEAT_SCHEDULE = {
         ),  # 04:30 daily, staggered by first-publish anniversary
     },
 }
+CELERY_IMPORTS = ("plugins.tasks",)
 # Set plugin token access and refresh validity to a very long duration
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=365 * 1000),

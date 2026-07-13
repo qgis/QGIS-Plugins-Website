@@ -4,6 +4,8 @@ import datetime
 import logging
 import os
 import time
+import re
+from collections import defaultdict
 
 from django.conf import settings
 from django.contrib import messages
@@ -645,7 +647,7 @@ def plugin_upload(request):
                 new_version = PluginVersion(**version_data)
                 new_version.save()
                 msg = _(
-                    "The Plugin has been successfully uploaded. Security and quality checks are now running asynchronously."
+                    "The Plugin has been successfully uploaded. Security and quality checks are now running asynchronously. A Qt6 compliance check will be launched. The result is displayed on the plugin's version page."
                 )
                 messages.success(request, msg, fail_silently=True)
 
@@ -2847,6 +2849,24 @@ def version_detail(
         security_scan = None
         scan_badge = get_scan_badge_info(None)
 
+    # Parse Qt6 logs
+    qt6_issues = []
+    if version.qt6_logs:
+        pattern = re.compile(r"^(/[^:]+):(\d+):(\d+)\s+-\s+(.+)$")
+        for line in version.qt6_logs.splitlines():
+            match = pattern.match(line)
+            if not match:
+                continue
+            filepath, lineno, col, message = match.groups()
+            path_parts = filepath.split("/")
+            relative_path = "/".join(path_parts[4:]) if len(path_parts) > 4 else filepath
+            qt6_issues.append({
+                "file": relative_path,
+                "line": lineno,
+                "col": col,
+                "message": message.strip(),
+            })
+
     return render(
         request,
         "plugins/version_detail.html",
@@ -2854,6 +2874,7 @@ def version_detail(
             "version": version,
             "security_scan": security_scan,
             "scan_badge": scan_badge,
+            "qt6_issues": qt6_issues,
         },
     )
 
