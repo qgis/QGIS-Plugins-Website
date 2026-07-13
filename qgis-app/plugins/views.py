@@ -1047,7 +1047,7 @@ def plugin_email_communication_detail(request, pk):
         {"communication": communication},
     )
 
-  
+
 @superuser_required
 @require_POST
 def plugin_email_communication_resend(request, pk):
