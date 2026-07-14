@@ -261,7 +261,7 @@
                                             <span class="icon is-small">
                                                 <i class="fas fa-info"></i>
                                             </span>
-                                            <span>{% trans "Scanned with informational items (latest)" %}</span>
+                                            <span>{% trans "Infromational security items (latest)" %}</span>
                                         </a>
                                     {% else %}
                                         <a {% if user.is_staff or user in object.editors %}href="{{ release.get_absolute_url }}#security-tab"{% endif %} class="button is-small is-rounded is-light">
@@ -683,7 +683,7 @@
                                                     {% elif security_scan.overall_status == 'info' %}
                                                         <a
                                                             href="{{ version.get_absolute_url }}#security-tab"
-                                                            title="{% trans "Scanned with informational items (latest)" %}"
+                                                            title="{% trans "Infromational security items (latest)" %}"
                                                             class="button is-small is-info">
                                                             <span class="icon is-small">
                                                                 <i class="fas fa-circle-info"></i>

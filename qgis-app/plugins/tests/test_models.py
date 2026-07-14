@@ -4,7 +4,12 @@ from freezegun import freeze_time
 
 from django.contrib.auth.models import User
 from django.test import TestCase
-from plugins.models import Plugin, PluginVersion, PluginVersionFeedback
+from plugins.models import (
+    Plugin,
+    PluginVersion,
+    PluginVersionFeedback,
+    VALIDATION_STATUS_BLOCKED,
+)
 
 
 class PluginVersionFeedbackTest(TestCase):
@@ -125,5 +130,37 @@ class PluginVersionFeedbackManagerTest(TestCase):
         plugins = Plugin.feedback_pending_objects.all()
         self.assertEqual(len(plugins), 1)
         self.assertEqual(plugins[0], self.plugin_2)
+
+    def test_blocked_latest_version_excluded_from_received(self):
+        self.assertIn(
+            self.plugin_1, list(Plugin.feedback_received_objects.all())
+        )
+        self.version_1.validation_status = VALIDATION_STATUS_BLOCKED
+        self.version_1.save()
+        self.assertNotIn(
+            self.plugin_1, list(Plugin.feedback_received_objects.all())
+        )
+
+    def test_blocked_latest_version_excluded_from_pending(self):
+        self.assertIn(
+            self.plugin_2, list(Plugin.feedback_pending_objects.all())
+        )
+        self.version_2.validation_status = VALIDATION_STATUS_BLOCKED
+        self.version_2.save()
+        self.assertNotIn(
+            self.plugin_2, list(Plugin.feedback_pending_objects.all())
+        )
+
+    def test_blocked_latest_version_excluded_from_completed(self):
+        self.feedback_1.is_completed = True
+        self.feedback_1.save()
+        self.assertIn(
+            self.plugin_1, list(Plugin.feedback_completed_objects.all())
+        )
+        self.version_1.validation_status = VALIDATION_STATUS_BLOCKED
+        self.version_1.save()
+        self.assertNotIn(
+            self.plugin_1, list(Plugin.feedback_completed_objects.all())
+        )
 
 

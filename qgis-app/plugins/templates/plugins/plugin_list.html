@@ -232,7 +232,7 @@
 						{% if user in object.editors or user.is_staff %}
 						<td>
 							<div class="field has-addons">
-								{% with release=object.stable|default:object.experimental|default:object.latest_version %}
+								{% with release=object.latest_version %}
 									{% if release %}
 										{% with security_scan=release.security_scan %}
 										<p class="control mb-0">
@@ -249,7 +249,7 @@
 													<span class="icon is-small"><i class="fas fa-circle-exclamation"></i></span>
 												</a>
 											{% elif security_scan.overall_status == 'info' %}
-												<a href="{{ release.get_absolute_url }}#security-tab" title="{% trans "Scanned with informational items (latest)" %}" class="button is-small is-info">
+												<a href="{{ release.get_absolute_url }}#security-tab" title="{% trans "Infromational security items (latest)" %}" class="button is-small is-info">
 													<span class="icon is-small"><i class="fas fa-circle-info"></i></span>
 												</a>
 											{% else %}
