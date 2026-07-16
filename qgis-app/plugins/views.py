@@ -58,6 +58,7 @@ from plugins.forms import (
     VersionFeedbackForm,
 )
 from plugins.models import (
+    PLUGIN_EMAIL_CONFIRMATION_RESEND_INTERVAL_MINUTES,
     VALIDATION_STATUS_BLOCKED,
     VALIDATION_STATUS_VALIDATING,
     Plugin,
@@ -1158,21 +1159,56 @@ def plugin_email_token_confirm(request: HttpRequest, package_name: str) -> HttpR
 
 
 @login_required
+@require_POST
 def resend_plugin_email_confirmation(
     request: HttpRequest, package_name: str
 ) -> HttpResponse:
     """
-    Staff/superuser-only view that creates or replaces a pending email
-    confirmation for a plugin's author email address.
+    Let a plugin editor (or staff/superuser) re-send the email confirmation
+    for a plugin's author address, straight from the plugin detail page.
 
     Any existing unconfirmed confirmation for the same email is deleted first,
     then a fresh one is created and the email is sent.  All plugins that share
     the same email address are included (consistent with the management command).
+
+    The mail always goes to the address already on file, so this cannot be used
+    to redirect confirmations elsewhere.  A per-address cooldown
+    (``PLUGIN_EMAIL_CONFIRMATION_RESEND_INTERVAL_MINUTES``) throttles repeated
+    requests so the mailbox on file cannot be spammed.
     """
-    if not (request.user.is_staff or request.user.is_superuser):
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+
+    if request.user not in plugin.editors and not (
+        request.user.is_staff or request.user.is_superuser
+    ):
         return render(request, "plugins/plugin_permission_deny.html", {})
 
-    plugin = get_object_or_404(Plugin, package_name=package_name)
+    # Rate limit: refuse if an unconfirmed confirmation for this address was
+    # sent within the cooldown window.  Checked against the DB rather than the
+    # cache because the default cache backend is a no-op DummyCache.
+    cooldown = datetime.timedelta(
+        minutes=PLUGIN_EMAIL_CONFIRMATION_RESEND_INTERVAL_MINUTES
+    )
+    last_sent = (
+        PluginEmailConfirmation.objects.filter(
+            email=plugin.email, confirmed_at__isnull=True
+        )
+        .order_by("-sent_at")
+        .values_list("sent_at", flat=True)
+        .first()
+    )
+    if last_sent is not None:
+        elapsed = timezone.now() - last_sent
+        if elapsed < cooldown:
+            wait_minutes = max(1, int((cooldown - elapsed).total_seconds() // 60) + 1)
+            msg = _(
+                "A confirmation email was just sent to %(email)s. Please wait "
+                "about %(minutes)s minute(s) before requesting another one."
+            ) % {"email": plugin.email, "minutes": wait_minutes}
+            messages.warning(request, msg, fail_silently=True)
+            return HttpResponseRedirect(
+                reverse("plugin_email_token_confirm", args=(plugin.package_name,))
+            )
 
     # Delete any existing *pending* confirmation for this email so we always
     # send a fresh link.
