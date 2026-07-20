@@ -20,10 +20,17 @@
                 </p>
                 <p class="mt-2">
                     {% blocktrans trimmed %}
-                        If you have not received a confirmation email, please contact
-                        the site administrator.
+                        If you have not received a confirmation email, you can resend
+                        it to the plugin's author address using the button below.
                     {% endblocktrans %}
                 </p>
+                <form method="post" action="{% url 'plugin_resend_email_confirmation' plugin.package_name %}" class="mt-2">
+                    {% csrf_token %}
+                    <button type="submit" class="button is-small is-link">
+                        <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                        <span>{% trans "Resend confirmation email" %}</span>
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -60,14 +67,23 @@
                 {% if email_confirmation and email_confirmation.is_confirmed %}
                     <p>{% trans "This plugin's email address has already been confirmed. No further action is needed." %}</p>
                 {% elif email_confirmation and email_confirmation.is_expired %}
-                    <p>{% trans "The confirmation request has expired. Please contact the site administrator to send a new one." %}</p>
+                    <p>{% trans "The confirmation request has expired. Use the button below to send a fresh one to the plugin's author address." %}</p>
                 {% else %}
-                    <p>{% trans "No pending email confirmation was found for this plugin. Please contact the site administrator." %}</p>
+                    <p>{% trans "No pending email confirmation was found for this plugin. Use the button below to send one to the plugin's author address." %}</p>
+                {% endif %}
+                {% if not email_confirmation.is_confirmed %}
+                    <form method="post" action="{% url 'plugin_resend_email_confirmation' plugin.package_name %}" class="mt-3">
+                        {% csrf_token %}
+                        <button type="submit" class="button is-warning">
+                            <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                            <span>{% trans "Send confirmation email" %}</span>
+                        </button>
+                    </form>
                 {% endif %}
             </div>
         </div>
 
-        <a class="button is-light" href="{% url 'plugin_detail' plugin.package_name %}">
+        <a class="button is-light mt-3" href="{% url 'plugin_detail' plugin.package_name %}">
             <span class="icon"><i class="fas fa-arrow-left"></i></span>
             <span>{% trans "Back to plugin" %}</span>
         </a>

@@ -735,12 +735,33 @@ class TestResendPluginEmailConfirmationView(SetupMixin, TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/accounts/", response["Location"])
 
-    def test_non_staff_editor_gets_permission_deny(self):
+    def test_editor_can_resend(self):
+        """A plugin editor (owner/creator) may resend from the detail page."""
         self.client.force_login(self.editor_user)
+        response = self.client.post(self._url(self.plugin_a.package_name))
+        self.assertRedirects(
+            response,
+            reverse("plugin_detail", args=[self.plugin_a.package_name]),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("author@example.com", mail.outbox[0].to)
+
+    def test_unrelated_user_gets_permission_deny(self):
+        """A logged-in user who is neither editor nor staff is refused."""
+        stranger = User.objects.create_user("stranger", "stranger@org.com", "pw")
+        self.client.force_login(stranger)
         response = self.client.post(self._url(self.plugin_a.package_name))
         # Returns the permission-deny template (200 with error page)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "plugins/plugin_permission_deny.html")
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_get_not_allowed(self):
+        """The resend endpoint only accepts POST."""
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self._url(self.plugin_a.package_name))
+        self.assertEqual(response.status_code, 405)
 
     def test_staff_user_redirects_to_detail_on_success(self):
         self.client.force_login(self.staff_user)
@@ -780,6 +801,11 @@ class TestResendPluginEmailConfirmationView(SetupMixin, TestCase):
             [self.plugin_a],
             key="resend-old-key",
         )
+        # Backdate past the resend cooldown so the request is not throttled
+        # (sent_at uses auto_now_add, so it must be updated at the DB level).
+        PluginEmailConfirmation.objects.filter(pk=old_conf.pk).update(
+            sent_at=timezone.now() - datetime.timedelta(hours=1)
+        )
         self.client.force_login(self.staff_user)
         self.client.post(self._url(self.plugin_a.package_name))
         # Old pending record must be gone
@@ -795,6 +821,11 @@ class TestResendPluginEmailConfirmationView(SetupMixin, TestCase):
             "author@example.com",
             [self.plugin_a],
             key="resend-expired-key",
+        )
+        # An expired confirmation was, by definition, sent long ago; align
+        # sent_at so the cooldown does not throttle this resend.
+        PluginEmailConfirmation.objects.filter(pk=expired.pk).update(
+            sent_at=timezone.now() - datetime.timedelta(days=31)
         )
         self.client.force_login(self.staff_user)
         self.client.post(self._url(self.plugin_a.package_name))
@@ -831,6 +862,62 @@ class TestResendPluginEmailConfirmationView(SetupMixin, TestCase):
         self.assertTrue(
             PluginEmailConfirmation.objects.filter(pk=confirmed.pk).exists()
         )
+
+    # ---- detail page button -----------------------------------------------
+
+    def test_resend_button_shown_on_detail_page_for_editor(self):
+        """The plugin detail page exposes the resend form to an editor."""
+        self.client.force_login(self.editor_user)
+        response = self.client.get(
+            reverse("plugin_detail", args=[self.plugin_a.package_name])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self._url(self.plugin_a.package_name))
+
+    def test_resend_button_hidden_from_anonymous(self):
+        """Anonymous visitors never see the resend form."""
+        self.client.logout()
+        response = self.client.get(
+            reverse("plugin_detail", args=[self.plugin_a.package_name])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, self._url(self.plugin_a.package_name))
+
+    # ---- rate limiting ----------------------------------------------------
+
+    def test_second_resend_is_throttled(self):
+        """A second resend within the cooldown window sends no new email."""
+        self.client.force_login(self.staff_user)
+        self.client.post(self._url(self.plugin_a.package_name))
+        self.assertEqual(len(mail.outbox), 1)
+
+        # Immediate retry: blocked by the per-address cooldown.
+        self.client.post(self._url(self.plugin_a.package_name))
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_resend_allowed_again_after_cooldown(self):
+        """Once the cooldown has elapsed, a fresh resend is permitted."""
+        self.client.force_login(self.staff_user)
+        self.client.post(self._url(self.plugin_a.package_name))
+        self.assertEqual(len(mail.outbox), 1)
+
+        # Age the pending confirmation past the cooldown window.
+        PluginEmailConfirmation.objects.filter(
+            email="author@example.com", confirmed_at__isnull=True
+        ).update(sent_at=timezone.now() - datetime.timedelta(hours=1))
+
+        self.client.post(self._url(self.plugin_a.package_name))
+        self.assertEqual(len(mail.outbox), 2)
+
+    def test_throttle_is_per_address_not_per_plugin(self):
+        """Resending plugin_b is throttled by plugin_a's recent send (same email)."""
+        self.client.force_login(self.staff_user)
+        self.client.post(self._url(self.plugin_a.package_name))
+        self.assertEqual(len(mail.outbox), 1)
+
+        # plugin_b shares author@example.com, so it inherits the cooldown.
+        self.client.post(self._url(self.plugin_b.package_name))
+        self.assertEqual(len(mail.outbox), 1)
 
 
 # ---------------------------------------------------------------------------
