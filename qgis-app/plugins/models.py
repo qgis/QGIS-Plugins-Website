@@ -9,7 +9,7 @@ from typing import Iterable, Optional, Tuple
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models, transaction
-from django.db.models import Count, F, OuterRef, Subquery
+from django.db.models import Count, Exists, F, OuterRef, Subquery
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -327,6 +327,27 @@ class ServerPlugins(ApprovedPlugins):
         return super(ServerPlugins, self).get_queryset().filter(server=True).distinct()
 
 
+def confirmed_email_exists():
+    """
+    ``Exists`` subquery: True when the plugin's contact email has a live
+    confirmation (a confirmed, non-superseded record).
+
+    Mirrors ``Plugin.is_email_confirmed`` /
+    ``PluginEmailConfirmation.address_is_confirmed`` at the database level so
+    that review lists only surface plugins whose author email is verified.
+    A verified email is an acceptance criterion for approval, so plugins with
+    an unconfirmed email are left out of the review process until the author
+    clicks the confirmation link.
+    """
+    return Exists(
+        PluginEmailConfirmation.objects.filter(
+            email=OuterRef("email"),
+            confirmed_at__isnull=False,
+            superseded_at__isnull=True,
+        )
+    )
+
+
 class FeedbackCompletedPlugins(models.Manager):
     """
     Show only unapproved plugins with resolved feedbacks
@@ -350,12 +371,25 @@ class FeedbackCompletedPlugins(models.Manager):
             .values("approved")[:1]
         )
 
+        # A blocked latest version must be fixed by the author before review
+        latest_version_status_subquery = (
+            PluginVersion.objects.filter(plugin=OuterRef("pk"))
+            .order_by("-created_on")
+            .values("validation_status")[:1]
+        )
+
         return (
             super(FeedbackCompletedPlugins, self)
             .get_queryset()
             .filter(is_deleted=False)
-            .annotate(latest_version_approved=Subquery(latest_version_subquery))
+            .annotate(
+                latest_version_approved=Subquery(latest_version_subquery),
+                latest_version_status=Subquery(latest_version_status_subquery),
+                has_confirmed_email=confirmed_email_exists(),
+            )
             .filter(latest_version_approved=False, deprecated=False)
+            .filter(has_confirmed_email=True)
+            .exclude(latest_version_status=VALIDATION_STATUS_BLOCKED)
             .annotate(
                 total_feedback_count=Count("pluginversion__feedback"),
                 completed_feedback_count=Subquery(feedback_count_subquery),
@@ -393,6 +427,13 @@ class FeedbackReceivedPlugins(models.Manager):
             .values("approved")[:1]
         )
 
+        # A blocked latest version must be fixed by the author before review
+        latest_version_status = (
+            PluginVersion.objects.filter(plugin=OuterRef("pk"))
+            .order_by("-created_on")
+            .values("validation_status")[:1]
+        )
+
         feedback_count_subquery = (
             PluginVersionFeedback.objects.filter(
                 version=OuterRef("pluginversion"), is_completed=False
@@ -411,12 +452,16 @@ class FeedbackReceivedPlugins(models.Manager):
             )
             .annotate(
                 latest_version_approved=Subquery(latest_version),
+                latest_version_status=Subquery(latest_version_status),
+                has_confirmed_email=confirmed_email_exists(),
                 received_feedback_count=Subquery(feedback_count_subquery),
             )
             .filter(
                 latest_version_approved=False,
                 received_feedback_count__gte=1,
+                has_confirmed_email=True,
             )
+            .exclude(latest_version_status=VALIDATION_STATUS_BLOCKED)
             .extra(
                 select={
                     "average_vote": "rating_score / (rating_votes + 0.001)",
@@ -449,6 +494,13 @@ class FeedbackPendingPlugins(models.Manager):
             .values("approved")[:1]
         )
 
+        # A blocked latest version must be fixed by the author before review
+        latest_version_status = (
+            PluginVersion.objects.filter(plugin=OuterRef("pk"))
+            .order_by("-created_on")
+            .values("validation_status")[:1]
+        )
+
         return (
             super(FeedbackPendingPlugins, self)
             .get_queryset()
@@ -458,12 +510,16 @@ class FeedbackPendingPlugins(models.Manager):
             )
             .annotate(
                 latest_version_approved=Subquery(latest_version),
+                latest_version_status=Subquery(latest_version_status),
+                has_confirmed_email=confirmed_email_exists(),
                 total_feedback_count=Count("pluginversion__feedback"),
             )
             .filter(
                 latest_version_approved=False,
                 total_feedback_count=0,
+                has_confirmed_email=True,
             )
+            .exclude(latest_version_status=VALIDATION_STATUS_BLOCKED)
             .extra(
                 select={
                     "average_vote": "rating_score / (rating_votes + 0.001)",
@@ -1111,7 +1167,6 @@ class PluginVersion(models.Model):
     )
     qt6_logs = models.TextField(blank=True)
     qt6_checked_on = models.DateTimeField(null=True, blank=True)
-
 
     @property
     def is_available(self):

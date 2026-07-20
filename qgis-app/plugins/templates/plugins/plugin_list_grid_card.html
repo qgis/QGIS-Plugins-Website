@@ -107,7 +107,7 @@ is-one-third-fullhd">
                     </div>
                 </div>
                 {% if user.is_staff or user in object.editors %}
-                    {% with release=object.stable|default:object.experimental|default:object.latest_version %}
+                    {% with release=object.latest_version %}
                         {% if release %}
                             {% with security_scan=release.security_scan %}
                             <div class="is-flex mt-2">
@@ -129,7 +129,7 @@ is-one-third-fullhd">
                                 {% elif security_scan.overall_status == 'info' %}
                                     <a href="{{ release.get_absolute_url }}#security-tab" class="button is-small is-rounded is-info">
                                         <span class="icon is-small"><i class="fas fa-info"></i></span>
-                                        <span>{% trans "Scanned with informational items (latest)" %}</span>
+                                        <span>{% trans "Infromational security items (latest)" %}</span>
                                     </a>
                                 {% else %}
                                     <a href="{{ release.get_absolute_url }}#security-tab" class="button is-small is-rounded is-light">

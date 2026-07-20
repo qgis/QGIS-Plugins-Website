@@ -25,7 +25,7 @@
         <form method="post" action="{% url 'plugin_resend_email_confirmation' object.package_name %}" style="display:inline;">
             {% csrf_token %}
             <div class="tooltip">
-                <button type="submit" class="button is-small is-rounded is-warning">
+                <button type="submit" class="button is-small is-rounded">
                     <span class="icon is-small"><i class="fas fa-paper-plane"></i></span>
                     {% if email_confirmation and email_confirmation.is_expired %}
                         <span>{% trans "Email confirmation expired, resend" %}</span>

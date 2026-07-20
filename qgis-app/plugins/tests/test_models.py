@@ -1,14 +1,21 @@
 from datetime import datetime
 
-from freezegun import freeze_time
-
 from django.contrib.auth.models import User
 from django.test import TestCase
-from plugins.models import Plugin, PluginVersion, PluginVersionFeedback
+from freezegun import freeze_time
+from plugins.models import (
+    VALIDATION_STATUS_BLOCKED,
+    Plugin,
+    PluginEmailConfirmation,
+    PluginVersion,
+    PluginVersionFeedback,
+)
 
 
 class PluginVersionFeedbackTest(TestCase):
-    fixtures = ["fixtures/auth.json", ]
+    fixtures = [
+        "fixtures/auth.json",
+    ]
 
     def setUp(self):
         self.creator = User.objects.get(id=2)
@@ -20,7 +27,7 @@ class PluginVersionFeedbackTest(TestCase):
             tracker="http://example.com",
             package_name="test-feedback",
             name="test feedback",
-            about="this is a test for plugin feedbacks"
+            about="this is a test for plugin feedbacks",
         )
         self.version = PluginVersion.objects.create(
             plugin=self.plugin,
@@ -29,14 +36,14 @@ class PluginVersionFeedbackTest(TestCase):
             max_qg_version="99.99.99",
             version="0.2",
             approved=False,
-            external_deps="test"
+            external_deps="test",
         )
 
     def test_create_feedback_success(self):
         feedback = PluginVersionFeedback.objects.create(
             version=self.version,
             reviewer=self.staff,
-            task="test comment in a feedback."
+            task="test comment in a feedback.",
         )
         self.assertIsNotNone(feedback.created_on)
         self.assertFalse(feedback.is_completed)
@@ -48,7 +55,7 @@ class PluginVersionFeedbackTest(TestCase):
             version=self.version,
             reviewer=self.staff,
             task="test comment in a feedback.",
-            is_completed=True
+            is_completed=True,
         )
         self.assertEqual(feedback.completed_on, datetime(2023, 6, 30, 10, 0, 0))
         feedback.is_completed = False
@@ -57,7 +64,9 @@ class PluginVersionFeedbackTest(TestCase):
 
 
 class PluginVersionFeedbackManagerTest(TestCase):
-    fixtures = ["fixtures/auth.json", ]
+    fixtures = [
+        "fixtures/auth.json",
+    ]
 
     def setUp(self):
         self.creator = User.objects.get(id=2)
@@ -68,7 +77,8 @@ class PluginVersionFeedbackManagerTest(TestCase):
             tracker="http://example.com",
             package_name="plugin-test-1",
             name="plugin test 1",
-            about="this is a test for plugin feedbacks"
+            about="this is a test for plugin feedbacks",
+            email="author1@example.com",
         )
         self.version_1 = PluginVersion.objects.create(
             plugin=self.plugin_1,
@@ -77,12 +87,12 @@ class PluginVersionFeedbackManagerTest(TestCase):
             max_qg_version="99.99.99",
             version="1.0",
             approved=False,
-            external_deps="test"
+            external_deps="test",
         )
         self.feedback_1 = PluginVersionFeedback.objects.create(
             version=self.version_1,
             reviewer=self.staff,
-            task="test comment in a feedback."
+            task="test comment in a feedback.",
         )
         self.plugin_2 = Plugin.objects.create(
             created_by=self.creator,
@@ -90,7 +100,8 @@ class PluginVersionFeedbackManagerTest(TestCase):
             tracker="http://example.com",
             package_name="plugin-test-2",
             name="plugin test 2",
-            about="this is a test for plugin feedbacks"
+            about="this is a test for plugin feedbacks",
+            email="author2@example.com",
         )
         self.version_2 = PluginVersion.objects.create(
             plugin=self.plugin_2,
@@ -99,8 +110,15 @@ class PluginVersionFeedbackManagerTest(TestCase):
             max_qg_version="99.99.99",
             version="2.0",
             approved=False,
-            external_deps="test"
+            external_deps="test",
         )
+        # A verified contact email is required for a plugin to appear in the
+        # review lists, so confirm both by default.
+        for plugin in (self.plugin_1, self.plugin_2):
+            confirmation, _ = PluginEmailConfirmation.create_for_email(
+                plugin.email, [plugin]
+            )
+            confirmation.confirm()
 
     def test_query_plugins_objects_all(self):
         plugins = Plugin.objects.all()
@@ -114,16 +132,43 @@ class PluginVersionFeedbackManagerTest(TestCase):
         PluginVersionFeedback.objects.create(
             version=self.version_2,
             reviewer=self.staff,
-            task="test comment in a feedback for plugin 2."
+            task="test comment in a feedback for plugin 2.",
         )
         plugins = Plugin.feedback_received_objects.all()
         self.assertEqual(len(plugins), 2)
         self.assertListEqual(list(plugins), [self.plugin_1, self.plugin_2])
-
 
     def test_query_plugins_feedback_pending_objects(self):
         plugins = Plugin.feedback_pending_objects.all()
         self.assertEqual(len(plugins), 1)
         self.assertEqual(plugins[0], self.plugin_2)
 
+    def test_blocked_latest_version_excluded_from_received(self):
+        self.assertIn(self.plugin_1, list(Plugin.feedback_received_objects.all()))
+        self.version_1.validation_status = VALIDATION_STATUS_BLOCKED
+        self.version_1.save()
+        self.assertNotIn(self.plugin_1, list(Plugin.feedback_received_objects.all()))
 
+    def test_blocked_latest_version_excluded_from_pending(self):
+        self.assertIn(self.plugin_2, list(Plugin.feedback_pending_objects.all()))
+        self.version_2.validation_status = VALIDATION_STATUS_BLOCKED
+        self.version_2.save()
+        self.assertNotIn(self.plugin_2, list(Plugin.feedback_pending_objects.all()))
+
+    def test_blocked_latest_version_excluded_from_completed(self):
+        self.feedback_1.is_completed = True
+        self.feedback_1.save()
+        self.assertIn(self.plugin_1, list(Plugin.feedback_completed_objects.all()))
+        self.version_1.validation_status = VALIDATION_STATUS_BLOCKED
+        self.version_1.save()
+        self.assertNotIn(self.plugin_1, list(Plugin.feedback_completed_objects.all()))
+
+    def test_unconfirmed_email_excluded_from_received(self):
+        self.assertIn(self.plugin_1, list(Plugin.feedback_received_objects.all()))
+        PluginEmailConfirmation.objects.filter(email=self.plugin_1.email).delete()
+        self.assertNotIn(self.plugin_1, list(Plugin.feedback_received_objects.all()))
+
+    def test_unconfirmed_email_excluded_from_pending(self):
+        self.assertIn(self.plugin_2, list(Plugin.feedback_pending_objects.all()))
+        PluginEmailConfirmation.objects.filter(email=self.plugin_2.email).delete()
+        self.assertNotIn(self.plugin_2, list(Plugin.feedback_pending_objects.all()))
