@@ -38,11 +38,7 @@ logger = get_task_logger(__name__)
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def run_security_scan_task(
-    self,
-    plugin_version_pk,
-    is_manual=False,
-    auto_approve=False,
-    skipped_rule_ids=None
+    self, plugin_version_pk, is_manual=False, auto_approve=False, skipped_rule_ids=None
 ):
     """
     Run security scan on a plugin version asynchronously.
@@ -214,6 +210,9 @@ Summary:
   - Files scanned: {security_scan.files_scanned}
 
 View detailed results: {security_url}
+
+Please also make sure that the plugin email is confirmed so that it can be approved.
+If you have not confirmed your email, please check your inbox for a confirmation email or request a new one from your plugin's page.
 """
     else:
         # blocked
@@ -272,6 +271,9 @@ def _notify_staff_for_review(plugin_version: PluginVersion) -> None:
         return
 
     plugin = plugin_version.plugin
+
+    if not plugin.is_email_confirmed:
+        return
     domain = Site.objects.get_current().domain
     mail_from = settings.DEFAULT_FROM_EMAIL
 
