@@ -1676,6 +1676,14 @@ PLUGIN_EMAIL_CONFIRMATION_EXPIRY_DAYS = getattr(
     settings, "PLUGIN_EMAIL_CONFIRMATION_EXPIRY_DAYS", 30
 )
 
+# Minimum wait between two manual "resend confirmation email" requests for the
+# same author address.  Enforced against the DB (the latest unconfirmed
+# confirmation's ``sent_at``) rather than the cache, because the default cache
+# backend is a no-op ``DummyCache`` and would silently disable the limit.
+PLUGIN_EMAIL_CONFIRMATION_RESEND_INTERVAL_MINUTES = getattr(
+    settings, "PLUGIN_EMAIL_CONFIRMATION_RESEND_INTERVAL_MINUTES", 5
+)
+
 
 class PluginEmailConfirmation(models.Model):
     """
