@@ -3,9 +3,8 @@ import copy
 import datetime
 import logging
 import os
-import time
 import re
-from collections import defaultdict
+import time
 
 from django.conf import settings
 from django.contrib import messages
@@ -661,7 +660,9 @@ def plugin_upload(request):
                 if skipped_rule_codes:
                     skipped_rule_ids = list(
                         SecurityRule.objects.filter(
-                            check_code__in=skipped_rule_codes, enabled=True, can_be_skipped=True
+                            check_code__in=skipped_rule_codes,
+                            enabled=True,
+                            can_be_skipped=True,
                         ).values_list("id", flat=True)
                     )
                 else:
@@ -676,7 +677,7 @@ def plugin_upload(request):
                 run_security_scan_task.delay(
                     new_version.pk,
                     auto_approve=auto_approve,
-                    skipped_rule_ids=skipped_rule_ids
+                    skipped_rule_ids=skipped_rule_ids,
                 )
 
                 # Update plugins cached xml
@@ -741,13 +742,23 @@ def plugin_upload(request):
                 messages.error(request, e, fail_silently=True)
                 if not plugin.pk:
                     _srg = get_security_rules_grouped()
-                    return render(request, "plugins/plugin_upload.html", {
-                        "form": form,
-                        "security_rules_grouped": _srg,
-                        "total_enabled_rules": sum(g["enabled_count"] for g in _srg),
-                        "total_skippable_rules": sum(g["skippable_count"] for g in _srg),
-                        "total_mandatory_rules": sum(g["mandatory_count"] for g in _srg),
-                    })
+                    return render(
+                        request,
+                        "plugins/plugin_upload.html",
+                        {
+                            "form": form,
+                            "security_rules_grouped": _srg,
+                            "total_enabled_rules": sum(
+                                g["enabled_count"] for g in _srg
+                            ),
+                            "total_skippable_rules": sum(
+                                g["skippable_count"] for g in _srg
+                            ),
+                            "total_mandatory_rules": sum(
+                                g["mandatory_count"] for g in _srg
+                            ),
+                        },
+                    )
             return HttpResponseRedirect(plugin.get_absolute_url())
     else:
         form = PackageUploadForm(is_trusted=is_trusted)
@@ -756,13 +767,17 @@ def plugin_upload(request):
     total_enabled_rules = sum(g["enabled_count"] for g in security_rules_grouped)
     total_skippable_rules = sum(g["skippable_count"] for g in security_rules_grouped)
     total_mandatory_rules = sum(g["mandatory_count"] for g in security_rules_grouped)
-    return render(request, "plugins/plugin_upload.html", {
-        "form": form,
-        "security_rules_grouped": security_rules_grouped,
-        "total_enabled_rules": total_enabled_rules,
-        "total_skippable_rules": total_skippable_rules,
-        "total_mandatory_rules": total_mandatory_rules,
-    })
+    return render(
+        request,
+        "plugins/plugin_upload.html",
+        {
+            "form": form,
+            "security_rules_grouped": security_rules_grouped,
+            "total_enabled_rules": total_enabled_rules,
+            "total_skippable_rules": total_skippable_rules,
+            "total_mandatory_rules": total_mandatory_rules,
+        },
+    )
 
 
 @login_required
@@ -1216,11 +1231,7 @@ def resend_plugin_email_confirmation(
         email=plugin.email, confirmed_at__isnull=True
     ).delete()
 
-    # Only approved, non-deleted plugins are eligible for email confirmation,
-    # consistent with the send_email_confirmation management command.
-    all_plugins = list(
-        Plugin.approved_objects.filter(email=plugin.email, is_deleted=False)
-    )
+    all_plugins = list(Plugin.objects.filter(email=plugin.email, is_deleted=False))
     confirmation, _created = PluginEmailConfirmation.create_for_email(
         plugin.email, all_plugins
     )
@@ -2112,7 +2123,9 @@ def _version_create(request, plugin, version):
                 if skipped_rule_codes:
                     skipped_rule_ids = list(
                         SecurityRule.objects.filter(
-                            check_code__in=skipped_rule_codes, enabled=True, can_be_skipped=True
+                            check_code__in=skipped_rule_codes,
+                            enabled=True,
+                            can_be_skipped=True,
                         ).values_list("id", flat=True)
                     )
                 else:
@@ -2128,7 +2141,7 @@ def _version_create(request, plugin, version):
                 run_security_scan_task.delay(
                     new_object.pk,
                     auto_approve=auto_approve,
-                    skipped_rule_ids=skipped_rule_ids
+                    skipped_rule_ids=skipped_rule_ids,
                 )
 
                 scan_url = f"{new_object.get_absolute_url()}#security-tab"
@@ -2895,13 +2908,17 @@ def version_detail(
                 continue
             filepath, lineno, col, message = match.groups()
             path_parts = filepath.split("/")
-            relative_path = "/".join(path_parts[4:]) if len(path_parts) > 4 else filepath
-            qt6_issues.append({
-                "file": relative_path,
-                "line": lineno,
-                "col": col,
-                "message": message.strip(),
-            })
+            relative_path = (
+                "/".join(path_parts[4:]) if len(path_parts) > 4 else filepath
+            )
+            qt6_issues.append(
+                {
+                    "file": relative_path,
+                    "line": lineno,
+                    "col": col,
+                    "message": message.strip(),
+                }
+            )
 
     return render(
         request,

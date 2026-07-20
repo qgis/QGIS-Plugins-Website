@@ -305,7 +305,8 @@
             </div>
                 {% if not object.is_email_confirmed %}
                 <div class="notification is-warning">
-                    {% trans "This plugin cannot be approved until the author's contact email has been verified. A confirmation link was emailed when security validation passed; ask the author to click it, or use 'Resend confirmation'." %}
+                    {% trans "Please make sure that the plugin email is confirmed so that it can be approved." %}
+                    {% trans "For that, please check your inbox for a confirmation email or request a new one by clicking on 'Send Confirmation Email'" %}
                 </div>
                 {% endif %}
             {% endif %}
