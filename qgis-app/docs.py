@@ -47,6 +47,18 @@ def docs_security_scanning(request):
     )
 
 
+def docs_security_scanning_cli(request):
+    """
+    Renders the documentation page about running the security checks locally,
+    before upload, via the standalone CLI / pre-commit hook.
+    """
+    return render(
+        request,
+        "flatpages/docs_security_scanning_cli.html",
+        {},
+    )
+
+
 def docs_security_config_files(request):
     """
     Renders the documentation page about using tool config files (.bandit,
