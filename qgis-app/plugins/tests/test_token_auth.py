@@ -167,7 +167,7 @@ class UploadWithTokenTestCase(TestCase):
                 "package": uploaded_file,
             },
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         self.assertIn("application/json", response["Content-Type"])
         response_data = response.json()
         self.assertTrue(response_data.get("success"))
@@ -621,7 +621,7 @@ class APIResponseTestCase(TestCase):
         )
 
         # Check status code
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
 
         # Check content type
         self.assertIn("application/json", response["Content-Type"])
