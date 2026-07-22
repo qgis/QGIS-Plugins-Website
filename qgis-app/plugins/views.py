@@ -2059,7 +2059,7 @@ def version_create_api(request, package_name):
     version = PluginVersion(
         plugin=plugin, is_from_token=True, token=request.plugin_token
     )
-    return _version_create(request, plugin, version)
+    return _version_create_or_update(request, plugin, version)
 
 
 @login_required
@@ -2070,10 +2070,10 @@ def version_create(request, package_name):
             request, "plugins/version_permission_deny.html", {"plugin": plugin}
         )
     version = PluginVersion(plugin=plugin, created_by=request.user)
-    return _version_create(request, plugin, version)
+    return _version_create_or_update(request, plugin, version)
 
 
-def _version_create(request, plugin, version):
+def _version_create_or_update(request, plugin, version, is_created=True):
     """
     The form will create versions according to permissions,
     plugin name and description are updated according to the info
@@ -2096,7 +2096,7 @@ def _version_create(request, plugin, version):
         if form.is_valid():
             try:
                 new_object = form.save()
-                msg = _("The Plugin Version has been successfully created.")
+                msg = _("The Plugin Version has been successfully saved.")
 
                 # Prepare response data
                 response_data = {
@@ -2237,7 +2237,7 @@ def _version_create(request, plugin, version):
                 return JsonResponse(
                     {
                         "success": False,
-                        "error": "Failed to create version",
+                        "error": "Failed to save version",
                     },
                     status=400,
                 )
@@ -2274,7 +2274,9 @@ def _version_create(request, plugin, version):
         {
             "form": form,
             "plugin": plugin,
-            "form_title": _("New version for plugin"),
+            "version": version,
+            "form_title": _("%s version for plugin")
+            % ("New" if is_created else "Update"),
             "security_rules_grouped": security_rules_grouped,
             "total_enabled_rules": total_enabled_rules,
             "total_skippable_rules": total_skippable_rules,
@@ -2300,7 +2302,7 @@ def version_update_api(request, package_name, version):
         return JsonResponse({"detail": msg}, status=401)
     version.is_from_token = True
     version.token = request.plugin_token
-    return _version_update(request, plugin, version)
+    return _version_create_or_update(request, plugin, version)
 
 
 @login_required
@@ -2318,135 +2320,7 @@ def version_update(request, package_name, version):
         messages.error(request, msg, fail_silently=True, extra_tags="is-danger")
         return HttpResponseRedirect(plugin.get_absolute_url())
     version.created_by = request.user
-    is_trusted = request.user.has_perm("plugins.can_approve")
-    return _version_update(request, plugin, version, is_trusted=is_trusted)
-
-
-def _version_update(request, plugin, version, is_trusted=False):
-    """
-    The form will update versions according to permissions
-    """
-    is_api_request = getattr(version, "is_from_token", False)
-
-    if request.method == "POST":
-        form = PluginVersionForm(
-            request.POST,
-            request.FILES,
-            instance=version,
-            is_trusted=is_trusted,
-        )
-        if form.is_valid():
-            try:
-                new_object = form.save()
-                # update metadata for the main plugin object
-                _main_plugin_update(request, new_object.plugin, form)
-                msg = _("The Plugin Version has been successfully updated.")
-
-                # Prepare response data
-                response_data = {
-                    "success": True,
-                    "message": str(msg),
-                    "version": new_object.version,
-                    "plugin_id": new_object.plugin.pk,
-                    "version_id": new_object.pk,
-                }
-
-                if form.cleaned_data.get("multiple_parent_folders"):
-                    parent_folders = form.cleaned_data.get("multiple_parent_folders")
-                    warning_msg = _(
-                        f"Your plugin includes multiple parent folders: {parent_folders}. Please be aware that only the first folder has been recognized. It is strongly advised to have a single parent folder."
-                    )
-                    response_data["warnings"] = response_data.get("warnings", [])
-                    response_data["warnings"].append(str(warning_msg))
-                    if not is_api_request:
-                        messages.warning(
-                            request,
-                            warning_msg,
-                            fail_silently=True,
-                        )
-                    del form.cleaned_data["multiple_parent_folders"]
-
-                if form.cleaned_data.get("supportsQt6_deprecated"):
-                    qt6_warning_msg = mark_safe(
-                        _(
-                            "The <code>supportsQt6</code> flag in your plugin metadata is deprecated "
-                            "and is no longer used. QGIS 4 compatibility is now determined solely by "
-                            "the <code>qgisMaximumVersion</code> field. Please set "
-                            "<code>qgisMaximumVersion</code> to <code>4.99</code> (or higher) and "
-                            "remove <code>supportsQt6</code> from your metadata. "
-                            'See the <a href="/docs/migrate-qgis4">Migrate to QGIS 4</a> guide for more details.'
-                        )
-                    )
-                    response_data["warnings"] = response_data.get("warnings", [])
-                    response_data["warnings"].append(
-                        "The supportsQt6 flag is deprecated. See /docs/migrate-qgis4 for details."
-                    )
-                    if not is_api_request:
-                        messages.warning(
-                            request,
-                            qt6_warning_msg,
-                            fail_silently=True,
-                        )
-                    del form.cleaned_data["supportsQt6_deprecated"]
-
-                # Return JSON for API requests
-                if is_api_request:
-                    return JsonResponse(response_data, status=200)
-
-                messages.success(request, msg, fail_silently=True)
-            except (IntegrityError, ValidationError, DjangoUnicodeDecodeError) as e:
-                error_msg = str(e)
-                if is_api_request:
-                    return JsonResponse(
-                        {
-                            "success": False,
-                            "error": error_msg,
-                        },
-                        status=400,
-                    )
-                messages.error(request, e, fail_silently=True)
-                connection.close()
-            if is_api_request:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": "Failed to update version",
-                    },
-                    status=400,
-                )
-            return HttpResponseRedirect(plugin.get_absolute_url())
-        else:
-            # Form validation errors
-            if is_api_request:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": "Validation failed",
-                        "errors": form.errors,
-                    },
-                    status=400,
-                )
-    else:
-        if is_api_request:
-            return JsonResponse(
-                {
-                    "success": False,
-                    "error": "Method not allowed. Use POST to upload a package.",
-                },
-                status=405,
-            )
-        form = PluginVersionForm(instance=version, is_trusted=is_trusted)
-
-    return render(
-        request,
-        "plugins/version_form.html",
-        {
-            "form": form,
-            "plugin": plugin,
-            "version": version,
-            "form_title": _("Edit version for plugin"),
-        },
-    )
+    return _version_create_or_update(request, plugin, version, is_created=False)
 
 
 @login_required
