@@ -6,10 +6,9 @@ class PluginIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     created_by = indexes.CharField(model_attr="created_by")
     created_on = indexes.DateTimeField(model_attr="created_on")
+    downloads = indexes.IntegerField(model_attr="downloads", default=0)
     # We add this for autocomplete.
     name_auto = indexes.EdgeNgramField(model_attr="name")
-    description_auto = indexes.EdgeNgramField(model_attr="description")
-    about_auto = indexes.EdgeNgramField(model_attr="about", default="")
     package_name_auto = indexes.EdgeNgramField(model_attr="package_name", default="")
     author_auto = indexes.EdgeNgramField(model_attr="author", default="")
     created_by_auto = indexes.EdgeNgramField()
@@ -27,4 +26,6 @@ class PluginIndex(indexes.SearchIndex, indexes.Indexable):
 
     def index_queryset(self, using=None):
         """Search in approved plugins, including those marked for deletion."""
-        return Plugin.approved_objects.all()
+        return Plugin.approved_objects.select_related("created_by").prefetch_related(
+            "tags"
+        )

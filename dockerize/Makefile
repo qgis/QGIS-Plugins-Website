@@ -134,14 +134,14 @@ rebuild_index:
 	@echo "------------------------------------------------------------------"
 	@echo "Rebuild search index in PRODUCTION mode"
 	@echo "------------------------------------------------------------------"
-	@docker compose -p $(PROJECT_ID) exec uwsgi bash -c 'python manage.py rebuild_index'
+	@docker compose -p $(PROJECT_ID) exec uwsgi bash -c 'python manage.py rebuild_index --noinput --batch-size 100 --verbosity 2'
 
 uwsgi-shell:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Shelling into the uwsgi container(s)"
 	@echo "------------------------------------------------------------------"
-	@docker compose -p $(PROJECT_ID) exec uwsgi bash 
+	@docker compose -p $(PROJECT_ID) exec uwsgi bash
 
 uwsgi-reload:
 	@echo
@@ -169,7 +169,7 @@ web-shell:
 	@echo "------------------------------------------------------------------"
 	@echo "Shelling into the NGINX/WEB container(s)"
 	@echo "------------------------------------------------------------------"
-	@docker compose -p $(PROJECT_ID) exec web bash 
+	@docker compose -p $(PROJECT_ID) exec web bash
 
 web-logs:
 	@echo
