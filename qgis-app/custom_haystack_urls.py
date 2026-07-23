@@ -1,7 +1,7 @@
 # Custom haystack search to match partial strings
 
 from django.urls import re_path as url
-from haystack.query import SearchQuerySet
+from haystack.query import SQ, SearchQuerySet
 from haystack.views import SearchView
 
 
@@ -14,42 +14,20 @@ class SearchWithRequest(SearchView):
             form_kwargs = {}
 
         if self.searchqueryset is None:
-            sqs1 = SearchQuerySet().filter(
-                description_auto=self.request.GET.get("q", "")
+            q = self.request.GET.get("q", "")
+            sqs = SearchQuerySet().filter(
+                SQ(name_auto=q)
+                | SQ(text=q)
+                | SQ(package_name_auto=q)
+                | SQ(author_auto=q)
+                | SQ(created_by_auto=q)
             )
-            sqs2 = SearchQuerySet().filter(
-                about_auto=self.request.GET.get("q", "")
-            )
-            sqs3 = SearchQuerySet().filter(name_auto=self.request.GET.get("q", ""))
-            sqs4 = SearchQuerySet().filter(text=self.request.GET.get("q", ""))
-            sqs5 = SearchQuerySet().filter(
-                package_name_auto=self.request.GET.get("q", "")
-            )
-            sqs6 = SearchQuerySet().filter(
-                author_auto=self.request.GET.get("q", "")
-            )
-            sqs7 = SearchQuerySet().filter(
-                created_by_auto=self.request.GET.get("q", "")
-            )
-            form_kwargs["searchqueryset"] = sqs1 | sqs2 | sqs3 | sqs4 | sqs5 | sqs6 | sqs7
+            form_kwargs["searchqueryset"] = sqs
 
         return super(SearchWithRequest, self).build_form(form_kwargs)
 
     def get_results(self):
-        """
-        Fetches the search results and sorts them in descending order based on the 'downloads' attribute.
-        If the 'downloads' attribute is not present or the object is None, it defaults to 0.
-        """
-        results = self.form.searchqueryset
-        sort_by = 'downloads'
-        results = sorted(
-            results, 
-            key=lambda x: int(
-                getattr(x.object, sort_by)
-            ) if x.object is not None else 0,
-            reverse=True  # Reverse the sort order
-        )
-        return results
+        return self.form.searchqueryset.order_by("-downloads")
 
 
 urlpatterns = [
