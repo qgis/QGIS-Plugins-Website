@@ -1,0 +1,23 @@
+{% load i18n %}
+{% if breadcrumbs %}
+<nav class="breadcrumb plugin-breadcrumb" aria-label="{% trans "Breadcrumbs" %}">
+  <ul class="ml-0">
+    {% for crumb in breadcrumbs %}
+      <li{% if not crumb.url %} class="is-active"{% endif %}>
+        {% if crumb.url %}
+          <a href="{{ crumb.url }}" title="{{ crumb.title }}">{{ crumb.title }}</a>
+        {% else %}
+          <a href="#" aria-current="page" title="{{ crumb.title }}">{{ crumb.title }}</a>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</nav>
+{% if quick_links %}
+<nav class="plugin-quick-links tags" aria-label="{% trans "Plugin sections" %}">
+  {% for link in quick_links %}
+    <a class="tag is-rounded" href="{{ link.url }}">{{ link.title }}</a>
+  {% endfor %}
+</nav>
+{% endif %}
+{% endif %}

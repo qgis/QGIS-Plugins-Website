@@ -63,6 +63,7 @@
                     {% endblock %}
                 </div>
                 <div class="content column is-9">
+                    {% block breadcrumbs %}{% endblock %}
                     {% if messages %}
                     {% for message in messages %}
                         <div class="notification is-light {% if message.tags %} {{ message.tags }}{% endif %}">
@@ -78,7 +79,7 @@
             </div>
         </div>
     </section>
-    
+
     {% get_sustaining_members_section as sustaining_members_section %}
     {{ sustaining_members_section|safe }}
     {% include 'layouts/footer.html' %}

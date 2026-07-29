@@ -1,0 +1,44 @@
+/* Per-plugin breadcrumb trail (see plugins/includes/breadcrumbs.html). */
+
+.plugin-breadcrumb {
+  margin-bottom: 0.5rem;
+
+  /* Keep a long plugin name from wrapping the trail onto several lines.
+     Truncation is visual only, so screen readers still get the full name. */
+  li a {
+    display: inline-block;
+    max-width: 20rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+    white-space: nowrap;
+  }
+
+  li.is-active a {
+    cursor: default;
+  }
+
+  @media screen and (max-width: 768px) {
+    li a {
+      max-width: 10rem;
+    }
+  }
+}
+
+/* Quick jumps into the plugin detail tabs, shown on plugin sub-pages. */
+.plugin-quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+
+  a.tag {
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      background-color: $primary1;
+      color: $white;
+    }
+  }
+}
