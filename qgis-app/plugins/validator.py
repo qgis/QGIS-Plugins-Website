@@ -55,6 +55,17 @@ PLUGIN_BOOLEAN_METADATA = getattr(
     ("experimental", "deprecated", "server"),
 )
 
+URL_CHECK_TIMEOUT = 10  # seconds
+
+# https://stackoverflow.com/a/41950438/10268058
+# add the headers parameter to make the request appears like coming
+# from browser, otherwise some websites will return 403
+URL_CHECK_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/117.0.0.0 Safari/537.36"
+}
+
 
 def _read_from_init(initcontent, initname):
     """
@@ -118,70 +129,53 @@ def _check_url_link(urls):
         try:
             parsed_url = urlparse(url)
             return not all([parsed_url.scheme, parsed_url.netloc])
-        except Exception as e:
-            # Log the exception or handle it as per your requirement
-            print(f"Error occurred: {e}")
-            return True
-
-    def error_check_if_exist(url: str) -> bool:
-        # Check if url is exist
-        try:
-            # https://stackoverflow.com/a/41950438/10268058
-            # add the headers parameter to make the request appears like coming
-            # from browser, otherwise some websites will return 403
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/117.0.0.0 Safari/537.36"
-            }
-            req = requests.head(url, headers=headers, allow_redirects=True)
-        except requests.exceptions.SSLError:
-            req = requests.head(url, verify=False, allow_redirects=True)
         except Exception:
             return True
-        return req.status_code >= 400
 
-    def error_check_if_timeout(url: str) -> bool:
-        # Check if url exists with a timeout
+    def request_url(method: str, url: str, **kwargs):
+        # Retry without certificate verification when the site presents a
+        # certificate we cannot validate, the page itself may still be fine.
         try:
-            # Add headers to make the request appear like it's coming from a browser
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/117.0.0.0 Safari/537.36"
-            }
-            req = requests.head(
-                url, headers=headers, timeout=10, allow_redirects=True
-            )  # Set timeout to 10 seconds
-        except requests.exceptions.Timeout:
-            return True
-        except Exception:
-            return True
-        return req.status_code >= 400
-
-    timeout_url_error = [
-        item
-        for item in [
-            url_item["metadata_attr"]
-            for url_item in urls
-            if error_check_if_timeout(url_item["url"])
-        ]
-    ]
-    if len(timeout_url_error) > 0:
-        timeout_url_error_str = ", ".join(timeout_url_error)
-        raise ValidationError(
-            _(
-                f"Please provide valid url link for the following key(s) in the metadata source: <strong>{timeout_url_error_str}</strong>. "
-                "The website(s) cannot be reached within 10 seconds."
+            return method(
+                url,
+                headers=URL_CHECK_HEADERS,
+                timeout=URL_CHECK_TIMEOUT,
+                allow_redirects=True,
+                **kwargs,
             )
-        )
+        except requests.exceptions.SSLError:
+            return method(
+                url,
+                headers=URL_CHECK_HEADERS,
+                timeout=URL_CHECK_TIMEOUT,
+                allow_redirects=True,
+                verify=False,
+                **kwargs,
+            )
+
+    def unreachable_reason(url: str):
+        """
+        Returns None when the url can be reached, otherwise "timeout" or
+        "unreachable".
+        """
+        try:
+            response = request_url(requests.head, url)
+            if response.status_code >= 400:
+                # Some servers reject or mishandle HEAD requests (400, 403,
+                # 405, ...) while serving the very same url over GET, so
+                # confirm with a GET before declaring the url broken.
+                response = request_url(requests.get, url, stream=True)
+                response.close()
+        except requests.exceptions.Timeout:
+            return "timeout"
+        except Exception:
+            return "unreachable"
+        return None if response.status_code < 400 else "unreachable"
+
     url_error = [
-        item
-        for item in [
-            url_item["metadata_attr"]
-            for url_item in urls
-            if error_check(url_item["url"], url_item["forbidden_url"])
-        ]
+        url_item["metadata_attr"]
+        for url_item in urls
+        if error_check(url_item["url"], url_item["forbidden_url"])
     ]
     if len(url_error) > 0:
         url_error_str = ", ".join(url_error)
@@ -190,13 +184,24 @@ def _check_url_link(urls):
                 f"Please provide valid url link for the following key(s) in the metadata source: <strong>{url_error_str}</strong>. "
             )
         )
+
+    reasons = {
+        url_item["metadata_attr"]: unreachable_reason(url_item["url"])
+        for url_item in urls
+    }
+    timeout_url_error = [
+        attr for attr, reason in reasons.items() if reason == "timeout"
+    ]
+    if len(timeout_url_error) > 0:
+        timeout_url_error_str = ", ".join(timeout_url_error)
+        raise ValidationError(
+            _(
+                f"Please provide valid url link for the following key(s) in the metadata source: <strong>{timeout_url_error_str}</strong>. "
+                f"The website(s) cannot be reached within {URL_CHECK_TIMEOUT} seconds."
+            )
+        )
     exist_url_error = [
-        item
-        for item in [
-            url_item["metadata_attr"]
-            for url_item in urls
-            if error_check_if_exist(url_item["url"])
-        ]
+        attr for attr, reason in reasons.items() if reason == "unreachable"
     ]
     if len(exist_url_error) > 0:
         exist_url_error_str = ", ".join(exist_url_error)
@@ -486,7 +491,10 @@ def validator(package, is_new: bool = False):
     checked_metadata = []
     for k, v in metadata:
         try:
-            if not (k in PLUGIN_BOOLEAN_METADATA or k in ("icon_file", "supportsQt6_deprecated")):
+            if not (
+                k in PLUGIN_BOOLEAN_METADATA
+                or k in ("icon_file", "supportsQt6_deprecated")
+            ):
                 # v.decode('UTF-8')
                 checked_metadata.append((k, v.strip()))
             else:
