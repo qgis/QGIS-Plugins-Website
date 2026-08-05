@@ -244,6 +244,7 @@ class UploadWithTokenTestCase(TestCase):
             ).exists()
         )
 
+    @patch("plugins.validator._check_url_link", new=do_nothing)
     def test_new_version_not_auto_approved_for_untrusted_user_on_approved_plugin(self):
         """
         Security: uploading a new version via token must NOT be auto-approved
@@ -890,6 +891,7 @@ class TokenAPISkipSecurityRulesTest(TestCase):
             can_be_skipped=True,
         )
 
+    @patch("plugins.validator._check_url_link", new=do_nothing)
     @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay")
     def test_token_upload_with_skip_passes_rule_ids(self, mock_task):
         """Token API upload with skip_security_rules passes matching rule IDs to the task."""
@@ -913,6 +915,7 @@ class TokenAPISkipSecurityRulesTest(TestCase):
         _args, kwargs = mock_task.call_args
         self.assertIn(self.rule.id, kwargs.get("skipped_rule_ids", []))
 
+    @patch("plugins.validator._check_url_link", new=do_nothing)
     @patch("plugins.tasks.run_security_scan.run_security_scan_task.delay")
     def test_token_upload_without_skip_passes_empty_list(self, mock_task):
         """Token API upload without skip_security_rules passes empty list to task."""
