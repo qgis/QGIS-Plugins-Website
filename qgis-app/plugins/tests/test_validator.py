@@ -136,15 +136,26 @@ class TestValidatorMetadataPlugins(TestCase):
             ),
         )
 
-
     @mock.patch("requests.get", side_effect=requests.exceptions.SSLError())
     def test_check_url_link_ssl_error(self, mock_request):
-        urls = [{'url': "http://example.com/", 'forbidden_url': "forbidden_url", 'metadata_attr': "metadata attribute"}]
+        urls = [
+            {
+                "url": "http://example.com/",
+                "forbidden_url": "forbidden_url",
+                "metadata_attr": "metadata attribute",
+            }
+        ]
         self.assertIsNone(_check_url_link(urls))
 
     @mock.patch("requests.get", side_effect=requests.exceptions.HTTPError())
     def test_check_url_link_does_not_exist(self, mock_request):
-        urls = [{'url': "http://example.com/", 'forbidden_url': "forbidden_url", 'metadata_attr': "metadata attribute"}]
+        urls = [
+            {
+                "url": "http://example.com/",
+                "forbidden_url": "forbidden_url",
+                "metadata_attr": "metadata attribute",
+            }
+        ]
         self.assertIsNone(_check_url_link(urls))
 
 
@@ -152,11 +163,13 @@ class TestCheckUrlLinkFollowsRedirects(TestCase):
     """Regression tests for issue #342: URL validation must follow redirects
     (e.g. GitLab moving /-/issues to /-/work-items) instead of rejecting them."""
 
-    URLS = [{
-        'url': "https://gitlab.com/example/-/issues",
-        'forbidden_url': "forbidden_url",
-        'metadata_attr': "tracker",
-    }]
+    URLS = [
+        {
+            "url": "https://gitlab.com/example/-/issues",
+            "forbidden_url": "forbidden_url",
+            "metadata_attr": "tracker",
+        }
+    ]
 
     def _make_response(self, status_code):
         response = mock.Mock()
@@ -167,10 +180,9 @@ class TestCheckUrlLinkFollowsRedirects(TestCase):
     def test_head_calls_pass_allow_redirects(self, mock_head):
         mock_head.return_value = self._make_response(200)
         self.assertIsNone(_check_url_link(self.URLS))
-        # Both the timeout check and the existence check should opt in to
-        # following redirects, otherwise a 3xx response would be treated as
-        # the final status.
-        self.assertGreaterEqual(mock_head.call_count, 2)
+        # The reachability check must opt in to following redirects, otherwise
+        # a 3xx response would be treated as the final status.
+        self.assertGreaterEqual(mock_head.call_count, 1)
         for call in mock_head.call_args_list:
             self.assertTrue(
                 call.kwargs.get("allow_redirects"),
@@ -194,22 +206,77 @@ class TestCheckUrlLinkFollowsRedirects(TestCase):
 
     @mock.patch("requests.head")
     def test_ssl_error_retries_with_allow_redirects(self, mock_head):
-        # The SSL fallback path (verify=False) lives in error_check_if_exist,
-        # which runs after the timeout check passes. Both the retry and its
-        # redirect handling must stay intact.
+        # An unverifiable certificate must be retried with verify=False, and
+        # that retry must keep following redirects.
         mock_head.side_effect = [
-            self._make_response(200),         # timeout check passes
-            requests.exceptions.SSLError(),   # existence check trips SSL error
-            self._make_response(200),         # SSL-fallback retry succeeds
+            requests.exceptions.SSLError(),  # first attempt trips SSL error
+            self._make_response(200),  # SSL-fallback retry succeeds
         ]
         self.assertIsNone(_check_url_link(self.URLS))
-        ssl_retry_call = mock_head.call_args_list[2]
+        ssl_retry_call = mock_head.call_args_list[1]
         self.assertTrue(ssl_retry_call.kwargs.get("allow_redirects"))
         self.assertFalse(ssl_retry_call.kwargs.get("verify"))
 
 
+class TestCheckUrlLinkRejectsHeadOnlyFailures(TestCase):
+    """Regression tests for issue #406: servers that answer HEAD with an error
+    status (e.g. https://www.bfs.de returns 400) but serve the page over GET
+    must not be reported as unreachable, and a non-timeout failure must not be
+    reported as a timeout."""
+
+    URLS = [
+        {
+            "url": "https://www.example.com/",
+            "forbidden_url": "forbidden_url",
+            "metadata_attr": "homepage",
+        }
+    ]
+
+    def _make_response(self, status_code):
+        response = mock.Mock()
+        response.status_code = status_code
+        return response
+
+    @mock.patch("requests.get")
+    @mock.patch("requests.head")
+    def test_head_error_falls_back_to_get(self, mock_head, mock_get):
+        mock_head.return_value = self._make_response(400)
+        mock_get.return_value = self._make_response(200)
+        self.assertIsNone(_check_url_link(self.URLS))
+        self.assertEqual(mock_get.call_count, 1)
+        self.assertTrue(mock_get.call_args.kwargs.get("allow_redirects"))
+
+    @mock.patch("requests.get")
+    @mock.patch("requests.head")
+    def test_broken_url_still_rejected_after_get_fallback(self, mock_head, mock_get):
+        mock_head.return_value = self._make_response(404)
+        mock_get.return_value = self._make_response(404)
+        with self.assertRaises(ValidationError) as error:
+            _check_url_link(self.URLS)
+        self.assertIn("cannot be reached", error.exception.messages[0])
+        self.assertNotIn("seconds", error.exception.messages[0])
+
+    @mock.patch("requests.head", side_effect=requests.exceptions.ConnectionError())
+    def test_connection_error_is_not_reported_as_timeout(self, mock_head):
+        with self.assertRaises(ValidationError) as error:
+            _check_url_link(self.URLS)
+        self.assertNotIn("seconds", error.exception.messages[0])
+
+    @mock.patch("requests.head", side_effect=requests.exceptions.Timeout())
+    def test_timeout_is_reported_as_timeout(self, mock_head):
+        with self.assertRaises(ValidationError) as error:
+            _check_url_link(self.URLS)
+        self.assertIn("within 10 seconds", error.exception.messages[0])
+
+    @mock.patch("requests.head")
+    def test_head_requests_use_a_timeout(self, mock_head):
+        mock_head.return_value = self._make_response(200)
+        self.assertIsNone(_check_url_link(self.URLS))
+        self.assertEqual(mock_head.call_args.kwargs.get("timeout"), 10)
+
+
 class TestValidatorForbiddenFileFolder(TestCase):
-    """Test if zipfile is not containing forbidden folders and files """
+    """Test if zipfile is not containing forbidden folders and files"""
 
     def setUp(self) -> None:
         valid_plugins = os.path.join(TESTFILE_DIR, "valid_metadata_link.zip")
@@ -242,7 +309,7 @@ class TestValidatorForbiddenFileFolder(TestCase):
             (
                 "For security reasons, zip file cannot contain <strong> '__MACOSX' </strong> directory. "
                 "However, there is one present at the root of the archive."
-             ),
+            ),
         ):
             validator(self.package)
 
@@ -292,12 +359,12 @@ class TestValidatorForbiddenFileFolder(TestCase):
         self.assertNotEqual(
             exception.message,
             "For security reasons, zip file cannot contain <strong> '.git' </strong> directory. ",
-            "However, there is one present at the root of the archive."
+            "However, there is one present at the root of the archive.",
         )
 
 
 class TestValidatorInvalidPackageName(TestCase):
-    """Test if plugin's directory is not PEP8 compliant """
+    """Test if plugin's directory is not PEP8 compliant"""
 
     def setUp(self) -> None:
         invalid_package_name = os.path.join(TESTFILE_DIR, "invalid_package_name.zip_")
@@ -319,15 +386,17 @@ class TestValidatorInvalidPackageName(TestCase):
                 size=39889,
                 charset="utf8",
             ),
-            is_new=True
+            is_new=True,
         )
 
 
 class TestLicenseValidator(TestCase):
-    """Test if zipfile contains LICENSE file """    
+    """Test if zipfile contains LICENSE file"""
 
     def setUp(self) -> None:
-        plugin_without_license = os.path.join(TESTFILE_DIR, "plugin_without_license.zip_")
+        plugin_without_license = os.path.join(
+            TESTFILE_DIR, "plugin_without_license.zip_"
+        )
         self.plugin_package = open(plugin_without_license, "rb")
 
     def tearDown(self):
@@ -345,11 +414,12 @@ class TestLicenseValidator(TestCase):
                 content_type="application/zip",
                 size=39889,
                 charset="utf8",
-            )
+            ),
         )
 
+
 class TestMultipleParentFoldersValidator(TestCase):
-    """Test if zipfile contains multiple parent folders """    
+    """Test if zipfile contains multiple parent folders"""
 
     def setUp(self) -> None:
         multi_parents_plugin = os.path.join(TESTFILE_DIR, "multi_parents_plugin.zip_")
@@ -366,8 +436,9 @@ class TestMultipleParentFoldersValidator(TestCase):
             if key == attribute:
                 return value
         return None
+
     def test_plugin_with_multiple_parents(self):
-        result =  validator(
+        result = validator(
             InMemoryUploadedFile(
                 self.multi_parents_plugin_package,
                 field_name="tempfile",
@@ -377,11 +448,13 @@ class TestMultipleParentFoldersValidator(TestCase):
                 charset="utf8",
             )
         )
-        multiple_parent_folders = self._get_value_by_attribute('multiple_parent_folders', result)
+        multiple_parent_folders = self._get_value_by_attribute(
+            "multiple_parent_folders", result
+        )
         self.assertIsNotNone(multiple_parent_folders)
 
     def test_plugin_with_single_parent(self):
-        result =  validator(
+        result = validator(
             InMemoryUploadedFile(
                 self.single_parent_plugin_package,
                 field_name="tempfile",
@@ -391,7 +464,9 @@ class TestMultipleParentFoldersValidator(TestCase):
                 charset="utf8",
             )
         )
-        multiple_parent_folders = self._get_value_by_attribute('multiple_parent_folders', result)
+        multiple_parent_folders = self._get_value_by_attribute(
+            "multiple_parent_folders", result
+        )
         self.assertIsNone(multiple_parent_folders)
 
 
