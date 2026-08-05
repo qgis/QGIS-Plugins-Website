@@ -1,5 +1,5 @@
 {% extends BASE_TEMPLATE %}{% load i18n plugins_tagcloud simplemenu_tags static %}
-{% load plugin_utils %}
+{% load plugin_utils plugin_breadcrumbs %}
 {% block title %}
     {% plugin_title %} — {% trans "QGIS Python Plugins Repository"%}
 {% endblock %}
@@ -8,6 +8,8 @@
 <h2>{% trans "QGIS Python Plugins Repository"%}</h2>
 {% endblock %}
 
+
+{% block breadcrumbs %}{% plugin_breadcrumbs %}{% endblock %}
 
 {% block menu %}
 {{ block.super }}
