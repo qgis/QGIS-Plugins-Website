@@ -213,6 +213,26 @@ def _check_url_link(urls):
         )
 
 
+def validate_package_name_pep8(package_name: str):
+    """
+    Checks that the plugin's top level directory name is PEP 8 compliant,
+    i.e. a valid Python identifier.
+
+    This is only enforced for new plugins: plugins registered before this
+    rule was introduced must still be able to publish new versions, since
+    their package name cannot be changed without appearing as a brand new
+    plugin to their users.
+    """
+    if not package_name.isidentifier():
+        raise ValidationError(
+            _(
+                "The name of the top level directory inside the zip package must be PEP 8 compliant: "
+                "a valid Python identifier, which means it must start with a letter or underscore, "
+                "and can only contain letters, digits, and underscores."
+            )
+        )
+
+
 def validator(package, is_new: bool = False):
     """
     Analyzes a zipped file, returns metadata if success, False otherwise.
@@ -336,14 +356,8 @@ def validator(package, is_new: bool = False):
             )
         )
     # Check if package_name is PEP 8 compliant
-    if is_new and not package_name.isidentifier():
-        raise ValidationError(
-            _(
-                "The name of the top level directory inside the zip package must be PEP 8 compliant: "
-                "a valid Python identifier, which means it must start with a letter or underscore, "
-                "and can only contain letters, digits, and underscores."
-            )
-        )
+    if is_new:
+        validate_package_name_pep8(package_name)
 
     # Cuts the trailing slash
     if package_name.endswith("/"):

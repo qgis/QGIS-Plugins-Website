@@ -224,5 +224,70 @@ class PluginUploadTestCase(TestCase):
             version.pk, auto_approve=True, skipped_rule_ids=[]
         )
 
+    @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
+    @patch("plugins.validator._check_url_link", new=do_nothing)
+    @patch(
+        "plugins.tasks.run_security_scan.run_security_scan_task.delay", new=do_nothing
+    )
+    def test_upload_new_plugin_with_invalid_package_name_is_rejected(self):
+        """
+        A brand new plugin whose top level folder name is not PEP 8 compliant
+        must still be rejected.
+        """
+        self.client.login(username="testuser", password="testpassword")
+
+        invalid_plugin = os.path.join(TESTFILE_DIR, "invalid_package_name.zip_")
+        with open(invalid_plugin, "rb") as file:
+            uploaded_file = SimpleUploadedFile(
+                "invalid_package_name.zip_", file.read(), content_type="application/zip"
+            )
+
+        response = self.client.post(self.url, {"package": uploaded_file})
+
+        self.assertEqual(response.status_code, 200)
+        form = response.context["form"]
+        self.assertFalse(form.is_valid())
+        self.assertIn("PEP 8 compliant", str(form.errors))
+        self.assertFalse(Plugin.objects.filter(package_name="test-modul").exists())
+
+    @patch("plugins.tasks.generate_plugins_xml", new=do_nothing)
+    @patch("plugins.validator._check_url_link", new=do_nothing)
+    @patch(
+        "plugins.tasks.run_security_scan.run_security_scan_task.delay", new=do_nothing
+    )
+    def test_upload_new_version_of_plugin_with_invalid_package_name(self):
+        """
+        Regression test for issue #400: uploading a new version of an already
+        registered plugin whose folder name predates the PEP 8 rule must be
+        accepted as an update instead of being validated as a new plugin.
+        """
+        self.client.login(username="testuser", password="testpassword")
+
+        plugin = Plugin.objects.create(
+            name="Test Plugin",
+            package_name="test-modul",
+            created_by=self.user,
+            author="Kartoza",
+            email="test@example.com",
+            description="I am here for testing purpose",
+            about="I was built for testing purpose",
+            tracker="https://qgis.org/",
+            repository="https://qgis.org/",
+        )
+
+        invalid_plugin = os.path.join(TESTFILE_DIR, "invalid_package_name.zip_")
+        with open(invalid_plugin, "rb") as file:
+            uploaded_file = SimpleUploadedFile(
+                "invalid_package_name.zip_", file.read(), content_type="application/zip"
+            )
+
+        response = self.client.post(self.url, {"package": uploaded_file})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Plugin.objects.filter(package_name="test-modul").count(), 1)
+        self.assertTrue(
+            PluginVersion.objects.filter(plugin=plugin, version="0.0.1").exists()
+        )
+
     def tearDown(self):
         self.client.logout()

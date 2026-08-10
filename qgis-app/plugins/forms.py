@@ -12,7 +12,7 @@ from plugins.models import (
     PluginVersion,
     SecurityRule,
 )
-from plugins.validator import validator
+from plugins.validator import validate_package_name_pep8, validator
 from taggit.forms import TagField
 
 
@@ -340,12 +340,22 @@ class PackageUploadForm(forms.Form):
         """
         package = self.cleaned_data.get("package")
         try:
-            self.cleaned_data.update(validator(package, is_new=True))
+            self.cleaned_data.update(validator(package))
         except ValidationError as e:
             msg = _(
                 "There were errors reading plugin package (please check also your plugin's metadata)."
             )
             raise ValidationError(mark_safe("%s %s" % (msg, ",".join(e.messages))))
+
+        # This form handles both new plugins and updates of existing ones, so the
+        # PEP 8 package name check can only be applied once we know whether the
+        # package name matches an already registered plugin. Existing plugins
+        # keep their historical (non compliant) folder name, see issue #400.
+        if not Plugin.objects.filter(
+            package_name=self.cleaned_data["package_name"]
+        ).exists():
+            validate_package_name_pep8(self.cleaned_data["package_name"])
+
         # Disabled: now the PackageUploadForm also accepts updates
         # if Plugin.objects.filter(package_name = self.cleaned_data['package_name']).count():
         #    raise ValidationError(_('A plugin with this package name (%s) already exists. To update an existing plugin, you should open the plugin\'s details view and add a new version from there.') % self.cleaned_data['package_name'])
