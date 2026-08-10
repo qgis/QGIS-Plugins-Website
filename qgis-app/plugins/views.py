@@ -145,6 +145,20 @@ def send_upload_confirmation_email(plugin_version):
     )
 
 
+def get_upload_message(scan_url: str) -> str:
+    """
+    Generate a message for the plugin upload confirmation form
+    """
+    return _(
+        "Your plugin is being validated. Security and quality checks are "
+        "running in the background. You will receive an email with the results. "
+        f"<a href='{scan_url}'>Check validation status</a>. <br/>"
+        "Once the plugin process passes the automated checks, "
+        "it will still need manual approval, this could take from couple "
+        "of minutes to days depending on availability of volunteer."
+    )
+
+
 def send_mail_wrapper(subject, message, mail_from, recipients, fail_silently=True):
     if settings.DEBUG:
         logging.debug("Mail not sent (DEBUG=True)")
@@ -685,15 +699,7 @@ def plugin_upload(request):
 
                 # The version is awaiting security validation, no immediate approval
                 scan_url = f"{new_version.get_absolute_url()}#security-tab"
-                warnings.append(
-                    mark_safe(
-                        _(
-                            "Your plugin is being validated. Security and quality checks are "
-                            "running in the background. You will receive an email with the results. "
-                            f"<a href='{scan_url}'>Check validation status</a>"
-                        )
-                    )
-                )
+                warnings.append(mark_safe(get_upload_message(scan_url)))
                 if not form.cleaned_data.get("metadata_source") == "metadata.txt":
                     msg = _(
                         "Your plugin does not contain a metadata.txt file, metadata have been read from the __init__.py file. This is deprecated and its support will eventually cease."
@@ -2161,13 +2167,7 @@ def _version_create_or_update(request, plugin, version, is_created=True):
                 if not is_api_request:
                     messages.info(
                         request,
-                        mark_safe(
-                            _(
-                                "Security and quality checks are running in the background. "
-                                "You will receive an email with the results. "
-                                f"<a href='{scan_url}'>Check validation status</a>"
-                            )
-                        ),
+                        mark_safe(get_upload_message(scan_url)),
                         fail_silently=True,
                     )
 
