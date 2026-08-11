@@ -199,6 +199,8 @@ Plugin details: {version_url}
             status_msg = "Your plugin has been automatically approved and is now available for download."
         else:
             status_msg = "Your plugin is ready for review by an approver."
+            status_msg += " This could take from couple of minutes to days depending on"
+            status_msg += " availability of volunteer."
         message = f"""Good news! All security and quality checks passed for your plugin.
 
 Plugin: {plugin.name}
