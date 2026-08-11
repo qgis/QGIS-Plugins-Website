@@ -16,6 +16,7 @@ import requests
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.forms import ValidationError
+from django.utils.html import escape
 from django.utils.translation import gettext_lazy as _
 
 PLUGIN_MAX_UPLOAD_SIZE = getattr(settings, "PLUGIN_MAX_UPLOAD_SIZE", 25000000)  # 25 mb
@@ -55,16 +56,41 @@ PLUGIN_BOOLEAN_METADATA = getattr(
     ("experimental", "deprecated", "server"),
 )
 
-URL_CHECK_TIMEOUT = 10  # seconds
+URL_CHECK_TIMEOUT = getattr(settings, "URL_CHECK_TIMEOUT", 10)  # seconds per attempt
+
+# A url that stalls once is tried again before the upload is rejected. Keep the
+# product of timeout and attempts below the web server request timeout.
+URL_CHECK_ATTEMPTS = getattr(settings, "URL_CHECK_ATTEMPTS", 2)
 
 # https://stackoverflow.com/a/41950438/10268058
 # add the headers parameter to make the request appears like coming
 # from browser, otherwise some websites will return 403
 URL_CHECK_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/117.0.0.0 Safari/537.36"
+    "User-Agent": getattr(
+        settings,
+        "URL_CHECK_USER_AGENT",
+        "Mozilla/5.0 (X11; Linux x86_64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/140.0.0.0 Safari/537.36",
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
 }
+
+# Some hosts (Codeberg, for instance) actively reject requests that claim to be
+# a browser but are not, answering 403 to the headers above. Retry those with an
+# honest, identifiable user agent before declaring the url unreachable.
+URL_CHECK_FALLBACK_HEADERS = {
+    "User-Agent": getattr(
+        settings,
+        "URL_CHECK_FALLBACK_USER_AGENT",
+        "QGIS-Plugins-Website/1.0 (+https://plugins.qgis.org; link validator)",
+    ),
+    "Accept": "*/*",
+}
+
+# Statuses that usually mean "we do not like your client", not "this url is broken".
+URL_CHECK_RETRY_STATUSES = (401, 403, 406, 409, 429)
 
 
 def _read_from_init(initcontent, initname):
@@ -132,13 +158,13 @@ def _check_url_link(urls):
         except Exception:
             return True
 
-    def request_url(method: str, url: str, **kwargs):
+    def request_url(method: str, url: str, headers=URL_CHECK_HEADERS, **kwargs):
         # Retry without certificate verification when the site presents a
         # certificate we cannot validate, the page itself may still be fine.
         try:
             return method(
                 url,
-                headers=URL_CHECK_HEADERS,
+                headers=headers,
                 timeout=URL_CHECK_TIMEOUT,
                 allow_redirects=True,
                 **kwargs,
@@ -146,17 +172,17 @@ def _check_url_link(urls):
         except requests.exceptions.SSLError:
             return method(
                 url,
-                headers=URL_CHECK_HEADERS,
+                headers=headers,
                 timeout=URL_CHECK_TIMEOUT,
                 allow_redirects=True,
                 verify=False,
                 **kwargs,
             )
 
-    def unreachable_reason(url: str):
+    def check_once(url: str):
         """
-        Returns None when the url can be reached, otherwise "timeout" or
-        "unreachable".
+        Single reachability attempt. Returns (None, None) when the url can be
+        reached, otherwise a ("timeout"|"unreachable", detail) tuple.
         """
         try:
             response = request_url(requests.head, url)
@@ -166,11 +192,37 @@ def _check_url_link(urls):
                 # confirm with a GET before declaring the url broken.
                 response = request_url(requests.get, url, stream=True)
                 response.close()
+            if response.status_code in URL_CHECK_RETRY_STATUSES:
+                # The host is up but refuses our browser-like user agent, ask
+                # again identifying ourselves honestly.
+                response = request_url(
+                    requests.get,
+                    url,
+                    headers=URL_CHECK_FALLBACK_HEADERS,
+                    stream=True,
+                )
+                response.close()
         except requests.exceptions.Timeout:
-            return "timeout"
-        except Exception:
-            return "unreachable"
-        return None if response.status_code < 400 else "unreachable"
+            return "timeout", _("no response within %s seconds") % URL_CHECK_TIMEOUT
+        except Exception as e:
+            return "unreachable", type(e).__name__
+        if response.status_code < 400:
+            return None, None
+        return "unreachable", _("HTTP status %s") % response.status_code
+
+    def unreachable_reason(url: str):
+        """
+        Like check_once, but a stalled response is retried before it fails the
+        upload: hosts such as Codeberg intermittently take a very long time to
+        answer, and a single slow response should not block a plugin release.
+        """
+        for attempt in range(URL_CHECK_ATTEMPTS):
+            reason, detail = check_once(url)
+            if reason != "timeout":
+                return reason, detail
+        return "timeout", _(
+            "no response within %(timeout)s seconds, after %(attempts)s attempts"
+        ) % {"timeout": URL_CHECK_TIMEOUT, "attempts": URL_CHECK_ATTEMPTS}
 
     url_error = [
         url_item["metadata_attr"]
@@ -185,30 +237,47 @@ def _check_url_link(urls):
             )
         )
 
-    reasons = {
-        url_item["metadata_attr"]: unreachable_reason(url_item["url"])
+    # Report the url that was actually tested and why it failed, otherwise the
+    # uploader cannot tell which link (or which value of it) is the problem.
+    def format_failures(failures):
+        # The url comes straight from the uploaded metadata.txt and the message
+        # is rendered as html, so escape it.
+        return "<br />".join(
+            f"<strong>{attr}</strong>: <code>{escape(url)}</code> ({detail})"
+            for attr, url, detail in failures
+        )
+
+    reasons = [
+        (url_item["metadata_attr"], url_item["url"])
+        + unreachable_reason(url_item["url"])
         for url_item in urls
-    }
+    ]
     timeout_url_error = [
-        attr for attr, reason in reasons.items() if reason == "timeout"
+        (attr, url, detail)
+        for attr, url, reason, detail in reasons
+        if reason == "timeout"
     ]
     if len(timeout_url_error) > 0:
-        timeout_url_error_str = ", ".join(timeout_url_error)
         raise ValidationError(
             _(
-                f"Please provide valid url link for the following key(s) in the metadata source: <strong>{timeout_url_error_str}</strong>. "
-                f"The website(s) cannot be reached within {URL_CHECK_TIMEOUT} seconds."
+                "The following url(s) in the metadata source could not be reached "
+                f"within the {URL_CHECK_TIMEOUT} seconds timeout:<br />"
+                f"{format_failures(timeout_url_error)}<br />"
+                "Please check the link(s), or try again later if the server is "
+                "temporarily slow."
             )
         )
     exist_url_error = [
-        attr for attr, reason in reasons.items() if reason == "unreachable"
+        (attr, url, detail)
+        for attr, url, reason, detail in reasons
+        if reason == "unreachable"
     ]
     if len(exist_url_error) > 0:
-        exist_url_error_str = ", ".join(exist_url_error)
         raise ValidationError(
             _(
-                f"Please provide valid url link for the following key(s) in the metadata source: <strong>{exist_url_error_str}</strong>. "
-                "The website(s) cannot be reached."
+                "The following url(s) in the metadata source could not be reached:"
+                f"<br />{format_failures(exist_url_error)}<br />"
+                "Please provide valid url link(s) in the metadata source."
             )
         )
 
