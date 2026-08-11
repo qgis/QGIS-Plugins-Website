@@ -5,7 +5,12 @@ import requests
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test import TestCase
-from plugins.validator import _check_url_link, validator
+from plugins.validator import (
+    URL_CHECK_FALLBACK_HEADERS,
+    URL_CHECK_TIMEOUT,
+    _check_url_link,
+    validator,
+)
 
 TESTFILE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "testfiles"))
 
@@ -253,26 +258,91 @@ class TestCheckUrlLinkRejectsHeadOnlyFailures(TestCase):
         mock_get.return_value = self._make_response(404)
         with self.assertRaises(ValidationError) as error:
             _check_url_link(self.URLS)
-        self.assertIn("cannot be reached", error.exception.messages[0])
-        self.assertNotIn("seconds", error.exception.messages[0])
+        self.assertIn("could not be reached", error.exception.messages[0])
+        self.assertNotIn("timeout", error.exception.messages[0])
 
     @mock.patch("requests.head", side_effect=requests.exceptions.ConnectionError())
     def test_connection_error_is_not_reported_as_timeout(self, mock_head):
         with self.assertRaises(ValidationError) as error:
             _check_url_link(self.URLS)
-        self.assertNotIn("seconds", error.exception.messages[0])
+        self.assertNotIn("timeout", error.exception.messages[0])
 
     @mock.patch("requests.head", side_effect=requests.exceptions.Timeout())
     def test_timeout_is_reported_as_timeout(self, mock_head):
         with self.assertRaises(ValidationError) as error:
             _check_url_link(self.URLS)
-        self.assertIn("within 10 seconds", error.exception.messages[0])
+        self.assertIn(
+            f"within the {URL_CHECK_TIMEOUT} seconds timeout",
+            error.exception.messages[0],
+        )
 
     @mock.patch("requests.head")
     def test_head_requests_use_a_timeout(self, mock_head):
         mock_head.return_value = self._make_response(200)
         self.assertIsNone(_check_url_link(self.URLS))
-        self.assertEqual(mock_head.call_args.kwargs.get("timeout"), 10)
+        self.assertEqual(mock_head.call_args.kwargs.get("timeout"), URL_CHECK_TIMEOUT)
+
+
+class TestCheckUrlLinkReportsAndRetries(TestCase):
+    """Regression tests for issue #411: hosts such as Codeberg answer 403 to our
+    browser-like user agent, and the error message must name the url that was
+    actually tested plus the reason it failed."""
+
+    URLS = [
+        {
+            "url": "https://codeberg.org/rduivenvoorde/featuregridcreator",
+            "forbidden_url": "forbidden_url",
+            "metadata_attr": "repository",
+        }
+    ]
+
+    def _make_response(self, status_code):
+        response = mock.Mock()
+        response.status_code = status_code
+        return response
+
+    @mock.patch("requests.get")
+    @mock.patch("requests.head")
+    def test_403_is_retried_with_fallback_user_agent(self, mock_head, mock_get):
+        mock_head.return_value = self._make_response(403)
+        mock_get.side_effect = [
+            self._make_response(403),  # GET fallback, still browser-like UA
+            self._make_response(200),  # retry with the honest UA succeeds
+        ]
+        self.assertIsNone(_check_url_link(self.URLS))
+        retry_headers = mock_get.call_args_list[-1].kwargs.get("headers")
+        self.assertEqual(retry_headers, URL_CHECK_FALLBACK_HEADERS)
+
+    @mock.patch("requests.get")
+    @mock.patch("requests.head")
+    def test_error_message_names_url_and_reason(self, mock_head, mock_get):
+        mock_head.return_value = self._make_response(404)
+        mock_get.return_value = self._make_response(404)
+        with self.assertRaises(ValidationError) as error:
+            _check_url_link(self.URLS)
+        message = error.exception.messages[0]
+        self.assertIn(self.URLS[0]["url"], message)
+        self.assertIn("repository", message)
+        self.assertIn("HTTP status 404", message)
+
+    @mock.patch("requests.head")
+    def test_single_stalled_response_is_retried(self, mock_head):
+        # Codeberg intermittently stalls; one slow response must not fail the
+        # upload when the retry succeeds.
+        mock_head.side_effect = [
+            requests.exceptions.Timeout(),
+            self._make_response(200),
+        ]
+        self.assertIsNone(_check_url_link(self.URLS))
+        self.assertEqual(mock_head.call_count, 2)
+
+    @mock.patch("requests.head", side_effect=requests.exceptions.Timeout())
+    def test_timeout_message_names_url(self, mock_head):
+        with self.assertRaises(ValidationError) as error:
+            _check_url_link(self.URLS)
+        message = error.exception.messages[0]
+        self.assertIn(self.URLS[0]["url"], message)
+        self.assertIn(f"{URL_CHECK_TIMEOUT} seconds", message)
 
 
 class TestValidatorForbiddenFileFolder(TestCase):
