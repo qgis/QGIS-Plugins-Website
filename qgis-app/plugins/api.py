@@ -6,7 +6,6 @@ from base64 import b64decode
 from io import BytesIO
 from xmlrpc.server import Fault
 
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
@@ -18,6 +17,7 @@ from plugins.models import SecurityRule
 from plugins.tasks.run_security_scan import run_security_scan_task
 from plugins.validator import validator
 from plugins.views import plugin_notify, send_upload_confirmation_email
+from plugins.vote_throttle import anonymous_vote_cookies
 from rpc4django import rpcmethod
 from taggit.models import Tag
 
@@ -158,7 +158,7 @@ def plugin_upload(package, auto_approve=False, **kwargs):
         run_security_scan_task.delay(
             new_version.pk,
             auto_approve=is_trusted and auto_approve,
-            skipped_rule_ids=xmlrpc_skipped_ids
+            skipped_rule_ids=xmlrpc_skipped_ids,
         )
     except IntegrityError as e:
         # Avoids error: current transaction is aborted, commands ignored until
@@ -201,36 +201,11 @@ def plugin_vote(plugin_id, vote, **kwargs):
     if not int(vote) in range(1, 6):
         msg = _("%s is not a valid vote (1-5).") % vote
         raise ValidationError(msg)
-    cookies = request.COOKIES
-    if request.user.is_anonymous:
-        # Get the cookie
-        cookie_name = "vote-%s.%s.%s" % (
-            ContentType.objects.get(app_label="plugins", model="plugin").pk,
-            plugin_id,
-            plugin.rating.field.key[:6],
-        )
-        if not request.COOKIES.get(cookie_name, False):
-            # Get the IP
-            ip_address = request.META["REMOTE_ADDR"]
-            # Check if a recent vote exists
-            rating = (
-                plugin.rating.get_ratings()
-                .filter(
-                    cookie__isnull=False,
-                    ip_address=ip_address,
-                    date_changed__gte=datetime.datetime.now()
-                    - datetime.timedelta(days=10),
-                )
-                .order_by("-date_changed")
-            )
-            # Change vote if exists
-            if len(rating):
-                cookies = {cookie_name: rating[0].cookie}
     return [
         plugin.rating.add(
             score=int(vote),
             user=request.user,
             ip_address=request.META["REMOTE_ADDR"],
-            cookies=cookies,
+            cookies=anonymous_vote_cookies(request, plugin),
         )
     ]

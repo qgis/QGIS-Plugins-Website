@@ -255,8 +255,18 @@ TAGGIT_AUTOCOMPLETE_JS_BASE_URL = MEDIA_ROOT + "/taggit-autocomplete"
 # Taggit: exclude tags with less than specified tagged items
 TAGCLOUD_COUNT_GTE = 3
 
+# Number of proxies we operate in front of the application, used by
+# middleware.XForwardedForMiddleware to decide how much of X-Forwarded-For can
+# be trusted. Our nginx faces clients directly and does not set the header, so
+# none of it is trustworthy and it is ignored.
+TRUSTED_PROXY_DEPTH = 0
+
 # ratings
 RATINGS_VOTES_PER_IP = 10000
+
+# Anonymous votes from the same address on the same plugin within this window
+# are treated as a change to the existing vote rather than a new one.
+ANONYMOUS_VOTE_WINDOW_DAYS = 10
 
 # OLWIDGET_STATIC_URL='/static/olwidget/'
 
