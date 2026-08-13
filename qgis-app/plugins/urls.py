@@ -494,12 +494,12 @@ from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
 # plugin rating
-from djangoratings.views import AddRatingFromModel
+from plugins.vote_throttle import throttled_rating_view
 
 urlpatterns += [
     url(
         r"rate/(?P<object_id>\d+)/(?P<score>\d+)/",
-        require_POST(csrf_protect(AddRatingFromModel())),
+        require_POST(csrf_protect(throttled_rating_view)),
         {
             "app_label": "plugins",
             "model": "plugin",
