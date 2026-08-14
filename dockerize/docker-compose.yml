@@ -50,6 +50,8 @@ services:
       - DATABASE_HOST=${DATABASE_HOST:-db}
       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-settings_docker}
       - DJANGO_LOCAL_SETTINGS=${DJANGO_LOCAL_SETTINGS:-settings_local.py}
+      # No default: Django refuses to start without it, which is the point.
+      - SECRET_KEY=${SECRET_KEY}
       - VIRTUAL_HOST=${VIRTUAL_HOST:-plugins.kartoza.com}
       - VIRTUAL_PORT=${VIRTUAL_PORT:-8080}
       - DEBUG=${DEBUG:-False}
@@ -148,7 +150,7 @@ services:
     working_dir: /celery_task
     command: ["celery", "-A", "plugins", "worker", "-l", "DEBUG", "-Q", "qt6"]
     env_file:
-      - .env 
+      - .env
     depends_on:
       rabbitmq:
         condition: service_healthy

@@ -62,7 +62,16 @@ STATICFILES_FINDERS = [
 
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = "y2vu=4qarl)p=g_blq_c4afk!p6u_cor1gy1k@05ro=+tf7+)g"
+#
+# Read from the environment with no fallback: this is a public repository, so a
+# literal here is a published signing key, and a default would let a
+# misconfigured deployment keep using it silently. Missing variable is a hard
+# failure at import time by design.
+#
+# Generate one with:
+#   python -c "from django.core.management.utils import get_random_secret_key
+#   print(get_random_secret_key())"
+SECRET_KEY = os.environ["SECRET_KEY"]
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
