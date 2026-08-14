@@ -90,7 +90,11 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     # Needed by rpc4django
     "plugins.middleware.HttpAuthMiddleware",
-    "django.contrib.auth.middleware.RemoteUserMiddleware",
+    # RemoteUserMiddleware is deliberately absent. AUTHENTICATION_BACKENDS does
+    # not include RemoteUserBackend, so it could never authenticate anyone, and
+    # nginx does not pass REMOTE_USER. What it did do is force_logout_if_no_header:
+    # with no REMOTE_USER present it logged out whoever HttpAuthMiddleware had
+    # just authenticated, unless a session backend key happened to be set.
     "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
     # Added by Tim for advanced loggin options
     "django.middleware.cache.FetchFromCacheMiddleware",
