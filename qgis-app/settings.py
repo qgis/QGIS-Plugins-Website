@@ -18,6 +18,18 @@ DEBUG = False
 # system time zone.
 TIME_ZONE = "America/Chicago"
 
+# Pinned explicitly. Django 5.0 changed the global default from False to True,
+# so this setting was silently flipping behaviour on upgrade: every datetime the
+# ORM reads back would be reinterpreted as UTC, and with TIME_ZONE above that
+# shifts rendered timestamps by five to six hours.
+#
+# The columns in this database were created by migrations run under USE_TZ =
+# False, so they are `timestamp without time zone`. Moving to aware datetimes
+# means converting the stored values as well as changing this flag, which is a
+# data migration and a separate piece of work. Until then this pin keeps the
+# upgrade behaviour preserving.
+USE_TZ = False
+
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = "en-us"

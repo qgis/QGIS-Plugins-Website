@@ -112,8 +112,7 @@ class PluginCreateEmptyTestCase(TestCase):
             self.assertEqual(response.status_code, 200)  # Form error, not redirect
             self.assertFalse(Plugin.objects.filter(package_name=invalid_name).exists())
             self.assertFormError(
-                response,
-                "form",
+                response.context["form"],
                 "package_name",
                 "Package name must start with a letter and can contain only ASCII letters, digits, '-' or '_'.",
             )
@@ -161,8 +160,7 @@ class PluginCreateEmptyTestCase(TestCase):
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 200)  # Form error
         self.assertFormError(
-            response,
-            "form",
+            response.context["form"],
             "package_name",
             "A plugin with a similar package name (MyPlugin) already exists.",
         )
@@ -193,8 +191,7 @@ class PluginCreateEmptyTestCase(TestCase):
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 200)  # Form error
         self.assertFormError(
-            response,
-            "form",
+            response.context["form"],
             "name",
             "A plugin with a similar name (My Awesome Plugin) already exists.",
         )
