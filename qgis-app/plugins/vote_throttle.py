@@ -7,10 +7,16 @@ submits ratings over XML-RPC without credentials. djangoratings identifies
 an anonymous voter by a cookie it issues itself, so a client that discards
 cookies is seen as a new voter on every request and can vote without limit.
 
-To close that, an anonymous vote arriving without a cookie is matched
-against recent votes from the same address on the same plugin. If one is
-found, its cookie is replayed so djangoratings treats the new vote as a
-change to the existing vote rather than an additional one.
+To close that, an anonymous vote arriving without a cookie we recognise is
+matched against recent votes from the same address on the same plugin. If
+one is found, its cookie is replayed so djangoratings treats the new vote as
+a change to the existing vote rather than an additional one.
+
+The cookie is checked against the votes we hold rather than merely being
+present, because the client controls what it sends: a made-up value would
+otherwise be enough to look like a returning voter and skip the throttle.
+settings.RATINGS_VOTES_PER_IP is enforced by djangoratings independently of
+this module and caps the same behaviour should this logic ever be wrong.
 
 This was originally written inline for the XML-RPC path only
 (plugins/api.py, 2014). It lives here so the web path shares exactly the
@@ -40,10 +46,11 @@ def vote_cookie_name(plugin):
 def anonymous_vote_cookies(request, plugin):
     """Cookies to record a vote on ``plugin`` with.
 
-    Returns ``request.COOKIES`` unchanged for authenticated users, for
-    anonymous users that already hold a vote cookie for this plugin, and when
-    no recent vote from the same address exists. Otherwise returns a copy with
-    the recent vote's cookie added, so the vote is counted as a change.
+    Returns ``request.COOKIES`` unchanged for authenticated users and for
+    anonymous users whose vote cookie matches a vote we actually hold. Anything
+    else the client sends under that cookie name is discarded and the voter is
+    identified by address instead, replaying the cookie of their recent vote so
+    it is counted as a change rather than an additional vote.
     """
     cookies = request.COOKIES
 
@@ -51,8 +58,18 @@ def anonymous_vote_cookies(request, plugin):
         return cookies
 
     cookie_name = vote_cookie_name(plugin)
-    if cookies.get(cookie_name):
+    ratings = plugin.rating.get_ratings()
+
+    # A cookie is only evidence of a previous vote if it names one. Trusting
+    # its mere presence let a client defeat the throttle entirely by sending a
+    # different made-up value on every request.
+    supplied_cookie = cookies.get(cookie_name)
+    if supplied_cookie and ratings.filter(cookie=supplied_cookie).exists():
         return cookies
+
+    # Whatever the client sent is not ours, so it must not reach djangoratings
+    # and be written as the cookie of a fresh vote.
+    cookies = {name: value for name, value in cookies.items() if name != cookie_name}
 
     ip_address = request.META.get("REMOTE_ADDR", "")
     if not ip_address:
@@ -60,8 +77,7 @@ def anonymous_vote_cookies(request, plugin):
 
     window = timedelta(days=getattr(settings, "ANONYMOUS_VOTE_WINDOW_DAYS", 10))
     recent_vote = (
-        plugin.rating.get_ratings()
-        .filter(
+        ratings.filter(
             cookie__isnull=False,
             ip_address=ip_address,
             date_changed__gte=timezone.now() - window,

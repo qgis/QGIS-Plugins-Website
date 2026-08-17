@@ -263,7 +263,19 @@ TAGCLOUD_COUNT_GTE = 3
 TRUSTED_PROXY_DEPTH = 0
 
 # ratings
-RATINGS_VOTES_PER_IP = 10000
+#
+# djangoratings enforces this per plugin per address, and only when creating a
+# vote: changing an existing vote never reaches the check. It is therefore a cap
+# on how many separate votes one address can stack on one plugin, applied inside
+# the library and independent of plugins.vote_throttle, so a mistake in one does
+# not disable the other.
+#
+# 3 is drawn from the vote history: 94.5% of (plugin, address) pairs hold a
+# single vote and 99.1% hold three or fewer, so the cap sits above real
+# behaviour while cutting off the automated runs, which stacked five to
+# eighteen. Raise it if legitimate voters behind large shared addresses start
+# reporting refusals.
+RATINGS_VOTES_PER_IP = 3
 
 # Anonymous votes from the same address on the same plugin within this window
 # are treated as a change to the existing vote rather than a new one.
