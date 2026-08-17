@@ -38,6 +38,19 @@ STATIC_URL = "/static/"
 # filenames contain a hash of their content for cache busting
 # STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
+
+# Make this unique, and don't share it with anybody.
+#
+# Read from the environment with no fallback: this is a public repository, so a
+# literal here is a published signing key, and a default would let a
+# misconfigured deployment keep using it silently. Missing variable is a hard
+# failure at import time by design.
+#
+# Generate one with:
+#   python -c "from django.core.management.utils import get_random_secret_key
+#   print(get_random_secret_key())"
+SECRET_KEY = os.environ.get("SECRET_KEY")
+
 INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
