@@ -3,11 +3,9 @@ import os
 import requests
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from preferences import preferences
 from django.conf import settings
+from plugins.utils import QGIS_VERSION_LABELS, get_version_from_label
 from preferences import preferences
-from plugins.utils import get_version_from_label
-
 
 logger = get_task_logger(__name__)
 
@@ -19,7 +17,7 @@ def generate_plugins_xml(site=""):
     :param site: site domain where the plugins will be fetched, default to
                  http://plugins.qgis.org
     """
-    logger.info('generate_plugins_xml : {}'.format(site))
+    logger.info("generate_plugins_xml : {}".format(site))
 
     if not site:
         if settings.DEFAULT_PLUGINS_SITE:
@@ -29,7 +27,7 @@ def generate_plugins_xml(site=""):
     plugins_url = "{}/plugins/plugins_new.xml".format(site)
 
     versions = preferences.SitePreference.qgis_versions
-    labels = ["latest", "stable", "ltr"]
+    labels = QGIS_VERSION_LABELS
 
     if versions:
         versions = versions.split(",")
@@ -83,7 +81,9 @@ def generate_plugins_xml(site=""):
         os.mkdir(folder_path)
 
     def fetch_and_save_xml(version_or_label, is_label=False):
-        version = get_version_from_label(version_or_label) if is_label else version_or_label
+        version = (
+            get_version_from_label(version_or_label) if is_label else version_or_label
+        )
         response = requests.get(f"{plugins_url}?qgis={version}")
 
         if response.status_code == 200:

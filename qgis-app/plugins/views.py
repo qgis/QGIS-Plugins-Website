@@ -73,7 +73,7 @@ from plugins.models import (
     vjust,
 )
 from plugins.security_utils import get_scan_badge_info, get_security_rules_grouped
-from plugins.utils import parse_remote_addr
+from plugins.utils import QGIS_VERSION_LABELS, parse_remote_addr
 from plugins.validator import PLUGIN_REQUIRED_METADATA
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
@@ -2874,6 +2874,25 @@ def _add_patch_version(version: str, additional_patch: str) -> str:
     return version
 
 
+def _clean_qgis_version(version: str) -> str:
+    """Reduce the client supplied ``qgis`` parameter to a known safe value.
+
+    Legitimate values are either a dotted version number (``3``, ``3.34``,
+    ``3.34.5``) or one of the release channel labels. Labels pass through an
+    allow list; everything else has all non digit, non dot characters stripped,
+    which leaves real version requests untouched and makes a crafted value
+    inert. This is defence in depth: the queries themselves pass the value as a
+    parameter and never interpolate it, and the value also ends up in a cached
+    XML filename.
+    """
+
+    if not version:
+        return version
+    if str(version).lower() in QGIS_VERSION_LABELS:
+        return str(version).lower()
+    return re.sub(r"[^0-9.]", "", str(version))
+
+
 @cache_page(60 * 15)
 def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
     """
@@ -2886,7 +2905,7 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
         * package_name: Plugin.package_name
 
     """
-    request_version = request.GET.get("qgis", "1.8.0")
+    request_version = _clean_qgis_version(request.GET.get("qgis", "1.8.0"))
     version_level = len(str(request_version).split(".")) - 1
     qg_version = (
         qg_version
@@ -2940,8 +2959,12 @@ def xml_plugins(request, qg_version=None, stable_only=None, package_name=None):
             pass
     else:
 
-        # Checked the cached plugins
-        qgis_version = request.GET.get("qgis", None)
+        # Checked the cached plugins. The version goes into a filename, so it
+        # is stripped to digits and dots first: today the "plugins_" prefix
+        # happens to stop "../" escaping the directory (there is no separator
+        # after it, so the first path component never resolves), but that is an
+        # accident of the format string rather than a check.
+        qgis_version = _clean_qgis_version(request.GET.get("qgis", None))
         qgis_filename = "plugins_{}.xml".format(qgis_version)
         folder_name = os.path.join(settings.MEDIA_ROOT, "cached_xmls")
         path_file = os.path.join(folder_name, qgis_filename)
@@ -3010,7 +3033,7 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
         * package_name: Plugin.package_name
 
     """
-    request_version = request.GET.get("qgis", "1.8.0")
+    request_version = _clean_qgis_version(request.GET.get("qgis", "1.8.0"))
     version_level = len(str(request_version).split(".")) - 1
     qg_version = (
         qg_version
@@ -3081,36 +3104,46 @@ def xml_plugins_new(request, qg_version=None, stable_only=None, package_name=Non
             OR "auth_user"."is_superuser" = True))
         """
 
-        sql = """
+        # The table name and the trusted-user subquery are built from _meta and
+        # from literals in this module, so they are safe to concatenate. The
+        # version bounds and the experimental flag come from the request and are
+        # passed as query parameters -- never interpolated, or a quote in the
+        # ``qgis`` parameter would break out into the surrounding statement.
+        sql = (
+            """
             SELECT DISTINCT ON (pv.plugin_id) pv.*,
-            pv.created_by_id IN %(trusted_users_ids)s AS is_trusted
-                FROM %(pv_table)s pv
+            pv.created_by_id IN """
+            + trusted_users_ids
+            + """ AS is_trusted
+                FROM """
+            + PluginVersion._meta.db_table
+            + """ pv
                 WHERE (
                     pv.approved = True
-                    AND pv."max_qg_version" >= '%(qg_version_with_patch_0)s'
-                    AND pv."min_qg_version" <= '%(qg_version_with_patch_99)s'
-                    AND pv.experimental = %(experimental)s
+                    AND pv."max_qg_version" >= %s
+                    AND pv."min_qg_version" <= %s
+                    AND pv.experimental = %s
                 )
                 ORDER BY pv.plugin_id, pv.version DESC
             """
+        )
 
-        sql_params = {
-            "pv_table": PluginVersion._meta.db_table,
-            "p_table": Plugin._meta.db_table,
-            "qg_version_with_patch_0": _add_patch_version(qg_version, "0"),
-            "qg_version_with_patch_99": _add_patch_version(qg_version, "99"),
-            "experimental": "False",
-            "trusted_users_ids": str(trusted_users_ids),
-        }
+        def sql_params(experimental):
+            return [
+                _add_patch_version(qg_version, "0"),
+                _add_patch_version(qg_version, "99"),
+                experimental,
+            ]
 
-        object_list_new = PluginVersion.objects.raw(sql % sql_params)
+        object_list_new = PluginVersion.objects.raw(sql, sql_params(False))
 
         if stable_only != "1":
             # Do the query
             object_list_new = [o for o in object_list_new]
 
-            sql_params["experimental"] = "True"
-            object_list_new += [o for o in PluginVersion.objects.raw(sql % sql_params)]
+            object_list_new += [
+                o for o in PluginVersion.objects.raw(sql, sql_params(True))
+            ]
 
     return render(
         request,
