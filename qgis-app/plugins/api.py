@@ -12,6 +12,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 # Transaction
 from django.db import IntegrityError, connection
 from django.utils.translation import gettext_lazy as _
+from djangoratings.exceptions import IPLimitReached
 from plugins.models import *
 from plugins.models import SecurityRule
 from plugins.tasks.run_security_scan import run_security_scan_task
@@ -201,11 +202,17 @@ def plugin_vote(plugin_id, vote, **kwargs):
     if not int(vote) in range(1, 6):
         msg = _("%s is not a valid vote (1-5).") % vote
         raise ValidationError(msg)
-    return [
-        plugin.rating.add(
-            score=int(vote),
-            user=request.user,
-            ip_address=request.META["REMOTE_ADDR"],
-            cookies=anonymous_vote_cookies(request, plugin),
-        )
-    ]
+    try:
+        return [
+            plugin.rating.add(
+                score=int(vote),
+                user=request.user,
+                ip_address=request.META["REMOTE_ADDR"],
+                cookies=anonymous_vote_cookies(request, plugin),
+            )
+        ]
+    except IPLimitReached:
+        # Reported as a validation error so the plugin manager shows the reason
+        # rather than an opaque XML-RPC fault.
+        msg = _("Too many votes for this plugin from your address.")
+        raise ValidationError(msg)

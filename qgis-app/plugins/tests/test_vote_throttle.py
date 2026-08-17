@@ -1,11 +1,14 @@
 from datetime import timedelta
 
 from django.contrib.auth.models import AnonymousUser, User
+from django.core.exceptions import ValidationError
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from djangoratings.exceptions import IPLimitReached
 from freezegun import freeze_time
 from middleware import XForwardedForMiddleware
+from plugins.api import plugin_vote
 from plugins.models import Plugin
 from plugins.vote_throttle import anonymous_vote_cookies, vote_cookie_name
 
@@ -113,6 +116,20 @@ class AnonymousVoteThrottleTest(TestCase):
         self.assertEqual(plugin.rating_votes, 1)
         self.assertEqual(plugin.rating_score, 1)
 
+    def test_repeated_votes_with_forged_cookies_count_once(self):
+        # A client that invents a new vote cookie on every request used to look
+        # like a new voter each time and slip past the throttle entirely.
+        cookie_name = vote_cookie_name(self.plugin)
+        url = reverse("plugin_rate", args=[self.plugin.pk, 1])
+        for attempt in range(10):
+            self.client.cookies.clear()
+            self.client.cookies[cookie_name] = "forged-%d" % attempt
+            self.client.post(url, REMOTE_ADDR="203.0.113.9")
+
+        plugin = self._reload()
+        self.assertEqual(plugin.rating_votes, 1)
+        self.assertEqual(plugin.rating_score, 1)
+
     def test_repeated_votes_replace_rather_than_accumulate(self):
         self._rate(5)
         self._rate(1)
@@ -178,13 +195,60 @@ class AnonymousVoteCookiesTest(TestCase):
         request = self._request(user=self.creator)
         self.assertEqual(anonymous_vote_cookies(request, self.plugin), {})
 
-    def test_existing_cookie_is_left_alone(self):
+    def test_cookie_naming_a_real_vote_is_left_alone(self):
+        self.plugin.rating.add(
+            score=5, user=None, ip_address="198.51.100.7", cookies={}
+        )
+        vote = self.plugin.rating.get_ratings().get()
+
         cookie_name = vote_cookie_name(self.plugin)
-        cookies = {cookie_name: "held-by-client"}
-        request = self._request(cookies=cookies)
+        request = self._request(cookies={cookie_name: vote.cookie})
         self.assertEqual(
             anonymous_vote_cookies(request, self.plugin)[cookie_name],
-            "held-by-client",
+            vote.cookie,
+        )
+
+    def test_cookie_naming_no_vote_is_discarded(self):
+        # The client chooses what it sends, so a value we have no vote for is
+        # worthless as evidence and must not stand in for one.
+        cookie_name = vote_cookie_name(self.plugin)
+        request = self._request(cookies={cookie_name: "made-up"})
+        self.assertEqual(anonymous_vote_cookies(request, self.plugin), {})
+
+    def test_forged_cookie_does_not_suppress_the_address_lookup(self):
+        self.plugin.rating.add(score=5, user=None, ip_address="203.0.113.9", cookies={})
+        vote = self.plugin.rating.get_ratings().get()
+
+        cookie_name = vote_cookie_name(self.plugin)
+        request = self._request(
+            remote_addr="203.0.113.9", cookies={cookie_name: "made-up"}
+        )
+        self.assertEqual(
+            anonymous_vote_cookies(request, self.plugin)[cookie_name],
+            vote.cookie,
+        )
+
+    def test_cookie_for_another_plugin_is_not_borrowed(self):
+        other = Plugin.objects.create(
+            created_by=self.creator,
+            repository="http://example.com",
+            tracker="http://example.com",
+            package_name="test-vote-cookies-other",
+            name="test vote cookies other",
+            about="a second plugin whose vote cookie must not be reused",
+        )
+        other.rating.add(score=5, user=None, ip_address="198.51.100.7", cookies={})
+        other_vote = other.rating.get_ratings().get()
+
+        cookie_name = vote_cookie_name(self.plugin)
+        request = self._request(cookies={cookie_name: other_vote.cookie})
+        self.assertEqual(anonymous_vote_cookies(request, self.plugin), {})
+
+    def test_unrelated_cookies_are_preserved(self):
+        cookie_name = vote_cookie_name(self.plugin)
+        request = self._request(cookies={cookie_name: "made-up", "sessionid": "abc"})
+        self.assertEqual(
+            anonymous_vote_cookies(request, self.plugin), {"sessionid": "abc"}
         )
 
     def test_recent_vote_cookie_is_replayed(self):
@@ -219,3 +283,70 @@ class AnonymousVoteCookiesTest(TestCase):
 
         request = self._request(remote_addr="")
         self.assertEqual(anonymous_vote_cookies(request, self.plugin), {})
+
+
+@override_settings(RATINGS_VOTES_PER_IP=2, ANONYMOUS_VOTE_WINDOW_DAYS=1)
+class VotesPerAddressCapTest(TestCase):
+    """djangoratings caps votes per plugin per address, independently of us."""
+
+    fixtures = ["fixtures/auth.json"]
+
+    def setUp(self):
+        self.creator = User.objects.get(id=2)
+        self.plugin = Plugin.objects.create(
+            created_by=self.creator,
+            repository="http://example.com",
+            tracker="http://example.com",
+            package_name="test-vote-ip-cap",
+            name="test vote ip cap",
+            about="this is a test for the per address vote cap",
+        )
+
+    def _vote_beyond_the_window(self, score, ip_address="203.0.113.9"):
+        """Record a vote, then age it so the throttle will not replay it.
+
+        This isolates the cap: every call is a fresh vote as far as
+        plugins.vote_throttle is concerned, which is the situation the cap
+        exists to catch.
+        """
+        self.plugin.rating.add(
+            score=score, user=None, ip_address=ip_address, cookies={}
+        )
+        # date_changed is auto_now, so bypass save() to age the votes.
+        self.plugin.rating.get_ratings().update(
+            date_changed=timezone.now() - timedelta(days=2)
+        )
+
+    def test_votes_up_to_the_cap_are_recorded(self):
+        self._vote_beyond_the_window(5)
+        self._vote_beyond_the_window(5)
+
+        self.assertEqual(self.plugin.rating.get_ratings().count(), 2)
+
+    def test_vote_past_the_cap_is_refused(self):
+        self._vote_beyond_the_window(5)
+        self._vote_beyond_the_window(5)
+
+        with self.assertRaises(IPLimitReached):
+            self._vote_beyond_the_window(5)
+
+        self.assertEqual(self.plugin.rating.get_ratings().count(), 2)
+
+    def test_cap_is_per_address(self):
+        self._vote_beyond_the_window(5)
+        self._vote_beyond_the_window(5)
+        self._vote_beyond_the_window(5, ip_address="198.51.100.7")
+
+        self.assertEqual(self.plugin.rating.get_ratings().count(), 3)
+
+    def test_rpc_reports_the_cap_as_a_validation_error(self):
+        self._vote_beyond_the_window(5)
+        self._vote_beyond_the_window(5)
+
+        request = RequestFactory().post("/", REMOTE_ADDR="203.0.113.9")
+        request.user = AnonymousUser()
+        request.COOKIES = {}
+
+        # The plugin manager should be told why, not handed an XML-RPC fault.
+        with self.assertRaises(ValidationError):
+            plugin_vote(self.plugin.pk, 5, request=request)
