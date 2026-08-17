@@ -71,7 +71,7 @@ STATICFILES_FINDERS = [
 # Generate one with:
 #   python -c "from django.core.management.utils import get_random_secret_key
 #   print(get_random_secret_key())"
-SECRET_KEY = os.environ["SECRET_KEY"]
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
