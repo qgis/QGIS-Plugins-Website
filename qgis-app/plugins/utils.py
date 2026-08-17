@@ -70,13 +70,22 @@ def parse_remote_addr(request: HttpRequest) -> str:
     return request.META.get("REMOTE_ADDR", "")
 
 
+# Release channel names accepted wherever a QGIS version number is expected.
+# These are fixed by the version.qgis.org payload rather than by deployment, so
+# they live here next to the function that resolves them rather than in
+# settings. generate_plugins_xml caches one feed per label as
+# plugins_<label>.xml, and _clean_qgis_version allows them through so those
+# cached feeds stay reachable.
+QGIS_VERSION_LABELS = ("latest", "stable", "ltr")
+
+
 def get_version_from_label(param):
     """
     Fetches the QGIS version based on the given parameter.
 
     Args:
         param (str): The parameter to determine which version to fetch.
-                     Accepts 'ltr', 'stable', or 'latest'.
+                     Accepts one of QGIS_VERSION_LABELS.
 
     Returns:
         str: The major and minor version of QGIS.
