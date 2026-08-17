@@ -59,6 +59,7 @@ RUN STATIC_ROOT=/home/web/static_baked/ \
     DATABASE_PASSWORD=build \
     DATABASE_HOST=build \
     RABBITMQ_HOST=build \
+    SECRET_KEY=build \
     DJANGO_SETTINGS_MODULE=settings_docker \
     python manage.py collectstatic --noinput --skip-checks
 
