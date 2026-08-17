@@ -3,6 +3,7 @@ import re
 
 from django import forms
 from django.forms import ModelForm, ValidationError
+from django.utils.html import format_html_join
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from plugins.models import (
@@ -184,8 +185,18 @@ class PluginVersionForm(ModelForm):
                 msg = _(
                     "There were errors reading plugin package (please check also your plugin's metadata).<br />"
                 )
+                # The validator quotes values read from the uploaded package, so
+                # each message is escaped before the whole thing is marked safe.
                 raise ValidationError(
-                    mark_safe("%s %s" % (msg, "<br />".join(e.messages)))
+                    mark_safe(
+                        "%s %s"
+                        % (
+                            msg,
+                            format_html_join(
+                                mark_safe("<br />"), "{}", ((m,) for m in e.messages)
+                            ),
+                        )
+                    )
                 )
             # Populate instance
             self.instance.min_qg_version = self.cleaned_data.get("qgisMinimumVersion")
@@ -345,7 +356,13 @@ class PackageUploadForm(forms.Form):
             msg = _(
                 "There were errors reading plugin package (please check also your plugin's metadata)."
             )
-            raise ValidationError(mark_safe("%s %s" % (msg, ",".join(e.messages))))
+            # As above: escape the validator messages, not the wrapper.
+            raise ValidationError(
+                mark_safe(
+                    "%s %s"
+                    % (msg, format_html_join(",", "{}", ((m,) for m in e.messages)))
+                )
+            )
 
         # This form handles both new plugins and updates of existing ones, so the
         # PEP 8 package name check can only be applied once we know whether the
