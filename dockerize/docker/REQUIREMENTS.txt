@@ -38,7 +38,6 @@ geoip2~=5.3
 git+https://github.com/Xpirix/django-ratings.git@d705fffe4e2c01b584327c3b7c36b6d087895158
 git+https://github.com/Xpirix/django-simplemenu.git@687ba03e73fc24b2338a3ce8390104a4b047ea0f
 git+https://github.com/metamatik/django-templatetag-sugar.git@33bc10cc560521f7932c66e677b32276e4ad6915
-importlib_metadata<5
 markdown~=3.5
 oauthlib~=3.2
 Pillow~=12.3
