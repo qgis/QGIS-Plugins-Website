@@ -28,9 +28,16 @@ flake8~=7.3
 flake8-json~=24.4
 freezegun~=1.4
 geoip2==4.5.0
-git+https://github.com/Xpirix/django-ratings.git@modernize
-git+https://github.com/Xpirix/django-simplemenu.git@modernize
-git+https://github.com/metamatik/django-templatetag-sugar.git
+# Pinned to commit SHAs, not branch names. A "@modernize" ref (or no ref at
+# all) resolves to whatever the branch tip happens to be at image build time,
+# so a force-push or a new commit upstream silently changes what we ship and
+# two builds of the same tag are not the same image. These three SHAs are the
+# commits already installed in qgis/qgis-plugins-uwsgi:latest, so pinning them
+# changes no code -- it just stops the versions from moving on their own.
+# To take an update: bump the SHA here in its own commit.
+git+https://github.com/Xpirix/django-ratings.git@d705fffe4e2c01b584327c3b7c36b6d087895158
+git+https://github.com/Xpirix/django-simplemenu.git@687ba03e73fc24b2338a3ce8390104a4b047ea0f
+git+https://github.com/metamatik/django-templatetag-sugar.git@33bc10cc560521f7932c66e677b32276e4ad6915
 importlib_metadata<5
 markdown~=3.5
 oauthlib~=3.2
