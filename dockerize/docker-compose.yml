@@ -158,7 +158,17 @@ services:
       internal:
 
   rabbitmq:
-    image: ${RABBITMQ_IMAGE:-rabbitmq:3.7-alpine}
+    # 3.13, NOT 4.x. RabbitMQ 4 removed transient non-exclusive queues, which is
+    # precisely what Celery declares for its control (pidbox), event and rpc://
+    # result queues, so a 4.x broker takes the worker down with
+    #   INTERNAL_ERROR - Feature `transient_nonexcl_queues` is deprecated
+    # Verified: on 4.3 the worker crash-loops and beat cannot schedule.
+    # 3.13 is the last line that permits them. See docs/RABBITMQ-UPGRADE.md.
+    #
+    # Moving off the old 3.7 default needs this volume recreated rather than
+    # upgraded in place. Safe here because the broker holds no durable state
+    # worth keeping. Do NOT copy that pattern to the postgres volume.
+    image: ${RABBITMQ_IMAGE:-rabbitmq:3.13-alpine}
     hostname: rabbitmq
     volumes:
       - rabbitmq:/var/lib/rabbitmq
