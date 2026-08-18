@@ -18,7 +18,7 @@ django-sortable-listview~=0.43
 django-taggit~=6.1
 django-taggit-autosuggest~=0.4
 django-taggit-templatetags
-django-tinymce==4.1.0
+django-tinymce~=5.0
 django-webpack-loader~=3.1
 djangorestframework~=3.14
 djangorestframework-simplejwt~=5.3
