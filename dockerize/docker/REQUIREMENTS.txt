@@ -8,7 +8,7 @@ django-allauth~=65.15
 django-annoying~=0.10
 django-auth-ldap~=5.3
 django-bootstrap-pagination-forked~=1.7
-django-debug-toolbar~=4.2
+django-debug-toolbar~=7.1
 django-extensions~=4.1
 django-haystack~=3.2
 django-matomo==0.1.6
