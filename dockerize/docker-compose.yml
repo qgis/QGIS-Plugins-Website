@@ -210,7 +210,13 @@ services:
   web:
     # Note you cannot scale if you use container_name
     container_name: qgis-plugins-web
-    image: nginx
+    # Pinned to the stable branch. A bare "nginx" means nginx:latest, so the
+    # internet-facing TLS terminator silently changed version on any host that
+    # happened to re-pull, and no two deploys were guaranteed identical.
+    #
+    # Deliberately NOT -alpine: sites-enabled/docker-entrypoint.sh starts with
+    # #!/usr/bin/env bash, which the alpine image does not ship.
+    image: nginx:1.30
     hostname: web
     entrypoint:
     - /etc/nginx/sites-available/docker-entrypoint.sh
@@ -270,7 +276,9 @@ services:
       internal:
 
   certbot:
-    image: certbot/certbot
+    # Pinned: this one writes to ./certbot-etc, so an unexpected major version
+    # turning up on a re-pull would run against the live certificate store.
+    image: certbot/certbot:v5.7.0
     container_name: certbot
     volumes:
       - ./webroot:/var/www/webroot
