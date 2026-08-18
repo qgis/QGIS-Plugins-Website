@@ -41,7 +41,7 @@ git+https://github.com/metamatik/django-templatetag-sugar.git@33bc10cc560521f793
 importlib_metadata<5
 markdown~=3.5
 oauthlib~=3.2
-Pillow~=10.1
+Pillow~=12.3
 psycopg2-binary~=2.9
 pyjwt~=2.8
 requests~=2.31
