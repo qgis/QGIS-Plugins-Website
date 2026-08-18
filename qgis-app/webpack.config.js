@@ -11,10 +11,20 @@ let plugins = [
   new MiniCssExtractPlugin({
     filename: 'css/[name].[contenthash].css',
   }),
+  // Supplies jQuery to bundled modules that use $ / jQuery as free variables
+  // without importing it (e.g. file_upload_widget.js).
+  //
+  // "default" is required: jQuery 4 is an ES module, so a bare 'jquery' here
+  // binds the namespace object rather than the function, and calls fail with
+  // "$ is not a function".
+  //
+  // 'window.jQuery' is deliberately NOT mapped. ProvidePlugin rewrites the
+  // configured expression wherever it appears, including on the left-hand side
+  // of an assignment, so mapping it turned the "window.jQuery = jQuery" line in
+  // index.js into a no-op and left the global unset in the production build.
   new webpack.ProvidePlugin({
-    $: 'jquery',
-    jQuery: 'jquery',
-    'window.jQuery': 'jquery',
+    $: ['jquery', 'default'],
+    jQuery: ['jquery', 'default'],
   }),
 ];
 
@@ -25,11 +35,11 @@ if (mode === 'development') {
 }
 
 
-// List of libraries to expose globally
-const exposeLibraries = [
-  { name: 'jquery', exposes: ['$', 'jQuery'] },
-  { name: 'datatables.net', exposes: ['DataTable'] },
-];
+// Globals for out-of-bundle scripts are published explicitly at the top of
+// static/js/index.js rather than through expose-loader. See the comment there:
+// expose-loader matched on require.resolve(), which resolves jQuery 4 and
+// DataTables 3 to their CJS build while webpack bundles the ESM one, so the
+// rules matched nothing and failed silently.
 
 module.exports = {
   entry: './static/js/index',
@@ -40,14 +50,6 @@ module.exports = {
   plugins: plugins,
   module: {
     rules: [
-      // Auto-generate expose-loader rules
-      ...exposeLibraries.map(lib => ({
-        test: require.resolve(lib.name),
-        loader: 'expose-loader',
-        options: {
-          exposes: lib.exposes,
-        },
-      })),
       {
         test: /\.scss$/,
         use: [

@@ -14,7 +14,6 @@
   "license": "ISC",
   "devDependencies": {
     "css-loader": "^7.1.4",
-    "expose-loader": "^5.0.1",
     "highlight.js": "^11.12.0",
     "mini-css-extract-plugin": "^2.10.2",
     "sass": "^1.102.0",
@@ -27,8 +26,8 @@
   },
   "dependencies": {
     "choices.js": "^11.0.3",
-    "jquery": "^4.0.0",
     "datatables.net": "^3.0.2",
-    "datatables.net-dt": "^3.0.2"
+    "datatables.net-dt": "^3.0.2",
+    "jquery": "^4.0.0"
   }
 }
