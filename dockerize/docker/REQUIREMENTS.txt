@@ -27,7 +27,7 @@ feedparser~=6.0
 flake8~=7.3
 flake8-json~=24.4
 freezegun~=1.4
-geoip2==4.5.0
+geoip2~=5.3
 # Pinned to commit SHAs, not branch names. A "@modernize" ref (or no ref at
 # all) resolves to whatever the branch tip happens to be at image build time,
 # so a force-push or a new commit upstream silently changes what we ship and
