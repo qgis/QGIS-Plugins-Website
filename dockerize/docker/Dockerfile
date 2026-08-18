@@ -33,16 +33,28 @@ ADD dockerize/docker/REQUIREMENTS.txt /REQUIREMENTS.txt
 
 RUN pip install --upgrade pip && pip install -r /REQUIREMENTS.txt
 
-# Install NodeJS and bulma css webpack
-RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends wget && \
-    wget --no-check-certificate https://deb.nodesource.com/setup_20.x -O /tmp/node.sh && bash /tmp/node.sh && \
+# Install NodeJS. Node 22 is the active LTS; Node 20 went into maintenance.
+#
+# Certificate verification is deliberately left ON. This downloads a shell
+# script and pipes it into bash as root, so --no-check-certificate (which was
+# here before) meant anyone able to intercept the connection could execute
+# arbitrary code inside the image at build time.
+RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends wget ca-certificates && \
+    wget https://deb.nodesource.com/setup_22.x -O /tmp/node.sh && bash /tmp/node.sh && \
     apt-get -qq update && apt-get -qq install -y nodejs build-essential
 
 WORKDIR /home/web/django_project
 # The lockfile is copied alongside package.json so `npm ci` can install the
 # exact resolved tree rather than re-resolving the caret ranges at build time.
 COPY qgis-app/package.json qgis-app/package-lock.json /home/web/django_project/
-RUN npm install --unsafe-perm -g npm@10.2.1 && npm install --unsafe-perm -g webpack@5.89.0 && npm install --unsafe-perm -g webpack-cli@5.1.4 && npm ci --unsafe-perm
+# webpack and webpack-cli are NOT installed globally: they are already
+# devDependencies, npm scripts resolve node_modules/.bin first, and the global
+# copies were pinned separately (webpack@5.89.0, webpack-cli@5.1.4) so they
+# drifted from package.json without anything noticing. npm comes from the Node
+# package rather than being pinned to an older release on top of it -- the
+# pinned npm@10.2.1 was from 2023 and dragged in its own vulnerable bundled
+# tree (tar, sigstore, brace-expansion) that had nothing to do with this app.
+RUN npm ci --unsafe-perm
 
 # Build webpack bundles at image build time — no runtime npm needed.
 RUN npm run build
