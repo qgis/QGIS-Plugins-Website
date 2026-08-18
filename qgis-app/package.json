@@ -28,7 +28,7 @@
   "dependencies": {
     "choices.js": "^11.0.3",
     "jquery": "^4.0.0",
-    "datatables.net": "^2.3.1",
-    "datatables.net-dt": "^2.3.1"
+    "datatables.net": "^3.0.2",
+    "datatables.net-dt": "^3.0.2"
   }
 }
