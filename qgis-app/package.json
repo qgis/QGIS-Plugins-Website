@@ -21,7 +21,7 @@
     "sass-loader": "^17.0.0",
     "style-loader": "^4.0.0",
     "webpack": "^5.109.2",
-    "webpack-bundle-tracker": "^2.0.1",
+    "webpack-bundle-tracker": "^3.2.4",
     "webpack-cli": "^7.2.2",
     "webpack-livereload-plugin": "^3.0.2"
   },
