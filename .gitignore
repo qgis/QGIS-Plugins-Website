@@ -59,7 +59,10 @@ docker-compose.override.yml
 # Webpack
 node_modules
 qgis-app/static/bundles
-qgis-app/package-lock.json
+# NOTE: qgis-app/package-lock.json is deliberately NOT ignored. It is the only
+# thing pinning the npm tree; without it every image build re-resolves the
+# caret ranges in package.json, so two builds of the same tag can ship
+# different JavaScript. The Dockerfile uses `npm ci`, which requires it.
 qgis-app/webpack-stats.json
 
 # Sustaining members template
