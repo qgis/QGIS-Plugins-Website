@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-"""Parse Grype CVE scan JSON output into a markdown table."""
+"""Parse Grype CVE scan JSON output into a markdown table.
+
+The table is size-capped: see scripts/report_common.py for why, and for what
+happens to the rows that do not fit.
+"""
 
 import json
 import sys
+
+from report_common import CVE_TABLE_BUDGET, render_budgeted
 
 SEVERITY_EMOJI = {
     "Critical": "🔴",
@@ -108,11 +114,16 @@ def main():
             emoji = SEVERITY_EMOJI.get(sev, "")
             summary_parts.append(f"{emoji} {counts[sev]} {sev}")
 
-    print(f"**{len(rows)} CVEs found:** {', '.join(summary_parts)}\n")
-    print("<details>")
-    print(f"<summary>CVE Details ({len(rows)} vulnerabilities)</summary>\n")
-    print("| Severity | CVSS | CVE | Package | Version | Fixed In | Description |")
-    print("|----------|------|-----|---------|---------|----------|-------------|")
+    head = (
+        f"**{len(rows)} CVEs found:** {', '.join(summary_parts)}\n\n"
+        "<details>\n"
+        f"<summary>CVE Details ({len(rows)} vulnerabilities)</summary>\n\n"
+        "| Severity | CVSS | CVE | Package | Version | Fixed In | Description |\n"
+        "|----------|------|-----|---------|---------|----------|-------------|\n"
+    )
+    tail = "\n</details>\n\n" + IMPACT_ASSESSMENT
+
+    table_rows = []
     for (
         _,
         cve_id,
@@ -125,11 +136,12 @@ def main():
         desc,
     ) in rows:
         emoji = SEVERITY_EMOJI.get(severity, "")
-        print(
-            f"| {emoji} {severity} | {cvss} | {nvd_link} | {pkg_name} | {pkg_version} | {fixed_in} | {desc} |"
+        table_rows.append(
+            f"| {emoji} {severity} | {cvss} | {nvd_link} | {pkg_name} | "
+            f"{pkg_version} | {fixed_in} | {desc} |"
         )
-    print("\n</details>\n")
-    print(IMPACT_ASSESSMENT)
+
+    print(render_budgeted(head, table_rows, tail, CVE_TABLE_BUDGET, "cve-scan.json"))
 
 
 if __name__ == "__main__":

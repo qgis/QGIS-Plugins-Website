@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-"""Parse syft SBOM JSON output into a markdown table."""
+"""Parse syft SBOM JSON output into a markdown table.
+
+The table is size-capped: see scripts/report_common.py for why, and for what
+happens to the rows that do not fit.
+"""
 
 import json
 import sys
+
+from report_common import SBOM_TABLE_BUDGET, render_budgeted
 
 
 def main():
@@ -45,14 +51,21 @@ def main():
 
     rows.sort(key=lambda r: (r[0], r[1]))
 
-    print(f"**{len(rows)} packages detected**\n")
-    print("<details>")
-    print(f"<summary>SBOM ({len(rows)} packages)</summary>\n")
-    print("| Package | Version | Type | License | Location |")
-    print("|---------|---------|------|---------|----------|")
-    for pkg_type, name, version, licenses, upstream in rows:
-        print(f"| {name} | {version} | {pkg_type} | {licenses} | {upstream} |")
-    print("\n</details>")
+    head = (
+        f"**{len(rows)} packages detected**\n\n"
+        "<details>\n"
+        f"<summary>SBOM ({len(rows)} packages)</summary>\n\n"
+        "| Package | Version | Type | License | Location |\n"
+        "|---------|---------|------|---------|----------|\n"
+    )
+    tail = "\n</details>\n"
+
+    table_rows = [
+        f"| {name} | {version} | {pkg_type} | {licenses} | {upstream} |"
+        for pkg_type, name, version, licenses, upstream in rows
+    ]
+
+    print(render_budgeted(head, table_rows, tail, SBOM_TABLE_BUDGET, "sbom.spdx.json"))
 
 
 if __name__ == "__main__":
