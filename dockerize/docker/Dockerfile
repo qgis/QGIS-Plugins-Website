@@ -39,8 +39,10 @@ RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends wget &&
     apt-get -qq update && apt-get -qq install -y nodejs build-essential
 
 WORKDIR /home/web/django_project
-COPY qgis-app/package.json /home/web/django_project/package.json
-RUN npm install --unsafe-perm -g npm@10.2.1 && npm install --unsafe-perm -g webpack@5.89.0 && npm install --unsafe-perm -g webpack-cli@5.1.4 && npm install --unsafe-perm
+# The lockfile is copied alongside package.json so `npm ci` can install the
+# exact resolved tree rather than re-resolving the caret ranges at build time.
+COPY qgis-app/package.json qgis-app/package-lock.json /home/web/django_project/
+RUN npm install --unsafe-perm -g npm@10.2.1 && npm install --unsafe-perm -g webpack@5.89.0 && npm install --unsafe-perm -g webpack-cli@5.1.4 && npm ci --unsafe-perm
 
 # Build webpack bundles at image build time — no runtime npm needed.
 RUN npm run build

@@ -3,6 +3,7 @@ node_modules/
 /playwright-report/
 /playwright/.cache/
 states
-package-lock.json
+# package-lock.json is deliberately tracked -- it is what pins the dependency
+# tree for the e2e suite. See the note in the repository root .gitignore.
 playwright-results
 *auth.json

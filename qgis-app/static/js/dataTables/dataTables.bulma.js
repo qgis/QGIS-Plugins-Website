@@ -109,13 +109,22 @@ DataTable.ext.renderer.pagingContainer.bulma = function (settings, buttonEls) {
 };
 
 DataTable.ext.renderer.layout.bulma = function ( settings, container, items ) {
-	var classes = settings.oClasses.layout;
+	// DataTables 3 renamed settings.oClasses to settings.classes, dropping the
+	// last of the Hungarian-notation objects.
+	var classes = settings.classes.layout;
 	var row = $('<div/>')
 		.attr('id', items.id || null)
 		.addClass(items.className || classes.row)
 		.appendTo( container );
 
-	DataTable.ext.renderer.layout._forLayoutRow(items, function (key, val) {
+	// DataTables 3 also removed the DataTable.ext.renderer.layout._forLayoutRow
+	// helper this used to call; the equivalent in core is now an internal,
+	// unexported function. It only walked the row's own keys, and the callback
+	// below already skips id/className itself, so a plain iteration is
+	// equivalent.
+	Object.keys(items).forEach(function (key) {
+		var val = items[key];
+
 		if (key === 'id' || key === 'className') {
 			return;
 		}
@@ -149,7 +158,7 @@ DataTable.ext.renderer.layout.bulma = function ( settings, container, items ) {
 			.css(style)
 			.append( val.contents )
 			.appendTo( row );
-	} );
+	});
 };
 
 
