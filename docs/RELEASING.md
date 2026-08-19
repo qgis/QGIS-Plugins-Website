@@ -218,3 +218,68 @@ Release notes are built from your PRs, so day to day:
 > The `docker.yml` scan is **report-only** today (`fail-build: false`) and uploads
 > results to the repo's **Security → Code scanning** tab. Once the CVE baseline is
 > clean, flip it to fail PRs above a severity cutoff.
+
+### Reading the SBOM and CVE report
+
+**GitHub truncates a release body at 125,000 characters, and does it silently** —
+the API accepts the request and returns success, so an over-long report is lost
+without any error anywhere. This is not theoretical: the `v4.2.4`, `v4.2.5` and
+`v4.2.6` bodies each measure exactly 124,999 characters, cut off mid-SBOM-row,
+with no CVE section present at all. Three releases in a row appeared to have no
+vulnerability report because the package inventory ahead of it had used up the
+whole budget.
+
+The **PR comment limit is smaller and stricter**: an issue comment body caps at
+65,536 characters, and the API *rejects* an over-long one rather than truncating
+it. The same `build-report.md` is used for both, so the comment is the binding
+constraint on report size.
+
+So the two tables in the report are **deliberately sized to fit**:
+
+- `scripts/cve_table.py` and `scripts/sbom_table.py` each get a fixed share of a
+  60,000-character budget (34,000 and 26,000), defined in
+  [`scripts/report_common.py`](../scripts/report_common.py) and sized against the
+  65,536 comment limit, not the 125,000 release limit. Budgets are measured in
+  UTF-16 code units, which is how GitHub counts — the severity emoji are astral
+  characters and cost two units each.
+- Summary lines and table headers are always emitted in full. Only rows are
+  dropped, and a note stating how many were omitted is appended whenever that
+  happens — if you do not see that note, nothing was cut.
+- **The CVE table lists only findings with a fix available.** On a Debian base
+  image the large majority of matches are advisories the distribution has
+  declined to fix or has no patch for; listing them buried the ones that mattered
+  (1201 of 1346 on the v4.3.0 scan). Those are still counted, and a line states
+  how many were left out and why, but they are not tabulated. In practice the
+  table is now short enough that it never truncates.
+
+**The attached `cve-scan.json` and `sbom.spdx.json` are the authoritative,
+complete data.** The tables in the body are a summary; always use the artifacts
+for anything more than a glance.
+
+The CVE headline reads `N actionable CVEs (of M total)`. Those numbers differ by
+a lot, and the actionable count is the one worth tracking release to release. A
+large total is mostly a statement about Debian's security policy; a non-zero
+actionable count is a statement about this project.
+
+### Where the build report appears
+
+- **On the run's Summary page** in Actions, via `$GITHUB_STEP_SUMMARY`. Note the
+  **Checks** tab deep-links to a *job's log view*, not the run summary, so
+  clicking a check will not land you on the report. That is GitHub's behaviour
+  and no workflow setting changes it.
+- **Appended to the release body** when a release is published.
+- **As a PR comment — only when the branch lives in this repository.** A pull
+  request opened from a **fork** runs with a read-only `GITHUB_TOKEN`, and a
+  `permissions:` block cannot elevate it, so the comment step 403s. It is
+  therefore gated on `head.repo.full_name == github.repository`.
+
+  This is why a PR from a personal fork gets **no build report comment**: compare
+  [#371](https://github.com/qgis/QGIS-Plugins-Website/pull/371) (head branch in
+  `qgis/`, comment present) with #425/#426 (head branch in a fork, no comment).
+  **Push the branch to this repository rather than to a fork if you want the
+  comment.** Fork PRs still get the full report in the step summary and the
+  downloadable artifacts.
+
+The generators are covered by `scripts/tests/test_report_tables.py`, run in the
+`lint` job of `test.yaml`. Change the budgets there and the tests will tell you if
+the combined output stops fitting.
