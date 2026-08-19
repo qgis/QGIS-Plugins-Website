@@ -99,21 +99,11 @@ def main():
                 pkg_version,
                 fixed_in,
                 description,
+                fix.get("state") or "unknown",
             )
         )
 
-    # Fixable first, then by severity, then by ID. When the table is truncated
-    # to fit the release body the rows that survive are the ones worth acting
-    # on, rather than an alphabetical slice of unfixable Debian advisories.
     rows.sort(key=lambda r: (r[0], r[1], r[2]))
-
-    counts = {}
-    fixable_counts = {}
-    for row in rows:
-        sev = row[3]
-        counts[sev] = counts.get(sev, 0) + 1
-        if row[0] == 0:
-            fixable_counts[sev] = fixable_counts.get(sev, 0) + 1
 
     def breakdown(by_severity):
         # Driven by SEVERITY_ORDER rather than a hardcoded list, so "Unknown"
@@ -124,23 +114,58 @@ def main():
             for sev in sorted(by_severity, key=lambda s: SEVERITY_ORDER.get(s, 5))
         )
 
-    fixable_total = sum(fixable_counts.values())
-    if fixable_total:
-        headline = (
-            f"**{fixable_total} of {len(rows)} CVEs have a fix available:** "
-            f"{breakdown(fixable_counts)}\n\n"
-            f"**All {len(rows)}:** {breakdown(counts)}\n"
+    # The table lists only findings we can act on. On a Debian-based image the
+    # great majority of matches are advisories the distribution has explicitly
+    # declined to fix or has no patch for, and listing them buries the handful
+    # that matter: the v4.3.0 report was 1346 rows of which 1201 could not be
+    # acted on at all. Those are still counted below, and the attached
+    # cve-scan.json remains the complete record.
+    actionable = [row for row in rows if row[0] == 0]
+
+    fixable_counts = {}
+    unfixable_states = {}
+    for row in rows:
+        if row[0] == 0:
+            fixable_counts[row[3]] = fixable_counts.get(row[3], 0) + 1
+        else:
+            unfixable_states[row[10]] = unfixable_states.get(row[10], 0) + 1
+
+    STATE_LABELS = {
+        "wont-fix": "upstream will not fix",
+        "not-fixed": "no patch published yet",
+        "unknown": "fix status unknown",
+    }
+    omitted = sum(unfixable_states.values())
+    if omitted:
+        detail = ", ".join(
+            f"{count} {STATE_LABELS.get(state, state)}"
+            for state, count in sorted(unfixable_states.items(), key=lambda kv: -kv[1])
+        )
+        context = (
+            f"\n{omitted} further finding{'s' if omitted != 1 else ''} "
+            f"({detail}) {'are' if omitted != 1 else 'is'} not listed: there is "
+            "nothing to upgrade to. Complete data in the attached "
+            "`cve-scan.json`.\n"
         )
     else:
-        headline = (
-            f"**{len(rows)} CVEs found, none with a fix available yet:** "
-            f"{breakdown(counts)}\n"
+        context = ""
+
+    if not actionable:
+        print(
+            f"**No actionable CVEs.** {len(rows)} finding"
+            f"{'s' if len(rows) != 1 else ''} detected, none with a fix "
+            "available.\n"
+            f"{context}"
         )
+        print(IMPACT_ASSESSMENT)
+        return
 
     head = (
-        f"{headline}\n"
+        f"**{len(actionable)} actionable CVEs** (of {len(rows)} total): "
+        f"{breakdown(fixable_counts)}\n"
+        f"{context}\n"
         "<details>\n"
-        f"<summary>CVE Details ({len(rows)} vulnerabilities, fixable first)"
+        f"<summary>Actionable CVEs ({len(actionable)} with a fix available)"
         "</summary>\n\n"
         "| Severity | CVSS | CVE | Package | Version | Fixed In | Description |\n"
         "|----------|------|-----|---------|---------|----------|-------------|\n"
@@ -159,7 +184,8 @@ def main():
         pkg_version,
         fixed_in,
         desc,
-    ) in rows:
+        _,
+    ) in actionable:
         emoji = SEVERITY_EMOJI.get(severity, "")
         table_rows.append(
             f"| {emoji} {severity} | {cvss} | {nvd_link} | {pkg_name} | "

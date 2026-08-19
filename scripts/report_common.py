@@ -30,11 +30,13 @@ RELEASE_BODY_LIMIT = 125_000
 # report.
 REPORT_BUDGET = 100_000
 
-# The CVE table gets the larger share deliberately. When the budget was
-# implicit the SBOM starved it completely; a package inventory is reference
-# material, a vulnerability list is actionable.
-CVE_TABLE_BUDGET = 60_000
-SBOM_TABLE_BUDGET = 40_000
+# The CVE table lists only findings that have a fix available, so it is far
+# smaller than the raw match count suggests -- 145 rows and ~32,000 units on the
+# v4.3.0 scan, against 1346 matches. It keeps the headroom to absorb a bad month
+# without truncating; the SBOM gets the rest, since it is a package inventory
+# that will always exceed any budget and is attached in full regardless.
+CVE_TABLE_BUDGET = 45_000
+SBOM_TABLE_BUDGET = 55_000
 
 
 def github_length(text):

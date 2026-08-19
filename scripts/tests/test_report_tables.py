@@ -124,7 +124,7 @@ class CveTableTests(unittest.TestCase):
         self.assertIn("cve-scan.json", out)
         # The summary and the closing tag must survive so the section is
         # still well-formed markdown after truncation.
-        self.assertIn("of 5000 CVEs", out)
+        self.assertIn("of 5000 total", out)
         self.assertIn("</details>", out)
 
     def test_headline_counts_only_fixable(self):
@@ -135,46 +135,57 @@ class CveTableTests(unittest.TestCase):
             make_match("CVE-4", "Low", "fixed", versions=["3.0"]),
         ]
         out = run_script(cve_table, {"matches": matches})
-        self.assertIn("**2 of 4 CVEs have a fix available:**", out)
-        self.assertIn("**All 4:**", out)
+        self.assertIn("**2 actionable CVEs** (of 4 total):", out)
+
+    def test_unfixable_findings_are_excluded_from_the_table(self):
+        matches = [
+            make_match("CVE-CRIT", "Critical", "wont-fix", pkg="unfixable-pkg"),
+            make_match("CVE-NP", "High", "not-fixed", pkg="unpatched-pkg"),
+            make_match("CVE-LOW", "Low", "fixed", pkg="fixable-pkg", versions=["9.9"]),
+        ]
+        out = run_script(cve_table, {"matches": matches})
+        self.assertIn("fixable-pkg", out)
+        # A Critical nobody can act on must not crowd out the row that matters.
+        self.assertNotIn("unfixable-pkg", out)
+        self.assertNotIn("unpatched-pkg", out)
+
+    def test_excluded_findings_are_still_counted_and_explained(self):
+        matches = [
+            make_match("CVE-1", "Low", "fixed", versions=["9.9"]),
+            make_match("CVE-2", "Critical", "wont-fix"),
+            make_match("CVE-3", "Critical", "wont-fix"),
+            make_match("CVE-4", "High", "not-fixed"),
+        ]
+        out = run_script(cve_table, {"matches": matches})
+        self.assertIn("3 further findings", out)
+        self.assertIn("2 upstream will not fix", out)
+        self.assertIn("1 no patch published yet", out)
+        self.assertIn("cve-scan.json", out)
 
     def test_headline_when_nothing_is_fixable(self):
         matches = [make_match("CVE-1", "High", "wont-fix")]
         out = run_script(cve_table, {"matches": matches})
-        self.assertIn("none with a fix available yet", out)
+        self.assertIn("**No actionable CVEs.**", out)
+        self.assertIn("1 further finding", out)
 
     def test_unknown_severity_appears_in_breakdown(self):
         # Regression: the breakdown was built from a hardcoded severity list
         # that omitted "Unknown", so the parts did not sum to the total.
         matches = [
-            make_match("CVE-1", "Critical", "wont-fix"),
-            make_match("CVE-2", "Unknown", "wont-fix"),
-            make_match("CVE-3", "Unknown", "wont-fix"),
+            make_match("CVE-1", "Critical", "fixed", versions=["1.0"]),
+            make_match("CVE-2", "Unknown", "fixed", versions=["1.0"]),
+            make_match("CVE-3", "Unknown", "fixed", versions=["1.0"]),
         ]
         out = run_script(cve_table, {"matches": matches})
-        summary = [line for line in out.splitlines() if line.startswith("**3 CVEs")][0]
+        summary = [ln for ln in out.splitlines() if ln.startswith("**3 actionable")][0]
         self.assertIn("1 Critical", summary)
         self.assertIn("2 Unknown", summary)
-
-    def test_fixable_rows_sort_ahead_of_unfixable_higher_severity(self):
-        matches = [
-            make_match("CVE-CRIT", "Critical", "wont-fix", pkg="unfixable-pkg"),
-            make_match("CVE-LOW", "Low", "fixed", pkg="fixable-pkg", versions=["9.9"]),
-        ]
-        out = run_script(cve_table, {"matches": matches})
-        data_rows = [
-            line
-            for line in out.splitlines()
-            if line.startswith("| ") and not line.startswith("| Severity")
-        ]
-        self.assertIn("fixable-pkg", data_rows[0])
-        self.assertIn("unfixable-pkg", data_rows[1])
 
     def test_missing_fix_block_is_treated_as_unfixable(self):
         match = make_match("CVE-1", "High", "fixed")
         del match["vulnerability"]["fix"]
         out = run_script(cve_table, {"matches": [match]})
-        self.assertIn("none with a fix available yet", out)
+        self.assertIn("**No actionable CVEs.**", out)
 
 
 class SbomTableTests(unittest.TestCase):
