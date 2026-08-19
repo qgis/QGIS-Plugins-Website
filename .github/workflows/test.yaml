@@ -37,6 +37,13 @@ jobs:
       - name: Run flake8
         run: flake8 --config setup.cfg
 
+      # scripts/*_table.py build the SBOM and CVE sections of the release body.
+      # A wrong output there is not a crash -- it silently truncates the release
+      # notes, which is how v4.2.4/5/6 shipped with no CVE section at all. Pure
+      # stdlib, so they run here rather than in the Django suite.
+      - name: Test the build-report table generators
+        run: python -m unittest discover -s scripts/tests -v
+
   test:
     runs-on: ubuntu-latest
     needs:
