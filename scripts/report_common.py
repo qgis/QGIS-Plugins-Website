@@ -24,19 +24,25 @@ inferred. The complete, untruncated data is always attached to the release as
 # reference; established empirically from the truncated v4.2.x release bodies.
 RELEASE_BODY_LIMIT = 125_000
 
-# What the two tables may consume between them. The remainder is headroom for
-# the image metadata table, the quick-start block, the impact assessment, and
-# the release-drafter notes that `append_body: true` prepends ahead of our
-# report.
-REPORT_BUDGET = 100_000
+# The same build-report.md is posted as a pull request comment, and an issue
+# comment body is capped at 65,536 characters. Unlike the release body, this one
+# is enforced: the API rejects the request outright rather than truncating. So
+# the comment, not the release, is the binding constraint on report size.
+COMMENT_BODY_LIMIT = 65_536
+
+# What the two tables may consume between them, sized against the smaller of the
+# two limits. The remainder is headroom for the image metadata table, the
+# quick-start block, the impact assessment, and the release-drafter notes that
+# `append_body: true` prepends ahead of our report.
+REPORT_BUDGET = 60_000
 
 # The CVE table lists only findings that have a fix available, so it is far
-# smaller than the raw match count suggests -- 145 rows and ~32,000 units on the
-# v4.3.0 scan, against 1346 matches. It keeps the headroom to absorb a bad month
-# without truncating; the SBOM gets the rest, since it is a package inventory
-# that will always exceed any budget and is attached in full regardless.
-CVE_TABLE_BUDGET = 45_000
-SBOM_TABLE_BUDGET = 55_000
+# smaller than the raw match count suggests -- 145 rows and ~31,700 units on the
+# v4.3.0 scan, against 1346 matches. It takes the larger share so it can absorb
+# a bad month without truncating. The SBOM takes the rest: it is an inventory
+# that would exceed any plausible budget anyway, and is attached in full.
+CVE_TABLE_BUDGET = 34_000
+SBOM_TABLE_BUDGET = 26_000
 
 
 def github_length(text):
@@ -69,8 +75,13 @@ def render_budgeted(head, rows, tail, budget, artifact):
     Space for the note is reserved up front using its worst case (every row
     omitted), so adding the note can never push the result back over budget.
     """
+    # Upper bound on the note's length. Every count in it is <= len(rows), so
+    # substituting len(rows) for all three gives the widest each field can be.
+    # Reserving with shown=0 is NOT an upper bound -- it is the narrowest that
+    # field ever gets, and the two extra digits of a realistic "shown" value
+    # were enough to push the rendered table three characters over budget.
     worst_case_note = OMISSION_NOTE.format(
-        shown=0,
+        shown=len(rows),
         total=len(rows),
         omitted=len(rows),
         limit=RELEASE_BODY_LIMIT,

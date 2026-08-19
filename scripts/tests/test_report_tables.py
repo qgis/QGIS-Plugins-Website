@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import cve_table  # noqa: E402
 import sbom_table  # noqa: E402
 from report_common import (  # noqa: E402
+    COMMENT_BODY_LIMIT,
     CVE_TABLE_BUDGET,
     RELEASE_BODY_LIMIT,
     REPORT_BUDGET,
@@ -31,6 +32,12 @@ from report_common import (  # noqa: E402
     github_length,
     render_budgeted,
 )
+
+# Rough size of the rest of build-report.md: the image metadata table, the
+# quick-start block and the trailing commit line. Measured from a real PR
+# report and rounded up, so the combined-size test reflects what is actually
+# posted rather than just the two tables.
+REPORT_PREAMBLE_ALLOWANCE = 2_000
 
 
 def make_match(cve_id, severity, fix_state, pkg="somepkg", versions=None):
@@ -247,9 +254,18 @@ class CombinedBudgetTests(unittest.TestCase):
         )
         combined = github_length(cve) + github_length(sbom)
         self.assertLessEqual(combined, REPORT_BUDGET)
-        # The rest of build-report.md (image metadata, quick start, and the
-        # release-drafter notes that append_body prepends) shares the cap.
-        self.assertLess(combined, RELEASE_BODY_LIMIT)
+
+        # build-report.md is posted as a PR comment as well as appended to the
+        # release body, and the comment limit is the smaller of the two. Unlike
+        # the release body it is enforced by rejection, not truncation, so
+        # exceeding it loses the comment entirely.
+        whole_report = combined + REPORT_PREAMBLE_ALLOWANCE
+        self.assertLess(whole_report, COMMENT_BODY_LIMIT)
+        self.assertLess(whole_report, RELEASE_BODY_LIMIT)
+
+    def test_budget_split_fits_the_smaller_github_limit(self):
+        self.assertEqual(CVE_TABLE_BUDGET + SBOM_TABLE_BUDGET, REPORT_BUDGET)
+        self.assertLess(REPORT_BUDGET + REPORT_PREAMBLE_ALLOWANCE, COMMENT_BODY_LIMIT)
 
 
 if __name__ == "__main__":

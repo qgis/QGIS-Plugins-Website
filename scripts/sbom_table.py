@@ -65,7 +65,11 @@ def main():
         for pkg_type, name, version, licenses, upstream in rows
     ]
 
-    print(render_budgeted(head, table_rows, tail, SBOM_TABLE_BUDGET, "sbom.spdx.json"))
+    # write(), not print(): print would append a newline that the budget did
+    # not account for, so the rendered section could exceed its cap by one.
+    sys.stdout.write(
+        render_budgeted(head, table_rows, tail, SBOM_TABLE_BUDGET, "sbom.spdx.json")
+    )
 
 
 if __name__ == "__main__":

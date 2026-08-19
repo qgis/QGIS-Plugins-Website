@@ -192,7 +192,11 @@ def main():
             f"{pkg_version} | {fixed_in} | {desc} |"
         )
 
-    print(render_budgeted(head, table_rows, tail, CVE_TABLE_BUDGET, "cve-scan.json"))
+    # write(), not print(): print would append a newline that the budget did
+    # not account for, so the rendered section could exceed its cap by one.
+    sys.stdout.write(
+        render_budgeted(head, table_rows, tail, CVE_TABLE_BUDGET, "cve-scan.json")
+    )
 
 
 if __name__ == "__main__":
