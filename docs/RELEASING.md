@@ -218,3 +218,38 @@ Release notes are built from your PRs, so day to day:
 > The `docker.yml` scan is **report-only** today (`fail-build: false`) and uploads
 > results to the repo's **Security → Code scanning** tab. Once the CVE baseline is
 > clean, flip it to fail PRs above a severity cutoff.
+
+### Reading the SBOM and CVE report
+
+**GitHub truncates a release body at 125,000 characters, and does it silently** —
+the API accepts the request and returns success, so an over-long report is lost
+without any error anywhere. This is not theoretical: the `v4.2.4`, `v4.2.5` and
+`v4.2.6` bodies each measure exactly 124,999 characters, cut off mid-SBOM-row,
+with no CVE section present at all. Three releases in a row appeared to have no
+vulnerability report because the package inventory ahead of it had used up the
+whole budget.
+
+So the two tables in the report are **deliberately truncated to fit**:
+
+- `scripts/cve_table.py` and `scripts/sbom_table.py` each get a fixed share of a
+  100,000-character budget (60,000 and 40,000), defined in
+  [`scripts/report_common.py`](../scripts/report_common.py). Budgets are measured
+  in UTF-16 code units, which is how GitHub counts.
+- Summary lines and table headers are always emitted in full. Only rows are
+  dropped, and a note stating how many were omitted is appended whenever that
+  happens — if you do not see that note, nothing was cut.
+- The CVE table is sorted **fixable first**, so the rows that survive truncation
+  are the ones that can be acted on today.
+
+**The attached `cve-scan.json` and `sbom.spdx.json` are the authoritative,
+complete data.** The tables in the body are a summary; always use the artifacts
+for anything more than a glance.
+
+The CVE headline reports how many findings have a fix available, alongside the
+total. Those numbers differ by a lot — most findings on a Debian-based image are
+upstream `wont-fix` or have no patch published — and the fixable count is the one
+worth tracking release to release.
+
+The generators are covered by `scripts/tests/test_report_tables.py`, run in the
+`lint` job of `test.yaml`. Change the budgets there and the tests will tell you if
+the combined output stops fitting.
