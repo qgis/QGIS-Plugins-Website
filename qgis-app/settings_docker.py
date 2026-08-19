@@ -1,5 +1,6 @@
 import ast
 import os
+import sys
 
 from celery.schedules import crontab
 from settings import *
@@ -248,6 +249,26 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # allauth requires its AccountMiddleware
 MIDDLEWARE.append("allauth.account.middleware.AccountMiddleware")
+
+# urls.py registers debug_toolbar.urls whenever DEBUG is on, but the
+# INSTALLED_APPS list above (which replaces the one from settings.py rather than
+# extending it) never included the app itself. That mismatch was survivable
+# until django-debug-toolbar 7, which added a HistoryEntry model: importing the
+# package with the app uninstalled now raises
+#   RuntimeError: Model class debug_toolbar.models.HistoryEntry doesn't declare
+#   an explicit app_label and isn't in an application in INSTALLED_APPS
+# which breaks manage.py outright with DEBUG=True (the local default).
+#
+# Excluded under the test runner. DEBUG here is read from the environment at
+# import time (True locally), but the runner forces settings.DEBUG = False
+# afterwards -- so urls.py skips the "djdt" routes while the app and its
+# middleware would still be loaded, and every response that renders the toolbar
+# dies with NoReverseMatch: 'djdt' is not a registered namespace.
+IS_RUNNING_TESTS = "test" in sys.argv
+
+if DEBUG and not IS_RUNNING_TESTS:
+    INSTALLED_APPS += ["debug_toolbar"]
+    MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
 
 
 # Set the maximum PLUGIN_MAX_UPLOAD_SIZE size to 25MB

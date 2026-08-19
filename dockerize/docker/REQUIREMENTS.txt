@@ -1,48 +1,58 @@
 bandit~=1.9
-beautifulsoup4~=4.12
-celery~=5.3
-cryptography~=46.0.6
+beautifulsoup4~=4.15
+celery~=5.6
+cryptography~=50.0
 detect-secrets~=1.5
-django~=4.2
-django-allauth~=65.15
+django~=5.2
+django-allauth~=65.19
 django-annoying~=0.10
-django-auth-ldap~=4.6
+django-auth-ldap~=5.3
 django-bootstrap-pagination-forked~=1.7
-django-debug-toolbar~=4.2
-django-extensions~=3.2
-django-haystack~=3.2
+django-debug-toolbar~=7.1
+django-extensions~=4.1
+django-haystack~=3.4
 django-matomo==0.1.6
 django-preferences==1.0.0
-django-rest-auth==0.9.5
 django-rest-multiple-models==2.1.3
 django-sortable-listview~=0.43
-django-taggit~=5.0
+django-taggit~=6.1
 django-taggit-autosuggest~=0.4
 django-taggit-templatetags
-django-tinymce==4.1.0
-django-webpack-loader~=3.1
-djangorestframework~=3.14
-djangorestframework-simplejwt~=5.3
+django-tinymce~=5.0
+django-webpack-loader~=3.2
+djangorestframework~=3.18
+djangorestframework-simplejwt~=5.5
 drf-yasg~=1.21
 feedparser~=6.0
 flake8~=7.3
 flake8-json~=24.4
-freezegun~=1.4
-geoip2==4.5.0
-git+https://github.com/Xpirix/django-ratings.git@modernize
-git+https://github.com/Xpirix/django-simplemenu.git@modernize
-git+https://github.com/metamatik/django-templatetag-sugar.git
-importlib_metadata<5
-markdown~=3.5
-oauthlib~=3.2
-Pillow~=10.1
+freezegun~=1.5
+geoip2~=5.3
+# Pinned to commit SHAs, not branch names. A "@modernize" ref (or no ref at
+# all) resolves to whatever the branch tip happens to be at image build time,
+# so a force-push or a new commit upstream silently changes what we ship and
+# two builds of the same tag are not the same image. These three SHAs are the
+# commits already installed in qgis/qgis-plugins-uwsgi:latest, so pinning them
+# changes no code -- it just stops the versions from moving on their own.
+# To take an update: bump the SHA here in its own commit.
+git+https://github.com/Xpirix/django-ratings.git@d705fffe4e2c01b584327c3b7c36b6d087895158
+git+https://github.com/Xpirix/django-simplemenu.git@687ba03e73fc24b2338a3ce8390104a4b047ea0f
+git+https://github.com/metamatik/django-templatetag-sugar.git@33bc10cc560521f7932c66e677b32276e4ad6915
+markdown~=3.10
+oauthlib~=3.3
+Pillow~=12.3
 psycopg2-binary~=2.9
-pyjwt~=2.8
-requests~=2.31
+pyjwt~=2.13
+requests~=2.34
 rpc4django~=0.6
-sentry-sdk~=2.2
-setuptools~=75.1
-sorl-thumbnail~=12.10
+sentry-sdk~=2.68
+setuptools~=84.0
+# Not imported directly; pinned so the resolver cannot drift back to the 1.26
+# line, which is in security-fix-only mode and carries known advisories. The
+# ceiling that used to force 1.26 was geoip2 4.x ("urllib3 <2.0.0"); geoip2 5
+# dropped it, so this floor is what keeps us on 2.x.
+urllib3~=2.7
+sorl-thumbnail~=13.0
 sorl-thumbnail-serializer-field==0.2.1
 uwsgi~=2.0
 whoosh~=2.7

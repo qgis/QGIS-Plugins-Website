@@ -29,6 +29,14 @@ AUTH_LDAP_USER_ATTR_MAP = {
     "last_name": "sn",
     "email": "mail",
 }
-# Cache group memberships for an hour to minimize LDAP traffic
-AUTH_LDAP_CACHE_GROUPS = True
-AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
+# Cache group memberships for an hour to minimize LDAP traffic.
+#
+# django-auth-ldap 5 removed AUTH_LDAP_CACHE_GROUPS and
+# AUTH_LDAP_GROUP_CACHE_TIMEOUT; AUTH_LDAP_CACHE_TIMEOUT replaces both, and it
+# defaults to 0 (caching off). The old names are not errors, they are simply
+# ignored, so leaving them would silently send every permission check to
+# ldap.osgeo.org.
+#
+# Note this only bites once a real cache backend is configured: settings.py
+# still uses DummyCache, so nothing is cached today either way.
+AUTH_LDAP_CACHE_TIMEOUT = 3600

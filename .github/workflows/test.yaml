@@ -69,3 +69,23 @@ jobs:
             python manage.py migrate &&
             python manage.py test
           '
+
+      # Audits what the image actually resolved to, rather than what
+      # REQUIREMENTS.txt asks for: the floors there are ranges, and most CVEs
+      # land in transitive packages that are never named in that file.
+      #
+      # Report-only for now (|| true), matching the Grype posture in docker.yml.
+      # Flip to a failing gate once the baseline is clean -- the sweep in this
+      # branch took it from 54 findings to the residue left in unmaintained
+      # dependencies.
+      - name: Audit Python dependencies (pip-audit)
+        if: always()
+        run: |
+          {
+            echo '## pip-audit'
+            echo
+            echo '```'
+            docker compose exec -T devweb bash -c \
+              'pip install -q pip-audit && pip-audit --progress-spinner off' 2>&1 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
