@@ -79,15 +79,17 @@ def main():
         pkg_name = artifact.get("name", "unknown")
         pkg_version = artifact.get("version", "unknown")
 
-        fixed_in = "-"
-        fix = vuln.get("fix", {})
-        if fix and fix.get("versions"):
-            fixed_in = ", ".join(fix["versions"])
+        fix = vuln.get("fix", {}) or {}
+        # Grype reports "fixed", "not-fixed", "wont-fix" or "unknown". Only
+        # "fixed" means an upgrade exists that we could actually take today.
+        fixable = fix.get("state") == "fixed"
+        fixed_in = ", ".join(fix.get("versions") or []) or "-"
 
         nvd_link = f"[{cve_id}](https://nvd.nist.gov/vuln/detail/{cve_id})"
 
         rows.append(
             (
+                0 if fixable else 1,
                 SEVERITY_ORDER.get(severity, 5),
                 cve_id,
                 severity,
@@ -100,24 +102,46 @@ def main():
             )
         )
 
-    rows.sort(key=lambda r: (r[0], r[1]))
+    # Fixable first, then by severity, then by ID. When the table is truncated
+    # to fit the release body the rows that survive are the ones worth acting
+    # on, rather than an alphabetical slice of unfixable Debian advisories.
+    rows.sort(key=lambda r: (r[0], r[1], r[2]))
 
-    # Summary counts
     counts = {}
+    fixable_counts = {}
     for row in rows:
-        sev = row[2]
+        sev = row[3]
         counts[sev] = counts.get(sev, 0) + 1
+        if row[0] == 0:
+            fixable_counts[sev] = fixable_counts.get(sev, 0) + 1
 
-    summary_parts = []
-    for sev in ["Critical", "High", "Medium", "Low", "Negligible"]:
-        if sev in counts:
-            emoji = SEVERITY_EMOJI.get(sev, "")
-            summary_parts.append(f"{emoji} {counts[sev]} {sev}")
+    def breakdown(by_severity):
+        # Driven by SEVERITY_ORDER rather than a hardcoded list, so "Unknown"
+        # is included. It previously was not, which meant the severities in the
+        # summary line did not add up to the total beside them.
+        return ", ".join(
+            f"{SEVERITY_EMOJI.get(sev, '')} {by_severity[sev]} {sev}"
+            for sev in sorted(by_severity, key=lambda s: SEVERITY_ORDER.get(s, 5))
+        )
+
+    fixable_total = sum(fixable_counts.values())
+    if fixable_total:
+        headline = (
+            f"**{fixable_total} of {len(rows)} CVEs have a fix available:** "
+            f"{breakdown(fixable_counts)}\n\n"
+            f"**All {len(rows)}:** {breakdown(counts)}\n"
+        )
+    else:
+        headline = (
+            f"**{len(rows)} CVEs found, none with a fix available yet:** "
+            f"{breakdown(counts)}\n"
+        )
 
     head = (
-        f"**{len(rows)} CVEs found:** {', '.join(summary_parts)}\n\n"
+        f"{headline}\n"
         "<details>\n"
-        f"<summary>CVE Details ({len(rows)} vulnerabilities)</summary>\n\n"
+        f"<summary>CVE Details ({len(rows)} vulnerabilities, fixable first)"
+        "</summary>\n\n"
         "| Severity | CVSS | CVE | Package | Version | Fixed In | Description |\n"
         "|----------|------|-----|---------|---------|----------|-------------|\n"
     )
@@ -125,6 +149,7 @@ def main():
 
     table_rows = []
     for (
+        _,
         _,
         cve_id,
         severity,
