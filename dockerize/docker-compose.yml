@@ -158,7 +158,17 @@ services:
       internal:
 
   rabbitmq:
-    image: ${RABBITMQ_IMAGE:-rabbitmq:3.7-alpine}
+    # 3.13, NOT 4.x. RabbitMQ 4 removed transient non-exclusive queues, which is
+    # precisely what Celery declares for its control (pidbox), event and rpc://
+    # result queues, so a 4.x broker takes the worker down with
+    #   INTERNAL_ERROR - Feature `transient_nonexcl_queues` is deprecated
+    # Verified: on 4.3 the worker crash-loops and beat cannot schedule.
+    # 3.13 is the last line that permits them. See docs/RABBITMQ-UPGRADE.md.
+    #
+    # Moving off the old 3.7 default needs this volume recreated rather than
+    # upgraded in place. Safe here because the broker holds no durable state
+    # worth keeping. Do NOT copy that pattern to the postgres volume.
+    image: ${RABBITMQ_IMAGE:-rabbitmq:3.13-alpine}
     hostname: rabbitmq
     volumes:
       - rabbitmq:/var/lib/rabbitmq
@@ -200,7 +210,13 @@ services:
   web:
     # Note you cannot scale if you use container_name
     container_name: qgis-plugins-web
-    image: nginx
+    # Pinned to the stable branch. A bare "nginx" means nginx:latest, so the
+    # internet-facing TLS terminator silently changed version on any host that
+    # happened to re-pull, and no two deploys were guaranteed identical.
+    #
+    # Deliberately NOT -alpine: sites-enabled/docker-entrypoint.sh starts with
+    # #!/usr/bin/env bash, which the alpine image does not ship.
+    image: nginx:1.30
     hostname: web
     entrypoint:
     - /etc/nginx/sites-available/docker-entrypoint.sh
@@ -260,7 +276,9 @@ services:
       internal:
 
   certbot:
-    image: certbot/certbot
+    # Pinned: this one writes to ./certbot-etc, so an unexpected major version
+    # turning up on a re-pull would run against the live certificate store.
+    image: certbot/certbot:v5.7.0
     container_name: certbot
     volumes:
       - ./webroot:/var/www/webroot
