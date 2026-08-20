@@ -1,1 +1,7 @@
 dockerize/postgres_data
+
+# Built by `npm ci` inside the image. Without this the host's node_modules is
+# copied into the build context and then overwritten -- slow, and it lets
+# whatever happens to be on a developer's machine leak into a production
+# artefact.
+qgis-app/node_modules
