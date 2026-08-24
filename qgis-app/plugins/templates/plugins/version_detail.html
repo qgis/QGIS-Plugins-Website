@@ -136,8 +136,23 @@
                 </span>
                 {% endif %}
             </a></li>
+            <li data-tab="4"><a href="#deprecated-tab">
+                <span>{% trans "Deprecated" %}</span>
+                {% if version.deprecated_status != 'not_run' %}
+                <span class="tag ml-2
+                    {% if version.deprecated_status == 'no_deprecated' %}is-success
+                    {% elif version.deprecated_status == 'has_deprecated' %}is-warning
+                    {% elif version.deprecated_status == 'pending' %}is-info
+                    {% endif %}">
+                    {% if version.deprecated_status == 'no_deprecated' %}✓
+                    {% elif version.deprecated_status == 'has_deprecated' %}⚠
+                    {% elif version.deprecated_status == 'pending' %}…
+                    {% endif %}
+                </span>
+                {% endif %}
+            </a></li>
             {% endif %}
-            <li data-tab="4"><a href="#manage-tab">{% trans "Manage" %}</a></li>
+            <li data-tab="5"><a href="#manage-tab">{% trans "Manage" %}</a></li>
         </ul>
     </div>
 
@@ -628,6 +643,66 @@
             {% endif %}
         </div>
         {% endif %}
+
+        <!-- TAB 4 : Deprecated Check -->
+        <div class="tab-pane" id="deprecated-tab">
+            {% if version.deprecated_status == 'not_run' %}
+                <div class="notification is-warning is-light">
+                    <p class="has-text-weight-semibold">
+                        <span class="icon"><i class="fas fa-clock"></i></span>
+                        {% trans "Deprecated check has not been run for this version" %}
+                    </p>
+                </div>
+            {% elif version.deprecated_status == 'pending' %}
+                <div class="notification is-info is-light">
+                    <p class="has-text-weight-semibold">
+                        <span class="icon"><i class="fas fa-spinner fa-spin"></i></span>
+                        {% trans "Deprecated check is currently running..." %}
+                    </p>
+                </div>
+            {% else %}
+                <div class="notification {% if version.deprecated_status == 'no_deprecated' %}is-success{% else %}is-warning{% endif %} is-light mb-4">
+                    <p class="has-text-weight-bold">
+                        {% if version.deprecated_status == 'no_deprecated' %}
+                            <span class="icon"><i class="fas fa-check-circle"></i></span>
+                            {% trans "No deprecated API usage found" %}
+                        {% else %}
+                            <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
+                            {% trans "Deprecated API usage found" %}
+                        {% endif %}
+                    </p>
+                    <p class="mt-1 is-size-7 has-text-grey">{% trans "Checked on" %}: {{ version.deprecated_checked_on|local_timezone }}</p>
+                    <p class="mt-1 is-size-7 has-text-grey">{% trans "This check is informational only and does not affect plugin approval." %}</p>
+                </div>
+                {% if deprecated_issues %}
+                <h5 class="title is-6 mb-3">{% trans "Deprecated usages found" %}: {{ deprecated_issues|length }}</h5>
+                <div style="overflow-x: auto;">
+                <table class="table is-fullwidth is-striped is-hoverable is-size-7">
+                    <thead>
+                        <tr>
+                            <th>{% trans "File" %}</th>
+                            <th>{% trans "Line" %}</th>
+                            <th>{% trans "Message" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in deprecated_issues %}
+                        <tr>
+                            <td><code>{{ issue.file }}</code></td>
+                            <td>{{ issue.line }}</td>
+                            <td>{{ issue.message }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+                {% else %}
+                    <div class="notification is-success is-light">
+                        {% trans "No deprecated API usage found, this plugin is up to date!" %}
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
 
         <div class="tab-pane" id="manage-tab">
             <h4 class="title is-6 mb-2">{% trans "Version management"%}</h4>
