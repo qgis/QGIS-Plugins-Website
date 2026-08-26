@@ -2,11 +2,10 @@
 Unit tests for Qt6 check functionality
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.test import TestCase
-
 from plugins.models import Plugin, PluginVersion
 from plugins.tasks.save_qt6_result import save_qt6_result
 
@@ -157,7 +156,7 @@ class TriggerQt6CheckSignalTest(TestCase):
             mock_send_task.assert_not_called()
 
     def test_signal_sends_task_with_correct_args(self):
-        """Signal should send the qt6 task with pk and package path"""
+        """Signal should send both qt6 and deprecated tasks with pk and package path"""
         with patch("plugins.signals.app.send_task") as mock_send_task:
             with patch(
                 "django.db.models.fields.files.FieldFile.path",
@@ -171,8 +170,14 @@ class TriggerQt6CheckSignalTest(TestCase):
                     min_qg_version="3.0.0",
                     package="packages/test.zip",
                 )
-                mock_send_task.assert_called_once_with(
+                self.assertEqual(mock_send_task.call_count, 2)
+                mock_send_task.assert_any_call(
                     "plugins.tasks.run_check_qt6.run_qgis_script",
+                    args=[version.pk, "/home/web/media/packages/test.zip"],
+                    queue="qt6",
+                )
+                mock_send_task.assert_any_call(
+                    "plugins.tasks.run_check_deprecated.run_check_deprecated",
                     args=[version.pk, "/home/web/media/packages/test.zip"],
                     queue="qt6",
                 )
@@ -193,6 +198,4 @@ class TriggerQt6CheckSignalTest(TestCase):
                     package="packages/test.zip",
                 )
                 version.refresh_from_db()
-                self.assertEqual(
-                    version.qt6_status, PluginVersion.Qt6Status.PENDING
-                )
+                self.assertEqual(version.qt6_status, PluginVersion.Qt6Status.PENDING)
