@@ -13,13 +13,21 @@ Uses professional security scanning tools via subprocess:
 import ast
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 import zipfile
 from typing import Dict
 
-from django.utils.translation import gettext_lazy as _
-from plugins.models import SecurityRule
+try:
+    # When running inside the Django web platform.
+    from django.utils.translation import gettext_lazy as _
+except Exception:  # pragma: no cover - standalone (CLI) use without Django
+    def _(message):
+        return message
+
+# NOTE: SecurityRule is imported lazily inside __init__ (only when needed) so
+# this module can be imported and run by the standalone CLI without Django.
 
 # All security tools are invoked via subprocess to avoid import/dependency issues
 
@@ -52,14 +60,22 @@ class PluginSecurityScanner:
     - flake8 for code quality
     """
 
-    def __init__(self, package_path: str, enabled_rules: list = None):
+    def __init__(
+        self, package_path: str, enabled_rules: list = None, all_secrets_plugins: list = None
+    ):
         """
         Initialize scanner with package path
 
         Args:
             package_path: Path to the plugin ZIP file
-            enabled_rules: List of SecurityRule objects that are enabled.
+            enabled_rules: List of rule objects that are enabled. Each item only
+                          needs ``.check_category`` and ``.check_code`` attributes.
                           If None or empty, all checks run unfiltered (backward compatible).
+            all_secrets_plugins: Optional list of ALL detect-secrets plugin codes.
+                          When provided, it is used to disable non-enabled secrets
+                          plugins without any database access (used by the standalone
+                          CLI). When None, the list is fetched lazily from the
+                          SecurityRule model (Django web-platform path).
         """
         self.package_path = package_path
         self.checks = []
@@ -85,11 +101,18 @@ class PluginSecurityScanner:
         # Pre-fetch ALL secrets plugin names once so _check_secrets() doesn't
         # need a DB query mid-scan.  Only needed when there are enabled rules.
         if self.enabled_secrets_rules:
-            self._all_secrets_plugins = list(
-                SecurityRule.objects.filter(check_category="secrets").values_list(
-                    "check_code", flat=True
+            if all_secrets_plugins is not None:
+                # Supplied by the caller (standalone CLI) -> no DB access.
+                self._all_secrets_plugins = list(all_secrets_plugins)
+            else:
+                # Django web-platform path: fetch from the model lazily.
+                from plugins.models import SecurityRule
+
+                self._all_secrets_plugins = list(
+                    SecurityRule.objects.filter(check_category="secrets").values_list(
+                        "check_code", flat=True
+                    )
                 )
-            )
         else:
             self._all_secrets_plugins = []
 
@@ -105,24 +128,30 @@ class PluginSecurityScanner:
         # Extract plugin to temporary directory for tool analysis
         self.extracted_dir = tempfile.mkdtemp()
         try:
-            with zipfile.ZipFile(self.package_path, "r") as zf:
-                zf.extractall(self.extracted_dir)
+            try:
+                with zipfile.ZipFile(self.package_path, "r") as zf:
+                    zf.extractall(self.extracted_dir)
 
-            # Run all checks (they will filter based on enabled_rules internally)
-            self._check_with_bandit()
-            self._check_secrets()
-            self._check_code_quality()
-            self._check_file_permissions()
-            self._check_suspicious_files()
+                # Run all checks (they will filter based on enabled_rules internally)
+                self._check_with_bandit()
+                self._check_secrets()
+                self._check_code_quality()
+                self._check_file_permissions()
+                self._check_suspicious_files()
 
-        except Exception:
-            # If extraction fails, run basic checks on ZIP
-            self._check_file_permissions()
-            self._check_suspicious_files()
+            except Exception:
+                # If extraction fails, run basic checks on ZIP
+                self._check_file_permissions()
+                self._check_suspicious_files()
 
-        # Calculate summary, including any developer-supplied config files
-        config_files = self._detect_config_files()
-        return self._generate_report(config_files=config_files)
+            # Calculate summary, including any developer-supplied config files
+            config_files = self._detect_config_files()
+            return self._generate_report(config_files=config_files)
+        finally:
+            # Always clean up the extraction directory to avoid leaking disk,
+            # which matters for repeated standalone/CLI runs.
+            shutil.rmtree(self.extracted_dir, ignore_errors=True)
+            self.extracted_dir = None
 
     def _check_with_bandit(self):
         """Run Bandit security scanner on Python files"""
