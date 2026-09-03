@@ -67,3 +67,21 @@ class ValidatorErrorEscapingTest(TestCase):
         rendered = str(raised.exception.messages[0])
         self.assertNotIn(HOSTILE, rendered)
         self.assertIn("&lt;img", rendered)
+
+    def test_version_form_clean_escapes_validator_messages(self):
+        """The second sink. PluginVersionForm.clean joins the same validator
+        messages behind its own mark_safe, and is reached from the version
+        upload form rather than the new plugin one."""
+        self.addCleanup(setattr, plugin_forms, "validator", plugin_forms.validator)
+        plugin_forms.validator = self._raise_hostile
+
+        form = plugin_forms.PluginVersionForm()
+        # clean() only reads the package when something was actually uploaded.
+        form.files = {"package": object()}
+        form.cleaned_data = {"package": object(), "changelog": ""}
+        with self.assertRaises(ValidationError) as raised:
+            form.clean()
+
+        rendered = str(raised.exception.messages[0])
+        self.assertNotIn(HOSTILE, rendered)
+        self.assertIn("&lt;img", rendered)
