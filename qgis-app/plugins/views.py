@@ -34,7 +34,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.encoding import DjangoUnicodeDecodeError
-from django.utils.html import mark_safe
+from django.utils.html import format_html, format_html_join, mark_safe
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.cache import never_cache
@@ -710,8 +710,15 @@ def plugin_upload(request):
                 if warnings:
                     messages.warning(
                         request,
-                        _("<p><strong>Warnings:</strong></p>")
-                        + "\n".join([("<p>%s</p>" % w) for w in warnings]),
+                        # format_html_join escapes every warning that has not
+                        # explicitly marked itself safe; some are built from
+                        # metadata the uploader controls.
+                        mark_safe(
+                            _("<p><strong>Warnings:</strong></p>")
+                            + format_html_join(
+                                "\n", "<p>{}</p>", ((w,) for w in warnings)
+                            )
+                        ),
                         fail_silently=True,
                     )
 
@@ -928,17 +935,23 @@ class PluginDetailView(DetailView):
         # Warnings for owners
         if check_plugin_access(self.request.user, plugin):
             if not plugin.homepage:
-                msg = _(
-                    '<strong>homepage</strong> metadata is missing, this is not required but recommended. Please consider adding "homepage" to  <code>metadata.txt</code>.'
+                msg = mark_safe(
+                    _(
+                        '<strong>homepage</strong> metadata is missing, this is not required but recommended. Please consider adding "homepage" to  <code>metadata.txt</code>.'
+                    )
                 )
                 messages.warning(self.request, msg, fail_silently=True)
             for md in set(PLUGIN_REQUIRED_METADATA) - set(
                 ("version", "qgisMinimumVersion")
             ):
                 if not getattr(plugin, md, None):
-                    msg = _(
-                        "<strong>%s</strong> metadata is missing, this metadata entry is <strong>required</strong>. Please add <strong>%s</strong> to <code>metadata.txt</code>."
-                    ) % (md, md)
+                    # md comes from PLUGIN_REQUIRED_METADATA, not from the request.
+                    msg = mark_safe(
+                        _(
+                            "<strong>%s</strong> metadata is missing, this metadata entry is <strong>required</strong>. Please add <strong>%s</strong> to <code>metadata.txt</code>."
+                        )
+                        % (md, md)
+                    )
                     messages.error(self.request, msg, fail_silently=True)
         stats_url = f"{settings.METABASE_DOWNLOAD_STATS_URL}?package_name={plugin.package_name}#hide_parameters=package_name"
         context.update(
@@ -1341,8 +1354,10 @@ def _check_optional_metadata(form, request):
     if not form.cleaned_data.get("homepage"):
         messages.warning(
             request,
-            _(
-                "Homepage field is empty, this field is not required but is recommended, please consider adding it to  <code>metadata.txt</code>."
+            mark_safe(
+                _(
+                    "Homepage field is empty, this field is not required but is recommended, please consider adding it to  <code>metadata.txt</code>."
+                )
             ),
             fail_silently=True,
         )
@@ -2833,13 +2848,15 @@ def version_rescan(request, package_name, version):
 
     messages.success(
         request,
-        mark_safe(
+        # format_html, not mark_safe: the plugin name is uploader supplied.
+        format_html(
             _(
-                "A security re-scan has been queued for <strong>%(plugin)s v%(version)s</strong>. "
+                "A security re-scan has been queued for <strong>{plugin} v{version}</strong>. "
                 "Results are informational only and will not change the plugin's current status. "
                 "Refresh the Security Scan tab in a few minutes to see the results."
-            )
-            % {"plugin": plugin.name, "version": version_obj.version}
+            ),
+            plugin=plugin.name,
+            version=version_obj.version,
         ),
         fail_silently=True,
     )

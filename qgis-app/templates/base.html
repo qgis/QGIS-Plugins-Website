@@ -68,7 +68,11 @@
                     {% for message in messages %}
                         <div class="notification is-light {% if message.tags %} {{ message.tags }}{% endif %}">
                             <button class="delete"></button>
-                            {{ message|safe }}
+                            {# No |safe here: messages carrying markup mark themselves
+                               safe at the call site (mark_safe/format_html), which the
+                               messages framework preserves. Escaping by default keeps
+                               plugin names and archive folder names from injecting HTML. #}
+                            {{ message }}
                         </div>
                     {% endfor %}
                     {% endif %}
