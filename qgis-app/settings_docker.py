@@ -74,7 +74,6 @@ INSTALLED_APPS = [
     "sortable_listview",
     "lib",  # Container for small tags and functions
     "sorl.thumbnail",
-    "djangoratings",
     "taggit",
     "taggit_autosuggest",
     "taggit_templatetags",
@@ -343,7 +342,7 @@ NEWS_MENU = [
     },
 ]
 
-# Featured, popular, most downloaded, most voted, best rated
+# Featured, popular, most downloaded
 TOP_MENU = [
     # Hidden for now, as we didn't set rules for featured plugins
     # Uncomment the following lines when ready to use featured plugins
@@ -361,16 +360,6 @@ TOP_MENU = [
         "name": "Most Downloaded",
         "url": "/plugins/most_downloaded/",
         "order": 2,
-    },
-    {
-        "name": "Most Voted",
-        "url": "/plugins/most_voted/",
-        "order": 3,
-    },
-    {
-        "name": "Best Rated Plugins",
-        "url": "/plugins/best_rated/",
-        "order": 4,
     },
 ]
 

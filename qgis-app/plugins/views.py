@@ -957,8 +957,6 @@ class PluginDetailView(DetailView):
         context.update(
             {
                 "stats_url": stats_url,
-                "rating": plugin.rating.get_rating(),
-                "votes": plugin.rating.votes,
                 "title": self.title,
                 "email_confirmation": PluginEmailConfirmation.objects.filter(
                     email=plugin.email
@@ -1643,9 +1641,7 @@ class PluginsList(ListView):
 
             # Validate the sort field
             if sort_by.lstrip("-") in [
-                "average_vote",
                 "latest_version_date",
-                "weighted_rating",
             ] or self._is_valid_field(sort_by.lstrip("-")):
                 qs = qs.order_by(sort_by)
             elif not qs.ordered:
@@ -1735,17 +1731,11 @@ class MyPluginsList(PluginsList):
 
         qs = qs.extra(
             select={
-                "average_vote": "rating_score / (rating_votes + 0.001)",
                 "latest_version_date": (
                     "SELECT created_on FROM plugins_pluginversion WHERE "
                     "plugins_pluginversion.plugin_id = plugins_plugin.id "
                     "AND approved = TRUE "
                     "ORDER BY created_on DESC LIMIT 1"
-                ),
-                "weighted_rating": (
-                    "((rating_votes::FLOAT / (rating_votes + 5)) * "
-                    "(rating_score::FLOAT / (rating_votes + 0.001))) + "
-                    "((5::FLOAT / (rating_votes + 5)) * 3)"
                 ),
             }
         )
@@ -1759,9 +1749,7 @@ class MyPluginsList(PluginsList):
                 sort_by = "-" + sort_by
 
             if sort_by.lstrip("-") in [
-                "average_vote",
                 "latest_version_date",
-                "weighted_rating",
             ] or self._is_valid_field(sort_by.lstrip("-")):
                 qs = qs.order_by(sort_by)
             elif not qs.ordered:

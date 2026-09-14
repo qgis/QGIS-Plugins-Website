@@ -10,7 +10,6 @@
                 <option value="author" {% if request.GET.sort == 'author' %}selected{% endif %}>{% trans "Author" %}</option>
                 <option value="created_on" {% if request.GET.sort == 'created_on' %}selected{% endif %}>{% trans "Created On" %}</option>
                 <option value="latest_version_date" {% if request.GET.sort == 'latest_version_date' %}selected{% endif %}>{% trans "Latest Version" %}</option>
-                <option value="weighted_rating" {% if request.GET.sort == 'weighted_rating' %}selected{% endif %}>{% trans "Stars" %}</option>
             </select>
         </span>
     </p>
@@ -30,21 +29,21 @@
         if (value) {
             // Get current URL parameters
             let params = new URLSearchParams(window.location.search);
-            
+
             // Update the relevant parameter (sort/order) based on the selection
             params.set(key, value);
-    
+
             // Preserve the other sorting option (sort/order)
             if (key === 'sort' && !params.has('order')) {
                 if (value === 'name' || value === 'author') {
-                    params.set('order', 'asc');  // Default to descending if sorting by weighted rating
+                    params.set('order', 'asc');  // Name and author read best ascending
                 } else {
-                    params.set('order', 'desc');  // Default to ascending if no order is selected
+                    params.set('order', 'desc');  // Everything else reads best descending
                 }
             } else if (key === 'order' && !params.has('sort')) {
                 params.set('sort', 'name');  // Default to sorting by name if no sort field is selected
             }
-    
+
             // Redirect to the updated URL
             window.location.search = params.toString();
         }
