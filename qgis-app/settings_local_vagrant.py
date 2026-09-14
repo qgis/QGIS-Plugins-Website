@@ -178,7 +178,6 @@ INSTALLED_APPS = [
     "sortable_listview",
     "lib",  # Container for small tags and functions
     "sorl.thumbnail",
-    "djangoratings",
     "taggit",
     "taggit_autosuggest",
     "taggit_templatetags",

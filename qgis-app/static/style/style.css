@@ -4,10 +4,6 @@ div.help {
     margin-bottom: 10px;
 }
 
-#rating {
-    margin: 1em 0;
-}
-
 .fieldWrapper input, .fieldWrapper textarea {
     width: 406px;
 }

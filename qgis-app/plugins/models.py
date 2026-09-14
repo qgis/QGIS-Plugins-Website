@@ -13,7 +13,6 @@ from django.db.models import Count, Exists, F, OuterRef, Subquery
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from djangoratings.fields import AnonymousRatingField
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from taggit_autosuggest.managers import TaggableManager
 
@@ -29,11 +28,8 @@ VERSION_RE = r"(^|(?<=\.))0+(?!(\.|$|-))|\.#+"
 class BasePluginManager(models.Manager):
     """
     Adds a score
-    * average_vote provides a simple average rating.
     * latest_version_date fetches the date of the
     most recent approved plugin version.
-    * weighted_rating uses the Bayesian Average formula
-    to provide a more balanced rating that mitigates the effect of low vote counts.
 
     Includes soft-deleted plugins so they remain visible in listings until
     permanently deleted.
@@ -45,17 +41,11 @@ class BasePluginManager(models.Manager):
             .get_queryset()
             .extra(
                 select={
-                    "average_vote": "rating_score / (rating_votes + 0.001)",
                     "latest_version_date": (
                         "SELECT created_on FROM plugins_pluginversion WHERE "
                         "plugins_pluginversion.plugin_id = plugins_plugin.id "
                         "AND approved = TRUE "
                         "ORDER BY created_on DESC LIMIT 1"
-                    ),
-                    "weighted_rating": (
-                        "((rating_votes::FLOAT / (rating_votes + 5)) * "
-                        "(rating_score::FLOAT / (rating_votes + 0.001))) + "
-                        "((5::FLOAT / (rating_votes + 5)) * 3)"
                     ),
                 }
             )
@@ -208,16 +198,10 @@ class UnapprovedPlugins(BasePluginManager):
             .filter(pluginversion__approved=False, deprecated=False, is_deleted=False)
             .extra(
                 select={
-                    "average_vote": "rating_score / (rating_votes + 0.001)",
                     "latest_version_date": (
                         "SELECT created_on FROM plugins_pluginversion WHERE "
                         "plugins_pluginversion.plugin_id = plugins_plugin.id "
                         "ORDER BY created_on DESC LIMIT 1"
-                    ),
-                    "weighted_rating": (
-                        "((rating_votes::FLOAT / (rating_votes + 5)) * "
-                        "(rating_score::FLOAT / (rating_votes + 0.001))) + "
-                        "((5::FLOAT / (rating_votes + 5)) * 3)"
                     ),
                 }
             )
@@ -241,7 +225,14 @@ class DeprecatedPlugins(BasePluginManager):
 
 class PopularPlugins(ApprovedPlugins):
     """
-    Shows only approved plugins, sort by popularity algorithm
+    Shows only approved plugins, sort by popularity algorithm.
+
+    Popularity is downloads per day since the plugin was published, so a plugin
+    gaining traction now outranks an older one that accumulated the same total
+    slowly. This keeps the list distinct from MostDownloadedPlugins, which the
+    previous formula no longer did once the rating term was removed.
+    GREATEST(..., 1) floors the age at one day so a plugin uploaded minutes ago
+    with a handful of downloads cannot top the chart.
     """
 
     def get_queryset(self):
@@ -251,7 +242,11 @@ class PopularPlugins(ApprovedPlugins):
             .filter(deprecated=False)
             .extra(
                 select={
-                    "popularity": "plugins_plugin.downloads * (1 + (rating_score/(rating_votes+0.01)/3))"
+                    "popularity": (
+                        "plugins_plugin.downloads::FLOAT / GREATEST("
+                        "EXTRACT(EPOCH FROM (NOW() - plugins_plugin.created_on))"
+                        " / 86400.0, 1)"
+                    )
                 }
             )
             .order_by("-popularity")
@@ -270,36 +265,6 @@ class MostDownloadedPlugins(ApprovedPlugins):
             .get_queryset()
             .filter(deprecated=False)
             .order_by("-downloads")
-            .distinct()
-        )
-
-
-class MostVotedPlugins(ApprovedPlugins):
-    """
-    Shows only approved plugins, sort by vote number
-    """
-
-    def get_queryset(self):
-        return (
-            super(MostVotedPlugins, self)
-            .get_queryset()
-            .filter(deprecated=False)
-            .order_by("-rating_votes")
-            .distinct()
-        )
-
-
-class BestRatedPlugins(ApprovedPlugins):
-    """
-    Shows only approved plugins, sort by vote/number of votes number
-    """
-
-    def get_queryset(self):
-        return (
-            super(BestRatedPlugins, self)
-            .get_queryset()
-            .filter(deprecated=False)
-            .order_by("-weighted_rating")
             .distinct()
         )
 
@@ -397,16 +362,10 @@ class FeedbackCompletedPlugins(models.Manager):
             .filter(total_feedback_count=F("completed_feedback_count"))
             .extra(
                 select={
-                    "average_vote": "rating_score / (rating_votes + 0.001)",
                     "latest_version_date": (
                         "SELECT created_on FROM plugins_pluginversion WHERE "
                         "plugins_pluginversion.plugin_id = plugins_plugin.id "
                         "ORDER BY created_on DESC LIMIT 1"
-                    ),
-                    "weighted_rating": (
-                        "((rating_votes::FLOAT / (rating_votes + 5)) * "
-                        "(rating_score::FLOAT / (rating_votes + 0.001))) + "
-                        "((5::FLOAT / (rating_votes + 5)) * 3)"
                     ),
                 }
             )
@@ -464,16 +423,10 @@ class FeedbackReceivedPlugins(models.Manager):
             .exclude(latest_version_status=VALIDATION_STATUS_BLOCKED)
             .extra(
                 select={
-                    "average_vote": "rating_score / (rating_votes + 0.001)",
                     "latest_version_date": (
                         "SELECT created_on FROM plugins_pluginversion WHERE "
                         "plugins_pluginversion.plugin_id = plugins_plugin.id "
                         "ORDER BY created_on DESC LIMIT 1"
-                    ),
-                    "weighted_rating": (
-                        "((rating_votes::FLOAT / (rating_votes + 5)) * "
-                        "(rating_score::FLOAT / (rating_votes + 0.001))) + "
-                        "((5::FLOAT / (rating_votes + 5)) * 3)"
                     ),
                 }
             )
@@ -522,16 +475,10 @@ class FeedbackPendingPlugins(models.Manager):
             .exclude(latest_version_status=VALIDATION_STATUS_BLOCKED)
             .extra(
                 select={
-                    "average_vote": "rating_score / (rating_votes + 0.001)",
                     "latest_version_date": (
                         "SELECT created_on FROM plugins_pluginversion WHERE "
                         "plugins_pluginversion.plugin_id = plugins_plugin.id "
                         "ORDER BY created_on DESC LIMIT 1"
-                    ),
-                    "weighted_rating": (
-                        "((rating_votes::FLOAT / (rating_votes + 5)) * "
-                        "(rating_score::FLOAT / (rating_votes + 0.001))) + "
-                        "((5::FLOAT / (rating_votes + 5)) * 3)"
                     ),
                 }
             )
@@ -663,16 +610,10 @@ class Plugin(models.Model):
     deprecated_objects = DeprecatedPlugins()
     popular_objects = PopularPlugins()
     most_downloaded_objects = MostDownloadedPlugins()
-    most_voted_objects = MostVotedPlugins()
-    best_rated_objects = BestRatedPlugins()
     server_objects = ServerPlugins()
     feedback_completed_objects = FeedbackCompletedPlugins()
     feedback_received_objects = FeedbackReceivedPlugins()
     feedback_pending_objects = FeedbackPendingPlugins()
-
-    rating = AnonymousRatingField(
-        range=5, use_cookies=True, can_change_vote=True, allow_delete=True
-    )
 
     tags = TaggableManager(blank=True)
 
@@ -768,17 +709,6 @@ class Plugin(models.Model):
         Returns a list of editor users that can approve a version
         """
         return [l for l in self.editors if l.has_perm("plugins.can_approve")]
-
-    @property
-    def avg_vote(self):
-        """
-        Returns the rating_score/(rating_votes+0.001) value, this
-        calculation is also available in manager's queries as
-        "average_vote".
-        This property is still useful when the object is not loaded
-        through a manager, for example in related objects.
-        """
-        return self.rating_score / (self.rating_votes + 0.001)
 
     class Meta:
         ordering = ("name",)

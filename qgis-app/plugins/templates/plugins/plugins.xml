@@ -1,4 +1,15 @@
-{% load static %}{% load local_timezone %}<?xml version = '1.0' encoding = 'UTF-8'?>
+{% load static %}{% load local_timezone %}{% comment %}
+Ratings were removed from plugins.qgis.org (QGIS PSC, September 2026), but
+<average_vote> and <rating_votes> are deliberately kept below and pinned to 0.
+This feed is public and mirrored: a consumer doing
+float(node.find("average_vote").text) raises AttributeError on a missing element
+but tolerates 0. Drop the two elements only once QGIS Desktop has shipped its
+own rating removal and the oldest supported LTR no longer reads them.
+
+This is a multi-line comment tag on purpose. Django's short comment form does
+not span lines, so a multi-line note written that way is emitted verbatim into
+every single plugin entry in the feed.
+{% endcomment %}<?xml version = '1.0' encoding = 'UTF-8'?>
 <?xml-stylesheet type="text/xsl" href="{% static "style/plugins.xsl" %}" ?>
 <plugins>
     {% for version in object_list %}<pyqgis_plugin name="{{version.plugin.name}}" version="{{ version.version }}" plugin_id="{{version.plugin.id }}">
@@ -21,8 +32,8 @@
         <repository><![CDATA[{{ version.plugin.repository }}]]></repository>
         <tags><![CDATA[{% for tag in version.plugin.tags.all %}{{ tag }}{% if not forloop.last %},{% endif %}{% endfor %}]]></tags>
         <downloads>{{version.plugin.downloads}}</downloads>
-        <average_vote>{{version.plugin.avg_vote}}</average_vote>
-        <rating_votes>{{version.plugin.rating_votes}}</rating_votes>
+        <average_vote>0</average_vote>
+        <rating_votes>0</rating_votes>
         <external_dependencies>{{version.plugin.external_deps }}</external_dependencies>
         <server>{% if version.plugin.server %}True{% else%}False{% endif %}</server>
     </pyqgis_plugin>{% endfor %}

@@ -274,25 +274,12 @@ urlpatterns = [
                 "title": _("Popular Plugins"),
                 "description": _(
                     "List of approved plugins sorted by popularity. "
-                    "Popularity is calculated by the number of "
-                    "downloads and votes."
+                    "Popularity is the number of downloads relative to how "
+                    "long the plugin has been published."
                 ),
             },
         ),
         name="popular_plugins",
-    ),
-    url(
-        r"^most_voted/$",
-        PluginsList.as_view(
-            queryset=Plugin.most_voted_objects.all(),
-            additional_context={
-                "title": _("Most Voted Plugins"),
-                "description": _(
-                    "List of approved plugins sorted by the number of votes."
-                ),
-            },
-        ),
-        name="most_voted_plugins",
     ),
     url(
         r"^most_downloaded/$",
@@ -306,19 +293,6 @@ urlpatterns = [
             },
         ),
         name="most_downloaded_plugins",
-    ),
-    url(
-        r"^best_rated/$",
-        PluginsList.as_view(
-            queryset=Plugin.best_rated_objects.all(),
-            additional_context={
-                "title": _("Best Rated Plugins"),
-                "description": _(
-                    "List of approved plugins sorted by the number of ratings."
-                ),
-            },
-        ),
-        name="best_rated_plugins",
     ),
     url(
         r"^feedback_completed/$",
@@ -487,26 +461,6 @@ urlpatterns += [
 urlpatterns += [
     # rpc4django will need to be in your Python path
     url(r"^RPC2/$", serve_rpc_request),
-]
-
-
-from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
-from django.views.decorators.http import require_POST
-
-# plugin rating
-from plugins.vote_throttle import throttled_rating_view
-
-urlpatterns += [
-    url(
-        r"rate/(?P<object_id>\d+)/(?P<score>\d+)/",
-        require_POST(csrf_protect(throttled_rating_view)),
-        {
-            "app_label": "plugins",
-            "model": "plugin",
-            "field_name": "rating",
-        },
-        name="plugin_rate",
-    ),
 ]
 
 
