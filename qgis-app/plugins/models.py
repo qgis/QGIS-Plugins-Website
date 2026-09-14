@@ -227,12 +227,16 @@ class PopularPlugins(ApprovedPlugins):
     """
     Shows only approved plugins, sort by popularity algorithm.
 
-    Popularity is downloads per day since the plugin was published, so a plugin
-    gaining traction now outranks an older one that accumulated the same total
-    slowly. This keeps the list distinct from MostDownloadedPlugins, which the
-    previous formula no longer did once the rating term was removed.
+    Popularity is downloads per day since created_on, which is set when the
+    plugin is first uploaded (not when it is approved), so a plugin gaining
+    traction now outranks an older one that accumulated the same total slowly.
+    This keeps the list distinct from MostDownloadedPlugins, which the previous
+    formula no longer did once the rating term was removed.
     GREATEST(..., 1) floors the age at one day so a plugin uploaded minutes ago
     with a handful of downloads cannot top the chart.
+
+    The user-facing wording of this formula is in the popular_plugins route in
+    plugins/urls.py; keep the two in step.
     """
 
     def get_queryset(self):

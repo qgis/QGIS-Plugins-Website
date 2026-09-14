@@ -273,9 +273,12 @@ urlpatterns = [
             additional_context={
                 "title": _("Popular Plugins"),
                 "description": _(
-                    "List of approved plugins sorted by popularity. "
-                    "Popularity is the number of downloads relative to how "
-                    "long the plugin has been published."
+                    "List of approved plugins sorted by popularity, "
+                    "calculated as "
+                    "popularity = downloads / days since first upload, "
+                    "where the age is counted as at least one day. "
+                    "This favours plugins gaining downloads quickly over "
+                    "older ones that took longer to reach the same total."
                 ),
             },
         ),
