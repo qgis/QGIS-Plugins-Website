@@ -2,6 +2,7 @@
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.urls import re_path as url
 from django.utils.translation import gettext_lazy as _
+from plugins.api_security_rules import security_rules_api
 from plugins.models import Plugin, PluginVersion
 from plugins.views import *
 from rpc4django.views import serve_rpc_request
@@ -26,6 +27,9 @@ urlpatterns = [
     url(r"^tags/(?P<tags>[^\/]+)/$", TagsPluginsList.as_view(), name="tags_plugins"),
     url(r"^add/$", plugin_upload, {}, name="plugin_upload"),
     url(r"^add-empty/$", plugin_create_empty, {}, name="plugin_create_empty"),
+    # Public read-only endpoint feeding the standalone security-check CLI.
+    # Declared before the <package_name> patterns so it is never shadowed.
+    url(r"^api/security-rules/$", security_rules_api, name="security_rules_api"),
     url(r"^user/(?P<username>[\w.@+-]+)/block/$", user_block, {}, name="user_block"),
     url(
         r"^user/(?P<username>[\w.@+-]+)/unblock/$",

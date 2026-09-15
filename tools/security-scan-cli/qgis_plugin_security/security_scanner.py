@@ -1,0 +1,1 @@
+../../../qgis-app/plugins/security_scanner.py
