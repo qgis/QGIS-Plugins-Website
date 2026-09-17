@@ -1504,34 +1504,34 @@ class PluginTokenDetailView(DetailView):
         return context
 
 
+@require_POST
 @login_required
 @transaction.atomic
 def plugin_token_create(request, package_name):
-    if request.method == "POST":
-        plugin = get_object_or_404(Plugin, package_name=package_name)
-        user = request.user
-        if not check_plugin_access(user, plugin):
-            return render(request, "plugins/plugin_permission_deny.html", {})
+    plugin = get_object_or_404(Plugin, package_name=package_name)
+    user = request.user
+    if not check_plugin_access(user, plugin):
+        return render(request, "plugins/plugin_permission_deny.html", {})
 
-        refresh = RefreshToken.for_user(user)
-        refresh["plugin_id"] = plugin.pk
+    refresh = RefreshToken.for_user(user)
+    refresh["plugin_id"] = plugin.pk
 
-        jti = refresh[api_settings.JTI_CLAIM]
+    jti = refresh[api_settings.JTI_CLAIM]
 
-        outstanding_token = OutstandingToken.objects.get(jti=jti)
+    outstanding_token = OutstandingToken.objects.get(jti=jti)
 
-        plugin_token = PluginOutstandingToken.objects.create(
-            plugin=plugin,
-            token=outstanding_token,
-            is_blacklisted=False,
-            is_newly_created=True,
+    plugin_token = PluginOutstandingToken.objects.create(
+        plugin=plugin,
+        token=outstanding_token,
+        is_blacklisted=False,
+        is_newly_created=True,
+    )
+
+    return HttpResponseRedirect(
+        reverse(
+            "plugin_token_detail", args=(plugin.package_name, outstanding_token.pk)
         )
-
-        return HttpResponseRedirect(
-            reverse(
-                "plugin_token_detail", args=(plugin.package_name, outstanding_token.pk)
-            )
-        )
+    )
 
 
 @login_required
