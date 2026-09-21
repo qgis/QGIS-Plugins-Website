@@ -1,6 +1,7 @@
 # Create your views here.
 import copy
 import datetime
+import json
 import logging
 import os
 import re
@@ -2809,6 +2810,27 @@ def version_detail(
                 }
             )
 
+    # Parse deprecated logs
+    deprecated_issues = []
+    if version.deprecated_logs:
+        try:
+            data = json.loads(version.deprecated_logs)
+            for d in data:
+                filepath = d.get("file", "")
+                path_parts = filepath.split("/")
+                relative_path = (
+                    "/".join(path_parts[4:]) if len(path_parts) > 4 else filepath
+                )
+                deprecated_issues.append(
+                    {
+                        "file": relative_path,
+                        "line": d.get("line", ""),
+                        "message": d.get("message", "").strip(),
+                    }
+                )
+        except Exception:
+            pass
+
     return render(
         request,
         "plugins/version_detail.html",
@@ -2817,6 +2839,7 @@ def version_detail(
             "security_scan": security_scan,
             "scan_badge": scan_badge,
             "qt6_issues": qt6_issues,
+            "deprecated_issues": deprecated_issues,
         },
     )
 

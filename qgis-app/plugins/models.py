@@ -1168,6 +1168,22 @@ class PluginVersion(models.Model):
     qt6_logs = models.TextField(blank=True)
     qt6_checked_on = models.DateTimeField(null=True, blank=True)
 
+    class DeprecatedStatus(models.TextChoices):
+        NOT_RUN = "not_run", _("Not run")
+        PENDING = "pending", _("Pending")
+        NO_DEPRECATED = "no_deprecated", _("No deprecated")
+        HAS_DEPRECATED = "has_deprecated", _("Has deprecated")
+
+    deprecated_status = models.CharField(
+        _("Deprecated status"),
+        max_length=20,
+        choices=DeprecatedStatus.choices,
+        default=DeprecatedStatus.NOT_RUN,
+        db_index=True,
+    )
+    deprecated_logs = models.TextField(blank=True)
+    deprecated_checked_on = models.DateTimeField(null=True, blank=True)
+
     @property
     def is_available(self):
         """
