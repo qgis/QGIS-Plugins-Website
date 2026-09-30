@@ -8,13 +8,15 @@ jobs:
   close-not-related:
     if: github.event.label.name == 'not-related'
     runs-on: ubuntu-latest
+
+    permissions:
+      issues: write
+
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
       - name: Close issue with comment
-        uses: peter-evans/close-issue@v3
-        with:
-          token: ${{ secrets.PAT }}
-          issue-number: ${{ github.event.issue.number }}
-          comment: >
-            This issue has been marked as not related to the QGIS Plugins website and is being closed.
-            It's possible that the issue is related to a specific plugin or functionality outside the QGIS Plugins website.
-            If you think this is a mistake, please comment to explain why.
+        run: gh issue close --comment "This issue has been marked as not related to the QGIS Plugins website and is being closed. It's possible that the issue is related to a specific plugin or functionality outside the QGIS Plugins website. If you think this is a mistake, please comment to explain why." ${{ github.event.issue.number }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
