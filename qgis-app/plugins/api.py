@@ -12,13 +12,11 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 # Transaction
 from django.db import IntegrityError, connection
 from django.utils.translation import gettext_lazy as _
-from djangoratings.exceptions import IPLimitReached
 from plugins.models import *
 from plugins.models import SecurityRule
 from plugins.tasks.run_security_scan import run_security_scan_task
 from plugins.validator import validator
 from plugins.views import plugin_notify, send_upload_confirmation_email
-from plugins.vote_throttle import anonymous_vote_cookies
 from rpc4django import rpcmethod
 from taggit.models import Tag
 
@@ -185,34 +183,23 @@ def plugin_tags(**kwargs):
 @rpcmethod(
     name="plugin.vote", signature=["array", "integer", "integer"], login_required=False
 )
-def plugin_vote(plugin_id, vote, **kwargs):
+def plugin_vote(plugin_id=None, vote=None, **kwargs):
     """
-    Vote a plugin, valid values are 1-5
+    Accepted and discarded.
+
+    Plugin ratings were removed from plugins.qgis.org (QGIS PSC, September
+    2026) after sustained vote manipulation. QGIS Desktop installs in the wild
+    keep calling this method for years after a release, and
+    QgsPluginInstaller.sendVote() treats any non-200 response as a failure and
+    shows the user an error, so the method stays registered under its original
+    name and signature, does nothing, touches no rows and cannot raise.
+
+    Both parameters are unused and default to None: clients may send any number
+    of positional parameters, and the desktop sends them as strings ("5", not
+    5). Nothing is logged per call, because this endpoint is the one under
+    attack.
+
+    The desktop never reads the return value, but the original success shape
+    (an array of one struct) is preserved for any other client that does.
     """
-    try:
-        request = kwargs.get("request")
-    except:
-        msg = _("Invalid request.")
-        raise ValidationError(msg)
-    try:
-        plugin = Plugin.objects.get(pk=plugin_id)
-    except Plugin.DoesNotExist:
-        msg = _("Plugin with id %s does not exists.") % plugin_id
-        raise ValidationError(msg)
-    if not int(vote) in range(1, 6):
-        msg = _("%s is not a valid vote (1-5).") % vote
-        raise ValidationError(msg)
-    try:
-        return [
-            plugin.rating.add(
-                score=int(vote),
-                user=request.user,
-                ip_address=request.META["REMOTE_ADDR"],
-                cookies=anonymous_vote_cookies(request, plugin),
-            )
-        ]
-    except IPLimitReached:
-        # Reported as a validation error so the plugin manager shows the reason
-        # rather than an opaque XML-RPC fault.
-        msg = _("Too many votes for this plugin from your address.")
-        raise ValidationError(msg)
+    return [{}]

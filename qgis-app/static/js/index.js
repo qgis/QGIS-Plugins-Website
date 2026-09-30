@@ -15,7 +15,7 @@ import 'choices.js/src/styles/choices.scss';
 DataTable.use(jQuery);
 
 // Publish the globals that scripts outside the bundle depend on:
-// static/js/jquery.cookie.js, jquery.ratings, dataTables.bulma.js and the
+// static/js/jquery.cookie.js, dataTables.bulma.js and the
 // inline setup in plugin_detail.html are plain <script> tags and expect
 // window.$ / window.jQuery.
 //

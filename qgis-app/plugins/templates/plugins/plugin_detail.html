@@ -11,45 +11,10 @@
 
 {% block extrajs %}
 {{ block.super }}
-<script type="text/javascript" src="{% static "js/jquery.cookie.js" %}"></script>
-<script type="text/javascript" src="{% static "jquery-ratings/jquery.ratings.1.0.js" %}"></script>
 <script src="{% static "js/dataTables/dataTables.bulma.js" %}"></script>
 <link rel="stylesheet" href="{% static 'style/dataTables.overrides.css' %}">
 
 <script type="text/javascript">
-    function csrfSafeMethod(method) {
-        // these HTTP methods do not require CSRF protection
-        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-    }
-
-    jQuery(document).ajaxStart(function () {
-        jQuery('#loading').addClass('is-active');
-    }).ajaxStop(function () {
-        jQuery('#loading').removeClass('is-active');
-    });
-
-    // Rating
-    jQuery(function(){
-        var csrftoken = jQuery.cookie('csrftoken');
-        jQuery.ajaxSetup({
-            crossDomain: false, // obviates need for sameOrigin test
-            beforeSend: function(xhr, settings) {
-                if (!csrfSafeMethod(settings.type)) {
-                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
-                }
-            }
-        });
-        jQuery('#rating').ratings(5, {% firstof rating '0' %}).bind('ratingchanged', function(event, data) {
-            jQuery.post('{% url "plugin_rate" object.pk '0' %}'.replace('/0', '/' + data.rating),  function(data){
-                if(data.search('changed') == -1){
-                    has_voted = true;
-                    jQuery('#votes').html(parseInt(jQuery('#votes').html())+1);
-                }
-                jQuery('#vote-message').html(data).fadeIn('slow', function(){jQuery(this).fadeOut('slow');});
-            });
-        });
-    });
-
     // Handle URL anchor for tabs
     $(function() {
 
@@ -167,7 +132,6 @@
 </script>
 {% endblock %}
 {% block extracss %}
-<link type="text/css" href="{% static "jquery-ratings/jquery.ratings.1.0.css" %}" rel="stylesheet" />
 <link rel="stylesheet" href="{% static "style/dataTables.bulma.css" %}">
 {{ block.super }}
 <style>
@@ -222,7 +186,6 @@
                     </div>
                 </div>
                 <p class="plugin-details-description">{{ object.description|linebreaksbr }}</p>
-                <div id="rating"> (<span id="votes">{% firstof votes '0' %}</span>) {% trans "votes" %}&nbsp;<span id="loading" style="display:none">Loading...</span><span id="vote-message" style="display:none"></span></div>
                 <div class="is-flex" style="gap: 0.5rem;">
                         {% with release=object.latest_version %}
                             {% if user.is_staff or user in object.editors %}
