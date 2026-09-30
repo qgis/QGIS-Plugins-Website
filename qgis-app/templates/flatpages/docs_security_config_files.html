@@ -97,7 +97,7 @@
 
   <p>
     Create a <code>.bandit</code> INI file at the root of your plugin. Use
-    <code>skips</code> to list test IDs that should be ignored and <code>exclude_dirs</code>
+    <code>skips</code> to list test IDs that should be ignored and <code>exclude</code>
     to omit vendored or test directories entirely.
   </p>
 
@@ -106,7 +106,7 @@
 skips = B405,B314,B318
 
 # Do not scan vendored libraries or test fixtures
-exclude_dirs = vendor,tests/fixtures</code></pre>
+exclude = vendor,tests/fixtures</code></pre>
 
   <p class="is-size-7 has-text-grey">
     Full list of Bandit test IDs:
