@@ -181,7 +181,7 @@ class TestCheckUrlLinkFollowsRedirects(TestCase):
         response.status_code = status_code
         return response
 
-    @mock.patch("requests.head")
+    @mock.patch("plugins.validator._url_check_session.head")
     def test_head_calls_pass_allow_redirects(self, mock_head):
         mock_head.return_value = self._make_response(200)
         self.assertIsNone(_check_url_link(self.URLS))
@@ -191,17 +191,18 @@ class TestCheckUrlLinkFollowsRedirects(TestCase):
         for call in mock_head.call_args_list:
             self.assertTrue(
                 call.kwargs.get("allow_redirects"),
-                "requests.head must be called with allow_redirects=True",
+                "the link check must be called with allow_redirects=True",
             )
 
-    @mock.patch("requests.head")
+    @mock.patch("plugins.validator._url_check_session.head")
     def test_redirect_to_valid_url_is_accepted(self, mock_head):
         # When allow_redirects=True, requests transparently follows the
-        # redirect chain and returns the final response's status code.
+        # redirect chain and returns the final response's status code. The
+        # guard validates each hop, so a redirect to a public host still works.
         mock_head.return_value = self._make_response(200)
         self.assertIsNone(_check_url_link(self.URLS))
 
-    @mock.patch("requests.head")
+    @mock.patch("plugins.validator._url_check_session.head")
     def test_redirect_to_broken_url_is_rejected(self, mock_head):
         # If the final URL after redirects is itself broken, validation
         # must still fail.
@@ -209,18 +210,20 @@ class TestCheckUrlLinkFollowsRedirects(TestCase):
         with self.assertRaises(ValidationError):
             _check_url_link(self.URLS)
 
-    @mock.patch("requests.head")
-    def test_ssl_error_retries_with_allow_redirects(self, mock_head):
-        # An unverifiable certificate must be retried with verify=False, and
-        # that retry must keep following redirects.
-        mock_head.side_effect = [
-            requests.exceptions.SSLError(),  # first attempt trips SSL error
-            self._make_response(200),  # SSL-fallback retry succeeds
-        ]
-        self.assertIsNone(_check_url_link(self.URLS))
-        ssl_retry_call = mock_head.call_args_list[1]
-        self.assertTrue(ssl_retry_call.kwargs.get("allow_redirects"))
-        self.assertFalse(ssl_retry_call.kwargs.get("verify"))
+    @mock.patch("plugins.validator._url_check_session.head")
+    def test_ssl_error_is_treated_as_unreachable(self, mock_head):
+        # An unverifiable certificate is no longer retried with verification
+        # turned off. A url we cannot verify is treated as unreachable, not
+        # quietly trusted, so validation fails rather than connecting insecurely.
+        mock_head.side_effect = requests.exceptions.SSLError()
+        with self.assertRaises(ValidationError):
+            _check_url_link(self.URLS)
+        for call in mock_head.call_args_list:
+            self.assertNotIn(
+                "verify",
+                call.kwargs,
+                "the insecure verify=False retry must be gone",
+            )
 
 
 class TestCheckUrlLinkRejectsHeadOnlyFailures(TestCase):
@@ -242,8 +245,8 @@ class TestCheckUrlLinkRejectsHeadOnlyFailures(TestCase):
         response.status_code = status_code
         return response
 
-    @mock.patch("requests.get")
-    @mock.patch("requests.head")
+    @mock.patch("plugins.validator._url_check_session.get")
+    @mock.patch("plugins.validator._url_check_session.head")
     def test_head_error_falls_back_to_get(self, mock_head, mock_get):
         mock_head.return_value = self._make_response(400)
         mock_get.return_value = self._make_response(200)
@@ -251,32 +254,41 @@ class TestCheckUrlLinkRejectsHeadOnlyFailures(TestCase):
         self.assertEqual(mock_get.call_count, 1)
         self.assertTrue(mock_get.call_args.kwargs.get("allow_redirects"))
 
-    @mock.patch("requests.get")
-    @mock.patch("requests.head")
+    @mock.patch("plugins.validator._url_check_session.get")
+    @mock.patch("plugins.validator._url_check_session.head")
     def test_broken_url_still_rejected_after_get_fallback(self, mock_head, mock_get):
         mock_head.return_value = self._make_response(404)
         mock_get.return_value = self._make_response(404)
         with self.assertRaises(ValidationError) as error:
             _check_url_link(self.URLS)
-        self.assertIn("could not be reached", error.exception.messages[0])
+        self.assertIn("could not reach", error.exception.messages[0])
         self.assertNotIn("timeout", error.exception.messages[0])
 
-    @mock.patch("requests.head", side_effect=requests.exceptions.ConnectionError())
+    @mock.patch(
+        "plugins.validator._url_check_session.head",
+        side_effect=requests.exceptions.ConnectionError(),
+    )
     def test_connection_error_is_not_reported_as_timeout(self, mock_head):
         with self.assertRaises(ValidationError) as error:
             _check_url_link(self.URLS)
         self.assertNotIn("timeout", error.exception.messages[0])
 
-    @mock.patch("requests.head", side_effect=requests.exceptions.Timeout())
-    def test_timeout_is_reported_as_timeout(self, mock_head):
+    @mock.patch(
+        "plugins.validator._url_check_session.head",
+        side_effect=requests.exceptions.Timeout(),
+    )
+    def test_timeout_is_not_distinguishable_from_other_failures(self, mock_head):
+        # A timeout once produced its own message, which let an uploader tell a
+        # filtered internal port (slow, times out) from a closed one. Every
+        # failure now returns the same generic message.
         with self.assertRaises(ValidationError) as error:
             _check_url_link(self.URLS)
-        self.assertIn(
-            f"within the {URL_CHECK_TIMEOUT} seconds timeout",
-            error.exception.messages[0],
-        )
+        message = error.exception.messages[0]
+        self.assertIn("could not reach", message)
+        self.assertNotIn("timeout", message)
+        self.assertNotIn("seconds", message)
 
-    @mock.patch("requests.head")
+    @mock.patch("plugins.validator._url_check_session.head")
     def test_head_requests_use_a_timeout(self, mock_head):
         mock_head.return_value = self._make_response(200)
         self.assertIsNone(_check_url_link(self.URLS))
@@ -301,8 +313,8 @@ class TestCheckUrlLinkReportsAndRetries(TestCase):
         response.status_code = status_code
         return response
 
-    @mock.patch("requests.get")
-    @mock.patch("requests.head")
+    @mock.patch("plugins.validator._url_check_session.get")
+    @mock.patch("plugins.validator._url_check_session.head")
     def test_403_is_retried_with_fallback_user_agent(self, mock_head, mock_get):
         mock_head.return_value = self._make_response(403)
         mock_get.side_effect = [
@@ -313,19 +325,26 @@ class TestCheckUrlLinkReportsAndRetries(TestCase):
         retry_headers = mock_get.call_args_list[-1].kwargs.get("headers")
         self.assertEqual(retry_headers, URL_CHECK_FALLBACK_HEADERS)
 
-    @mock.patch("requests.get")
-    @mock.patch("requests.head")
-    def test_error_message_names_url_and_reason(self, mock_head, mock_get):
+    @mock.patch("plugins.validator._url_check_session.get")
+    @mock.patch("plugins.validator._url_check_session.head")
+    def test_error_message_names_the_field_but_not_the_url_or_reason(
+        self, mock_head, mock_get
+    ):
+        # The message names which metadata field failed, since the uploader
+        # typed that value, but never the url, the status, or the reason. Those
+        # details let an upload probe the server's network, so they only go to
+        # the server log.
         mock_head.return_value = self._make_response(404)
         mock_get.return_value = self._make_response(404)
         with self.assertRaises(ValidationError) as error:
             _check_url_link(self.URLS)
         message = error.exception.messages[0]
-        self.assertIn(self.URLS[0]["url"], message)
         self.assertIn("repository", message)
-        self.assertIn("HTTP status 404", message)
+        self.assertNotIn(self.URLS[0]["url"], message)
+        self.assertNotIn("HTTP status", message)
+        self.assertNotIn("404", message)
 
-    @mock.patch("requests.head")
+    @mock.patch("plugins.validator._url_check_session.head")
     def test_single_stalled_response_is_retried(self, mock_head):
         # Codeberg intermittently stalls; one slow response must not fail the
         # upload when the retry succeeds.
@@ -336,13 +355,16 @@ class TestCheckUrlLinkReportsAndRetries(TestCase):
         self.assertIsNone(_check_url_link(self.URLS))
         self.assertEqual(mock_head.call_count, 2)
 
-    @mock.patch("requests.head", side_effect=requests.exceptions.Timeout())
-    def test_timeout_message_names_url(self, mock_head):
+    @mock.patch(
+        "plugins.validator._url_check_session.head",
+        side_effect=requests.exceptions.Timeout(),
+    )
+    def test_timeout_message_does_not_name_the_url(self, mock_head):
         with self.assertRaises(ValidationError) as error:
             _check_url_link(self.URLS)
         message = error.exception.messages[0]
-        self.assertIn(self.URLS[0]["url"], message)
-        self.assertIn(f"{URL_CHECK_TIMEOUT} seconds", message)
+        self.assertNotIn(self.URLS[0]["url"], message)
+        self.assertIn("repository", message)
 
 
 class TestValidatorForbiddenFileFolder(TestCase):
