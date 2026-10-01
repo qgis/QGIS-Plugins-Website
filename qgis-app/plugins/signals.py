@@ -8,27 +8,39 @@ from plugins.models import PluginVersion
 
 
 @receiver(post_save, sender=PluginVersion)
-def trigger_qt6_check(sender, instance, created, **kwargs):
-    if created:
-        # Skip if no package file is associated (e.g. in tests or incomplete instances)
-        if not instance.package or not instance.package.name:
-            return
-        try:
-            package_path = instance.package.path
-        except (ValueError, Exception):
-            # Skip if the path cannot be resolved (e.g. file outside MEDIA_ROOT)
-            return
+def trigger_checks_on_upload(sender, instance, created, **kwargs):
+    if not created:
+        return
+    if not instance.package or not instance.package.name:
+        return
+    try:
+        package_path = instance.package.path
+    except (ValueError, Exception):
+        return
 
-        # Mark as pending before sending the task
-        PluginVersion.objects.filter(pk=instance.pk).update(
-            qt6_status=PluginVersion.Qt6Status.PENDING
-        )
+    PluginVersion.objects.filter(pk=instance.pk).update(
+        qt6_status=PluginVersion.Qt6Status.PENDING,
+        deprecated_status=PluginVersion.DeprecatedStatus.PENDING,
+    )
 
-        app.send_task(
-            "plugins.tasks.run_check_qt6.run_qgis_script",
-            args=[instance.pk, package_path],
-            queue="qt6",
-        )
+    _trigger_qt6_check(instance.pk, package_path)
+    _trigger_deprecated_check(instance.pk, package_path)
+
+
+def _trigger_qt6_check(plugin_version_pk: int, package_path: str):
+    app.send_task(
+        "plugins.tasks.run_check_qt6.run_qgis_script",
+        args=[plugin_version_pk, package_path],
+        queue="qt6",
+    )
+
+
+def _trigger_deprecated_check(plugin_version_pk: int, package_path: str):
+    app.send_task(
+        "plugins.tasks.run_check_deprecated.run_check_deprecated",
+        args=[plugin_version_pk, package_path],
+        queue="qt6",
+    )
 
 @shared_task
 def update_search_index(action, instance_pk, app_label, model_name):
