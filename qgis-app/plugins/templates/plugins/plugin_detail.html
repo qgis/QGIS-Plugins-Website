@@ -279,10 +279,17 @@
                     {% include "plugins/includes/email_confirmation_badge.html" %}
                 </div>
                 <div class="buttons mt-3">
+                    {% if object.stable or object.experimental %}
                     <a class="button" href="{% if object.stable %}{{ object.stable.get_download_url }}{% else %}{{ object.experimental.get_download_url }}{% endif %}">
                         <span class="icon"><i class="fas fa-download"></i></span>
                         <span>{% trans "Download latest" %}</span>
                     </a>
+                    {% else %}
+                    <button class="button" type="button" disabled title="{% trans 'No approved version is available for download' %}">
+                        <span class="icon"><i class="fas fa-download"></i></span>
+                        <span>{% trans "No approved version yet" %}</span>
+                    </button>
+                    {% endif %}
                     <div class="tooltip">
                         <a class="button is-outlined" href="{% url 'plugin_versions_json' object.package_name %}" aria-label="{% trans 'Versions JSON' %}">
                             <span class="icon"><i class="fas fa-code"></i></span>
