@@ -75,6 +75,11 @@ class UploadWithTokenTestCase(TestCase):
         tokens = OutstandingToken.objects.all()
         self.assertEqual(tokens.count(), 1)
 
+    def test_token_create_get_not_allowed(self):
+        # GET request should return 405 Method Not Allowed
+        response = self.client.get(self.url_token_create)
+        self.assertEqual(response.status_code, 405)
+
     def test_upload_new_version_with_valid_token(self):
         # Generate a token for the authenticated user
         self.client.post(self.url_token_create, {})
