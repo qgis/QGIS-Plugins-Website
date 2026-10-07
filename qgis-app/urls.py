@@ -186,9 +186,7 @@ simplemenu.register(
     # Top plugins
     "/plugins/featured/",
     "/plugins/popular/",
-    "/plugins/most_voted/",
     "/plugins/most_downloaded/",
-    "/plugins/best_rated/",
     # Category
     "/plugins/stable/",
     "/plugins/experimental/",

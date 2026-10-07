@@ -100,11 +100,6 @@ is-one-third-fullhd">
                             <span>{{ object.latest_version_date|local_timezone:"SHORT_NATURAL_DAY" }}</span>
                         </span>
                     </p>
-                    <div class="is-flex is-align-items-center p-1">
-                        <div class="star-ratings">
-                            <span style="width:{% widthratio object.average_vote 5 100 %}%" class="rating"></span>
-                        </div> ({{ object.rating_votes }})
-                    </div>
                 </div>
                 {% if user.is_staff or user in object.editors %}
                     {% with release=object.latest_version %}

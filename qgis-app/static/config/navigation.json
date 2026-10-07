@@ -64,20 +64,6 @@
           {
             "type": "second-menu",
             "settings": {
-              "name": "Most Voted",
-              "href": "/plugins/most_voted/"
-            }
-          },
-          {
-            "type": "second-menu",
-            "settings": {
-              "name": "Best Rated Plugins",
-              "href": "/plugins/best_rated/"
-            }
-          },
-          {
-            "type": "second-menu",
-            "settings": {
               "name": "Stable",
               "href": "/plugins/stable/"
             }
