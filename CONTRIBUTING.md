@@ -25,29 +25,29 @@ docker-compose --version
 
 ## 🛒 Getting the Code
 
-Clone the git repo:
+- Clone the git repo
 
 ```bash
 git clone https://github.com/qgis/QGIS-Plugins-Website.git
 ```
 
-If the clone was succesful you should now see the local directory `./QGIS-Plugins-Website`.
+If the clone was succesful you should now see the directory `./QGIS-Plugins-Website`.
 
-Next, change to the `dockerize` within:
+- Change into this project root directory
 
 ```bash
-cd QGIS-Plugins-Website/dockerize
+cd QGIS-Plugins-Website
 ```
 
 ![-----------------------------------------------------](./img/green-gradient.png)
 
-
 ## 🧑💻 Development
 
 ### Environment file (`.env`)
+
 - Create .env file
 ```bash
-cp .env.template .env
+cp dockerize/.env.template dockerize/.env
 ```
 
 - Edit .env file and set your environment variables
@@ -63,7 +63,7 @@ cp .env.template .env
 
 - Create settings_local.py file
 ```bash
-cp settings_local.py.templ settings_local.py
+cp qgis-app/settings_local.py.templ qgis-app/settings_local.py
 ```
 
 - Edit settings_local.py file and set your environment variables
@@ -71,6 +71,12 @@ cp settings_local.py.templ settings_local.py
 **IMPORTANT NOTE**: As we are migrating to a declarative based infrastructure, it is preferable to use the `settings_local.py` file for all new Django variables. This file is ignored when commiting so please make sure you define your new variables with an example value (**NOT THE REAL ONE FOR SECRETS AND PASSWORDS**) inside the `settings_local.py.templ` file.
 
 ### Spin up the development environment
+
+- Change to the `dockerize` directory
+
+```bash
+cd dockerize
+```
 
 - Build and spin container
 ```bash
