@@ -25,11 +25,19 @@ docker-compose --version
 
 ## 🛒 Getting the Code
 
-- Clone git repo `git clone https://github.com/qgis/QGIS-Plugins-Website.git`
-- Run `$ pwd` in order to get your current directory
-- Path to your repo should be `<your current directory>/QGIS-Plugins-Website `
-- Go to dockerize directory `cd QGIS-Plugins-Website/dockerize`
+Clone the git repo:
 
+```bash
+git clone https://github.com/qgis/QGIS-Plugins-Website.git
+```
+
+If the clone was succesful you should now see the local directory `./QGIS-Plugins-Website`.
+
+Next, change to the `dockerize` within:
+
+```bash
+cd QGIS-Plugins-Website/dockerize
+```
 
 ![-----------------------------------------------------](./img/green-gradient.png)
 
@@ -39,15 +47,15 @@ docker-compose --version
 ### Environment file (`.env`)
 - Create .env file
 ```bash
-$ cp .env.template .env
+cp .env.template .env
 ```
 
 - Edit .env file and set your environment variables
 - Enable debug mode by setting `DEBUG=True`.
-- Uncomment RABBITMQ_IMAGE if you want to use a different image version. 
-Default is `rabbitmq:3.7-alpine`. This is useful if you encounter any issues 
-with the default image (can be also use to change the image without editing the code). 
-Please also see [this discussion](https://github.com/qgis/QGIS-Plugins-Website/issues/80).
+- Uncomment RABBITMQ_IMAGE if you want to use a different image version.
+  Default is `rabbitmq:3.7-alpine`. This is useful if you encounter any issues
+  with the default image (can be also use to change the image without editing the code).
+  Please also see [this discussion](https://github.com/qgis/QGIS-Plugins-Website/issues/80).
 
 **IMPORTANT NOTE**: For new Django variables, please use the `settings_local.py` as the `.env` file is not supported by the new production infrastructure.
 
@@ -55,7 +63,7 @@ Please also see [this discussion](https://github.com/qgis/QGIS-Plugins-Website/i
 
 - Create settings_local.py file
 ```bash
-$ cp settings_local.py.templ settings_local.py
+cp settings_local.py.templ settings_local.py
 ```
 
 - Edit settings_local.py file and set your environment variables
@@ -66,14 +74,14 @@ $ cp settings_local.py.templ settings_local.py
 
 - Build and spin container
 ```bash
-$ make build
-$ make devweb
+make build
+make devweb
 ```
 
 - Run migrate and seed db
 ```bash
-$ make devweb-migrate
-$ make dbseed
+make devweb-migrate
+make dbseed
 ```
 
 If you have a backup, you can restore it:
@@ -84,17 +92,18 @@ make dbrestore
 
 - Set up python interpreter in PyCharm or just runserver from devweb container:
 ```bash
-$ make devweb-runserver
+make devweb-runserver
 ```
 and now, you can see your site at `http://localhost:62202` `http://0.0.0.0:62202`.
 
 - Run unit tests
 ```bash
-$ make devweb-runtests
+make devweb-runtests
 ```
 
 - You can use the following credentials to log in if you ran the `make dbseed` command:
-```
+
+```text
 Admin account:
 username: admin
 password: admin
@@ -110,24 +119,24 @@ password: creator
 
 - Update migrations:
 ```bash
-$ make devweb-makemigrations app='plugins'
+make devweb-makemigrations app='plugins'
 ```
 
 - Run a django command from the devweb container
 ```bash
-$ make devweb-exec c='python manage.py createsuperuser'
-$ make devweb-exec c='pip freeze'
+make devweb-exec c='python manage.py createsuperuser'
+make devweb-exec c='pip freeze'
 ```
 
 - Enter the devweb container shell
 ```bash
-$ make devweb-shell
+make devweb-shell
 ```
 
 - If 'None' appears in the search results, it indicates a misalignment between the search index and the database. This discrepancy often arises when a plugin is deleted from the model but persists in the search index. To rectify this issue, it is essential to synchronize the search index with the database by rebuilding it. Execute the following command to initiate the rebuilding process:
 
 ```bash
-$ make rebuild_index
+make rebuild_index
 ```
 This command ensures that the search index accurately reflects the current state of the database, resolving the presence of 'None' in the search results. Automatic synchronization is currently managed in settings.py: `HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"`.
 
@@ -183,12 +192,12 @@ pre-commit install --config .pre-commit-config.yaml
 - Auth type: password (and tick 'save password')
 - Click next button
 - password : `docker`
-- Interpreter : ``/usr/local/bin/python``
+- Interpreter : `/usr/local/bin/python`
 - Sync folders -> click on the folder icon
   - local : `<path to your repo>/dockerize/qgis-app`
   - remote : `/home/web/django_project`
-  After that you should see something like this in sync folder:
-   `<Project root>/django_project→/home/web/django_project`
+    After that you should see something like this in sync folder:
+    `<Project root>/django_project→/home/web/django_project`
 - Automatically upload project files to the server -> untick the checkbox to avoid overwriting in your files.
 - Click the Apply button
 
@@ -197,7 +206,7 @@ pre-commit install --config .pre-commit-config.yaml
 
 - Language & Framework -> Django
 - tick to Enable Django Support.
-- Django project root: ``<path to your repo>/qgis_app``
+- Django project root: `<path to your repo>/qgis_app`
 - Settings: setting_docker.py
 - Click the Apply button
 
@@ -205,15 +214,15 @@ pre-commit install --config .pre-commit-config.yaml
 
 - Run -> Edit configurations
 - Click the `+` icon in the top left corner
-- Choose ``Django server`` from the popup list
+- Choose `Django server` from the popup list
 
 Now set these options:
 
-* **Name:** Django Server
-* **Host:** 0.0.0.0
-* **Port:** 8080
-* **Additional options:** ``--settings=settings.docker``
-* **Run browser** If checked, it will open the url after you click run. You should be able to access the running on 0.0.0.0:62202 (the port that mapped to 8080)
+- **Name:** Django Server
+- **Host:** 0.0.0.0
+- **Port:** 8080
+- **Additional options:** `--settings=settings.docker`
+- **Run browser** If checked, it will open the url after you click run. You should be able to access the running on 0.0.0.0:62202 (the port that mapped to 8080)
 
 * **Environment vars** , you can add the variables value one-by-one by clicking on browse icon at right corner in the input field, or just copy-paste this value:
 `PYTHONUNBUFFERED=1;DJANGO_SETTINGS_MODULE=settings_docker;RABBITMQ_HOST=rabbitmq;DATABASE_NAME=gis;DATABASE_USERNAME=docker;DATABASE_PASSWORD=docker;DATABASE_HOST=db`
@@ -239,11 +248,16 @@ able to step through views etc as you work.
 
 - Go to repo directory and run backup.sh
 ```bash
-$ ./backup.sh
+./backup.sh
 ```
 - You will find dumps file in backups directory
 ```bash
-$ tree -L 3 backups
+tree -L 3 backups
+```
+
+Example output:
+
+```text
 backups
 ├── 2016
 ├── 2017
@@ -275,13 +289,13 @@ backups
 
 - Copy the dump file you wish to restore to dockerize/backups/latest.dmp file
 ```bash
-$ cp backups/2020/December/PG_QGIS_PLUGINS_gis.16-December-2020.dmp dockerize/backups/latest.dmp
+cp backups/2020/December/PG_QGIS_PLUGINS_gis.16-December-2020.dmp dockerize/backups/latest.dmp
 ```
 
 - Restore the dump file
 ```bash
-$ cd dockerize
-$ make dbrestore
+cd dockerize
+make dbrestore
 ```
 ![-----------------------------------------------------](./img/green-gradient.png)
 
