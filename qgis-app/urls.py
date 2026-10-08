@@ -94,6 +94,11 @@ urlpatterns += [
 # Home and documentation pages
 urlpatterns += [
     url(r"^$", homepage, name="homepage"),
+    url(
+        r"^publish/?$",
+        RedirectView.as_view(pattern_name="docs_publish", permanent=True),
+        name="legacy_docs_publish",
+    ),
     url(r"^docs/publish", docs_publish, name="docs_publish"),
     url(r"^docs/approval", docs_approval, name="docs_approval"),
     url(r"^docs/faq", docs_faq, name="docs_faq"),
