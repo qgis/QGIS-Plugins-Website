@@ -470,3 +470,49 @@ class AuthorizedJsonExtraFieldsTests(TestCase):
                     pv.package.delete(save=False)
                 except Exception:
                     pass
+
+
+class PluginDetailDownloadButtonTests(TestCase):
+    fixtures = ["fixtures/auth.json"]
+
+    def setUp(self):
+        self.client = Client()
+        self.creator = User.objects.get(username="creator")
+        self.plugin = _make_plugin(
+            self.creator,
+            package_name="download_button_plugin",
+            name="Download Button Plugin",
+        )
+        self.detail_url = reverse("plugin_detail", args=[self.plugin.package_name])
+
+    def test_download_button_is_disabled_without_approved_version(self):
+        _make_version(self.plugin, self.creator, approved=False)
+
+        response = self.client.get(self.detail_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            '<button class="button" type="button" disabled',
+            html=False,
+        )
+        self.assertContains(response, "No approved version yet")
+        self.assertNotContains(response, 'href=""', html=False)
+
+    def test_download_button_links_to_latest_approved_version(self):
+        version = _make_version(self.plugin, self.creator)
+
+        response = self.client.get(self.detail_url)
+
+        download_url = reverse(
+            "version_download",
+            args=[self.plugin.package_name, version.version],
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'href="{download_url}"', html=False)
+        self.assertContains(response, "Download latest")
+
+    def tearDown(self):
+        for version in PluginVersion.objects.filter(plugin=self.plugin):
+            if version.package:
+                version.package.delete(save=False)
