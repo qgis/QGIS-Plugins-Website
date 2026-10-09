@@ -796,3 +796,75 @@ class ConfigFileFunctionalTestCase(TestCase):
             "Secret acknowledged in .secrets.baseline must not be re-flagged",
         )
         os.remove(zip_path)
+
+
+class SecurityScannerStandaloneTestCase(TestCase):
+    """Tests for the Django-decoupled / standalone-friendly scanner behaviour.
+
+    These guarantee the scanner used by the standalone CLI stays runnable
+    without any database access and cleans up after itself.
+    """
+
+    def _create_test_zip(self, files_content):
+        temp_dir = tempfile.mkdtemp()
+        zip_path = os.path.join(temp_dir, "test_plugin.zip")
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for filename, content in files_content.items():
+                zf.writestr(filename, content)
+        return zip_path
+
+    def test_all_secrets_plugins_supplied_avoids_db(self):
+        """When all_secrets_plugins is supplied, __init__ must not touch the DB."""
+
+        class _Rule:
+            def __init__(self, code, category):
+                self.check_code = code
+                self.check_category = category
+
+        enabled = [_Rule("KeywordDetector", "secrets")]
+        supplied = ["KeywordDetector", "Base64HighEntropyString"]
+
+        with self.assertNumQueries(0):
+            scanner = PluginSecurityScanner(
+                "/nonexistent.zip",
+                enabled_rules=enabled,
+                all_secrets_plugins=supplied,
+            )
+
+        self.assertEqual(scanner._all_secrets_plugins, supplied)
+
+    def test_scan_cleans_up_extraction_dir(self):
+        """The temporary extraction directory must be removed after scan()."""
+        zip_path = self._create_test_zip({"test_plugin/__init__.py": "# clean\n"})
+        scanner = PluginSecurityScanner(zip_path)
+        scanner.scan()
+
+        self.assertIsNone(scanner.extracted_dir)
+        os.remove(zip_path)
+
+    def test_scanner_module_has_no_hard_django_model_import(self):
+        """The module must import SecurityRule lazily, not at module top level."""
+        import plugins.security_scanner as scanner_mod
+
+        self.assertFalse(
+            hasattr(scanner_mod, "SecurityRule"),
+            "SecurityRule must not be imported at module scope (breaks standalone use)",
+        )
+
+    def test_lightweight_rule_objects_are_accepted(self):
+        """The scanner must work with duck-typed rule objects (no Django model)."""
+
+        class _Rule:
+            def __init__(self, code, category):
+                self.check_code = code
+                self.check_category = category
+
+        zip_path = self._create_test_zip({"test_plugin/__init__.py": "# clean\n"})
+        enabled = [_Rule("B602", "bandit"), _Rule("E501", "flake8")]
+        report = PluginSecurityScanner(
+            zip_path, enabled_rules=enabled, all_secrets_plugins=[]
+        ).scan()
+
+        self.assertIn("summary", report)
+        self.assertIn("checks", report)
+        os.remove(zip_path)
