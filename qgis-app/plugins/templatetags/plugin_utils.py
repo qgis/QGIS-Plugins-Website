@@ -249,4 +249,6 @@ def get_navigation_config_url():
         f.write(content)
 
     # Return the URL to the new file
-    return settings.MEDIA_URL.rstrip("/") + "/navigation_rendered.json"
+    return os.path.join(
+        "/media", "navigation_rendered.json"
+    )
