@@ -250,5 +250,5 @@ def get_navigation_config_url():
 
     # Return the URL to the new file
     return os.path.join(
-        settings.DEFAULT_PLUGINS_SITE, "media", "navigation_rendered.json"
+        "/media", "navigation_rendered.json"
     )
