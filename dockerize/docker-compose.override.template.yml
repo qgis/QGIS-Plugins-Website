@@ -14,9 +14,10 @@ services:
       target: dev
     ports:
       # for django test server
-      - "62202:8080"
+      - "62202:8081"
       # for ssh
       - "62203:22"
+    command: uwsgi --ini /uwsgi.conf
 
   beat:
     volumes:

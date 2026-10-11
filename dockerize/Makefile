@@ -203,7 +203,12 @@ exec:
 #    D E V E L O P M E N T    C O M M A N D S
 # ----------------------------------------------------------------------------
 
-build-dev:
+.PHONY: devweb-config
+
+devweb-config:
+	@test -f docker-compose.override.yml || cp docker-compose.override.template.yml docker-compose.override.yml
+
+build-dev: devweb-config
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Building in development mode only"
@@ -217,11 +222,13 @@ devweb-test: db
 	@echo "------------------------------------------------------------------"
 	@docker compose up --no-deps -d devweb
 
-devweb: db
+devweb: devweb-config db
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running in DEVELOPMENT mode"
 	@echo "------------------------------------------------------------------"
+	@docker compose -p $(PROJECT_ID) stop webpack
+	@docker compose -p $(PROJECT_ID) run --rm --no-deps webpack sh -c 'npm ci && npm run dev'
 	@docker compose -p $(PROJECT_ID) up --no-deps -d devweb rabbitmq worker beat webpack maindev qgis-qt6
 
 devweb-migrate:
