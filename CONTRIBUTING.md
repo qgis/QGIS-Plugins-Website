@@ -80,7 +80,7 @@ cd dockerize
 
 - Build and spin container
 ```bash
-make build
+make devweb-config build
 make devweb
 ```
 
