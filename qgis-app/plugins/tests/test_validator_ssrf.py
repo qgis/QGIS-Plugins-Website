@@ -17,10 +17,12 @@ Everything binds to 127.0.0.1. No test makes a request off this machine.
 """
 
 import http.server
+import os
 import socket
 import threading
 from unittest import mock
 
+import requests
 from django.core.exceptions import ValidationError
 from django.test import SimpleTestCase
 from plugins import safe_http
@@ -190,6 +192,8 @@ class IsBlockedAddressTest(SimpleTestCase):
             "172.16.9.9",
             "192.168.0.5",
             "169.254.169.254",
+            "100.64.0.1",  # carrier grade NAT, low end
+            "100.127.255.254",  # carrier grade NAT, high end
             "::1",
             "fe80::1",
             "fc00::1",
@@ -200,7 +204,14 @@ class IsBlockedAddressTest(SimpleTestCase):
             )
 
     def test_allows_public_addresses(self):
-        for addr in ("8.8.8.8", "1.1.1.1", "93.184.216.34", "2606:4700:4700::1111"):
+        for addr in (
+            "8.8.8.8",
+            "1.1.1.1",
+            "93.184.216.34",
+            "100.63.255.255",  # just below carrier grade NAT, public
+            "100.128.0.1",  # just above carrier grade NAT, public
+            "2606:4700:4700::1111",
+        ):
             self.assertFalse(
                 safe_http.is_blocked_address(addr), f"{addr} should be allowed"
             )
@@ -208,3 +219,52 @@ class IsBlockedAddressTest(SimpleTestCase):
     def test_blocks_scoped_ipv6_and_garbage(self):
         self.assertTrue(safe_http.is_blocked_address("fe80::1%eth0"))
         self.assertTrue(safe_http.is_blocked_address("not-an-ip"))
+
+
+class SafeSessionProxyTest(SimpleTestCase):
+    """A proxy would send our request to the proxy, which then fetches the
+    internal host for us, so getpeername never sees the internal address. The
+    session must ignore proxy configuration entirely."""
+
+    def test_session_ignores_proxy_settings(self):
+        session = safe_http.build_safe_session()
+        self.assertFalse(session.trust_env, "env trust must be off")
+        self.assertEqual(session.proxies, {}, "no default proxies")
+
+    def test_proxy_env_does_not_route_an_internal_url_through_a_proxy(self):
+        # Stand up a listener acting as the proxy. A plain http proxy receives
+        # the full target url as an ordinary request, so this records any use.
+        with _Listener() as proxy:
+            proxy_url = f"http://127.0.0.1:{proxy.port}"
+            closed = _free_port_on()  # nothing listening, direct attempt fails fast
+            target = f"http://127.0.0.1:{closed}/x"
+
+            # Baseline: a session that trusts the environment DOES use the
+            # proxy, so the listener would see the request. This proves the
+            # test can detect proxy use.
+            with mock.patch.dict(
+                os.environ, {"HTTP_PROXY": proxy_url, "HTTPS_PROXY": proxy_url}
+            ):
+                trusting = requests.Session()
+                try:
+                    trusting.get(target, timeout=3)
+                except requests.exceptions.RequestException:
+                    pass
+            self.assertTrue(
+                proxy.hits, "baseline: a trusting session routes through the proxy"
+            )
+
+            proxy.hits.clear()
+
+            # The guarded session must ignore the proxy and go direct, where the
+            # peer guard (or a refused connection) stops it. The proxy is never
+            # contacted.
+            with mock.patch.dict(
+                os.environ, {"HTTP_PROXY": proxy_url, "HTTPS_PROXY": proxy_url}
+            ):
+                session = safe_http.build_safe_session()
+                try:
+                    session.get(target, timeout=3)
+                except requests.exceptions.RequestException:
+                    pass
+            self.assertEqual(proxy.hits, [], "the guarded session must not use a proxy")
