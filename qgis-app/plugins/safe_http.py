@@ -28,11 +28,20 @@ class BlockedAddressError(Exception):
     """Raised when a connection resolves to an address we will not reach."""
 
 
+# Ranges the ipaddress flags below do not all catch, blocked explicitly.
+_EXTRA_BLOCKED_NETWORKS = (
+    # RFC 6598 carrier grade NAT. Routable inside many hosting networks, so an
+    # internal service can sit here, but not flagged private by every Python.
+    ipaddress.ip_network("100.64.0.0/10"),
+)
+
+
 def is_blocked_address(host: str) -> bool:
     """
     True when ``host`` is an ip we refuse to connect to: loopback, private
-    (RFC1918 and IPv6 unique local), link local (including the cloud metadata
-    address 169.254.169.254), reserved, multicast, or the unspecified address.
+    (RFC1918 and IPv6 unique local), carrier grade NAT (RFC 6598), link local
+    (including the cloud metadata address 169.254.169.254), reserved,
+    multicast, or the unspecified address.
 
     Several flags are checked rather than ``is_private`` alone so the policy is
     explicit and does not shift if that property's definition changes.
@@ -45,6 +54,8 @@ def is_blocked_address(host: str) -> bool:
     except ValueError:
         # Not a literal address. We only ever pass the connected peer here, so
         # this should not happen; refuse rather than guess.
+        return True
+    if any(ip in network for network in _EXTRA_BLOCKED_NETWORKS):
         return True
     return any(
         (
@@ -120,6 +131,7 @@ class SafeHTTPAdapter(HTTPAdapter):
 def build_safe_session() -> requests.Session:
     """A session that refuses internal hosts on http and https, redirects too."""
     session = requests.Session()
+    session.trust_env = False
     adapter = SafeHTTPAdapter()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
