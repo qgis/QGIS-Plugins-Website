@@ -252,10 +252,6 @@ devweb-shell:
 	@echo "------------------------------------------------------------------"
 	@docker compose -p $(PROJECT_ID) exec devweb bash
 
-.PHONY: devweb-livereload
-devweb-livereload:
-	@docker compose -p $(PROJECT_ID) -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.livereload.yml up --no-deps -d webpack
-
 devweb-runserver: devweb
 	@echo
 	@echo "------------------------------------------------------------------"

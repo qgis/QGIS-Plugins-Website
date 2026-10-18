@@ -102,11 +102,6 @@ make devweb-runserver
 ```
 and now, you can see your site at `http://localhost:62202` `http://0.0.0.0:62202`.
 
-- Enable automatic browser refresh (optional, after starting runserver):
-```bash
-make devweb-livereload
-```
-
 - Run unit tests
 ```bash
 make devweb-runtests
