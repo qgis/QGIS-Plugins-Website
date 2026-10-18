@@ -224,6 +224,9 @@ devweb: db
 	@echo "------------------------------------------------------------------"
 	@docker compose -p $(PROJECT_ID) up --no-deps -d devweb rabbitmq worker beat webpack maindev qgis-qt6
 
+devweb-stop:
+	@docker compose -p $(PROJECT_ID) down --remove-orphans
+
 devweb-migrate:
 	@echo
 	@echo "------------------------------------------------------------------"
