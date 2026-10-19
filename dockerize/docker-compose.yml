@@ -134,6 +134,9 @@ services:
       target: dev
     working_dir: /home/web/django_project
     command: npm start
+    # Comment out this port mapping to disable automatic browser refresh.
+    ports:
+      - "127.0.0.1:35729:35729"
     volumes:
       - ../qgis-app:/home/web/django_project
       - ${QGISPLUGINS_STATIC_VOLUME}:/home/web/static:rw
