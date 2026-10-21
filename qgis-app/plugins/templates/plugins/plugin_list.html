@@ -92,6 +92,23 @@
 {% endblock %}
 {% block content %}
 	<h2 class="title is-4">{% if title %}{{title}}{% else %}{% trans "All plugins" %}{% endif %}</h2>
+	{% if user.is_authenticated %}
+		<div class="buttons mb-0">
+			<a class="button is-success is-fullwidth" href="{% url "plugin_upload" %}">
+				<span class="icon">
+				<i class="fas fa-upload"></i>
+				</span>
+				<span>{% trans "Upload a plugin" %}</span>
+			</a>
+			<a class="button is-success is-outlined is-fullwidth" href="{% url "plugin_create_empty" %}">
+				<span class="icon">
+				<i class="fas fa-plus"></i>
+				</span>
+				<span>{% trans "Create empty plugin" %}</span>
+			</a>
+		</div>
+		<hr/>
+	{% endif %}
 	<div class="container rich tips mb-3">
 		<div class="cont coloring-1">
 		  {% if description %}
