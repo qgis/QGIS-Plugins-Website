@@ -159,7 +159,7 @@ make build-dev
 make devweb-test
 ```
 
-- **devweb:** Starts the `devweb` container for development, along with RabbitMQ, worker, beat, and webpack containers.
+- **devweb:** Installs locked npm dependencies, builds assets, and starts the `devweb` container for development, along with RabbitMQ, worker, beat, and webpack containers.
 ```sh
 make devweb
 ```
