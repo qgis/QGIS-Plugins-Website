@@ -125,6 +125,7 @@
           </a>
         </li>
         {% url 'docs_security_scanning' as docs_security_scanning_url %}
+        {% url 'docs_security_scanning_cli' as docs_security_scanning_cli_url %}
         {% url 'docs_security_tools' as docs_security_tools_url %}
         {% url 'docs_security_rules' as docs_security_rules_url %}
         {% url 'docs_security_skipping' as docs_security_skipping_url %}
@@ -140,6 +141,9 @@
           <ul class="collapsed" id="docs-security">
             <li class="has-child {% if request.path == docs_security_scanning_url %}is-active{% endif %}">
               <a href="{{ docs_security_scanning_url }}">Overview</a>
+            </li>
+            <li class="has-child {% if request.path == docs_security_scanning_cli_url %}is-active{% endif %}">
+              <a href="{{ docs_security_scanning_cli_url }}">Run Locally (CLI)</a>
             </li>
             <li class="has-child {% if request.path == docs_security_tools_url %}is-active{% endif %}">
               <a href="{{ docs_security_tools_url }}">Security Tools</a>

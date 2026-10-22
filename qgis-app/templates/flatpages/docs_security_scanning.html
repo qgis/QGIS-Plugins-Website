@@ -207,6 +207,26 @@
         </div>
       </div>
     </div>
+    <div class="column is-half">
+      <div class="notification is-success is-light" style="height:100%;">
+        <div class="is-flex is-align-items-flex-start" style="gap:1rem;">
+          <span class="icon is-large has-text-success" style="flex-shrink:0;">
+            <i class="fas fa-terminal fa-2x"></i>
+          </span>
+          <div>
+            <p class="has-text-weight-bold is-size-6 mb-1">Run Checks Locally</p>
+            <p class="is-size-7 mb-2">
+              Run the exact same checks on your machine before uploading, with a CLI,
+              in CI, or as a pre-commit hook — no upload required.
+            </p>
+            <a class="button is-success is-small" href="{% url 'docs_security_scanning_cli' %}">
+              <span class="icon"><i class="fas fa-terminal"></i></span>
+              <span>Local Checks (CLI)</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div><!-- /responsive-content -->

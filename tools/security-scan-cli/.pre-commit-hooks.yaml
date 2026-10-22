@@ -1,0 +1,7 @@
+- id: qgis-plugin-security
+  name: QGIS plugin security check
+  description: Run the QGIS plugins platform security checks locally before commit.
+  entry: qgis-plugin-security
+  language: python
+  pass_filenames: false
+  always_run: true
