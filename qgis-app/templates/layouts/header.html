@@ -41,11 +41,17 @@
                                     <span>{{ item.name }}</span>
                                 </a>
                                 <div class="navbar-dropdown">
-                                    {% for subitem in item.submenu %}
+                                    {% for subitem in item.submenu|with_divider_flags %}
+                                        {% if subitem.divider_before %}
+                                            <hr class="navbar-divider">
+                                        {% endif %}
                                         {% if subitem.submenu %}
                                             {% for entry in subitem.submenu %}
                                                 <a class="navbar-item has-text-weight-semibold is-size-7 ml-1 mr-1" href="{{ entry.url }}">
-                                                    {{ entry.name }}
+                                                    <span class="mr-2">
+                                                        <i class="fas {{ entry.icon }}"></i>
+                                                    </span>
+                                                    <span>{{ entry.name }}</span>
                                                     {% if entry.is_highlighted %}
                                                         <span class="tag is-success is-rounded is-size-7 ml-1">
                                                         {% trans "New" %}
@@ -53,9 +59,6 @@
                                                     {% endif %}
                                                 </a>
                                             {% endfor %}
-                                            {% if not forloop.last %}
-                                                <hr class="navbar-divider">
-                                            {% endif %}
                                         {% else %}
                                             <a class="navbar-item has-text-weight-semibold is-size-7 ml-1 mr-1" href="{{ subitem.url }}">
                                                 <span class="mr-2">
