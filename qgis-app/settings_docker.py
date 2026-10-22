@@ -430,6 +430,68 @@ PLUGINS_CATEGORIES = [
     },
 ]
 
+# PLUGIN_DOCUMENTATION_MENU
+PLUGIN_DOCUMENTATION_MENU = [
+    {
+        "name": "Publish a plugin",
+        "url_name": "docs_publish",
+        "order": 0,
+    },
+    {
+        "name": "Approval process",
+        "url_name": "docs_approval",
+        "order": 1,
+    },
+    {
+        "name": "FAQ",
+        "url_name": "docs_faq",
+        "order": 2,
+    },
+    {
+        "name": "Security Scanning",
+        "icon": "fa-shield-halved",
+        "url": "#",
+        "order": 3,
+        "submenu": [
+            {
+                "name": "Overview",
+                "url_name": "docs_security_scanning",
+                "order": 0,
+            },
+            {
+                "name": "Security Tools",
+                "url_name": "docs_security_tools",
+                "order": 1,
+            },
+            {
+                "name": "Rules Reference",
+                "url_name": "docs_security_rules",
+                "order": 2,
+            },
+            {
+                "name": "Rule Skipping",
+                "url_name": "docs_security_skipping",
+                "order": 3,
+            },
+            {
+                "name": "Config Files",
+                "url_name": "docs_security_config_files",
+                "order": 4,
+            },
+            {
+                "name": "Troubleshooting",
+                "url_name": "docs_security_troubleshooting",
+                "order": 5,
+            },
+        ],
+    },
+    {
+        "name": "Migrate to QGIS 4",
+        "url_name": "docs_migrate_qgis4",
+        "order": 4,
+    },
+]
+
 NAVIGATION_MENU = [
     {
         "name": "Home",
@@ -472,10 +534,17 @@ NAVIGATION_MENU = [
         "order": 5,
     },
     {
+        "name": "Documentation",
+        "url": "#",
+        "icon": "fa-book",
+        "order": 6,
+        "submenu": PLUGIN_DOCUMENTATION_MENU,
+    },
+    {
         "name": "Admin",
         "url": "/admin/",
         "icon": "fa-tools",
-        "order": 6,
+        "order": 7,
         "requires_staff": True,
     },
 ]
