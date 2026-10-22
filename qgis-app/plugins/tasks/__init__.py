@@ -15,3 +15,4 @@ from plugins.tasks.trigger_email_confirmation import (
     send_pending_email_confirmations,
 )
 from plugins.tasks.update_qgis_versions import update_qgis_versions
+from plugins.tasks.save_deprecated_result import save_deprecated_result
