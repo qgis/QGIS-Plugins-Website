@@ -36,6 +36,10 @@ LANGUAGE_CODE = "en-us"
 
 SITE_ID = 1
 
+# SitePreference is registered in the third-party preferences app. Keep its
+# project-specific migration in the checkout so it survives container rebuilds.
+MIGRATION_MODULES = {"preferences": "base.preferences_migrations"}
+
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
 USE_I18N = True

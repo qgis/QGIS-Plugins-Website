@@ -36,9 +36,7 @@ jobs:
         run: |
             docker compose exec -T devweb bash -c '
               set -e  # Exit immediately if any command fails
-              python manage.py makemigrations --merge --noinput &&
-              python manage.py makemigrations feedjack &&
-              python manage.py makemigrations &&
+              python manage.py makemigrations --check --dry-run --noinput &&
               python manage.py migrate &&
               python manage.py loaddata fixtures/*.json
               nohup python manage.py runserver 0.0.0.0:8081 &
