@@ -5,7 +5,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from plugins.utils import QGIS_VERSION_LABELS, get_version_from_label
-from preferences import preferences
+from constance import config
 
 logger = get_task_logger(__name__)
 
@@ -26,7 +26,7 @@ def generate_plugins_xml(site=""):
             site = "http://plugins.qgis.org"
     plugins_url = "{}/plugins/plugins_new.xml".format(site)
 
-    versions = preferences.SitePreference.qgis_versions
+    versions = config.QGIS_VERSIONS
     labels = QGIS_VERSION_LABELS
 
     if versions:

@@ -36,6 +36,16 @@ LANGUAGE_CODE = "en-us"
 
 SITE_ID = 1
 
+# Store the editable XML version list in the application database.
+CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
+CONSTANCE_CONFIG = {
+    "QGIS_VERSIONS": (
+        "",
+        "QGIS versions that will be used to generate the plugins_xml, separated by comma.",
+        str,
+    ),
+}
+
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
 USE_I18N = True
@@ -118,6 +128,7 @@ TEMPLATE_DIRS = (
 
 
 INSTALLED_APPS = [
+    "constance",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -168,7 +179,6 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "rest_framework_gis",
-    "preferences",
     "matomo",
 ]
 
@@ -184,7 +194,6 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 # ABP: adds DEBUG and BASE_TEMPLATE vars
                 "qgis_context_processor.additions",
-                "preferences.context_processors.preferences_cp",
             ),
         },
     },
