@@ -159,6 +159,7 @@ EMAIL_HOST = "localhost"
 DEFAULT_FROM_EMAIL = os.environ.get("EMAIL_HOST_USER", "automation")
 
 INSTALLED_APPS = [
+    "constance",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",

@@ -53,6 +53,7 @@ STATIC_URL = "/static/"
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
 INSTALLED_APPS = [
+    "constance",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -81,7 +82,6 @@ INSTALLED_APPS = [
     "simplemenu",
     "tinymce",
     "rpc4django",
-    "preferences",
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",

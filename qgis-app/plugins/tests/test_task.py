@@ -3,39 +3,41 @@ import os
 from django.test import TestCase, override_settings
 from django.conf import settings
 
-from preferences import preferences
+from constance import config
 from unittest.mock import patch, MagicMock
 
-from base.models.site_preferences import SitePreference
 from plugins.tasks.generate_plugins_xml import generate_plugins_xml
 from plugins.tasks.update_qgis_versions import update_qgis_versions
 
 
 class TestPluginTask(TestCase):
-    @patch.object(SitePreference.objects, 'first')
-    @patch.object(SitePreference.objects, 'create')
+    def setUp(self):
+        config.QGIS_VERSIONS = ''
+
     @patch('plugins.tasks.update_qgis_versions.get_qgis_versions')
-    def test_update_qgis_versions(self, mock_get_qgis_versions, mock_create, mock_first):
-        mock_create.return_value = MagicMock()
+    def test_update_qgis_versions(self, mock_get_qgis_versions):
+        config.QGIS_VERSIONS = '3.16,3.17,3.9,2.18'
         mock_get_qgis_versions.return_value = ['3.16', '3.11', '3.12']
-        site_preference = MagicMock()
-        site_preference.qgis_versions = '3.16,3.17'
-        mock_first.return_value = site_preference
 
         update_qgis_versions()
 
-        self.assertEqual(site_preference.qgis_versions, '3.17,3.16,3.12,3.11')
-        site_preference.save.assert_called_once()
+        self.assertEqual(config.QGIS_VERSIONS, '3.17,3.16,3.12,3.11,3.9,2.18')
 
-    @patch.object(SitePreference.objects, 'first')
-    @patch.object(SitePreference.objects, 'create')
     @patch('plugins.tasks.update_qgis_versions.get_qgis_versions')
-    def test_update_qgis_versions_no_site_preference(self, mock_get_qgis_versions, mock_create, mock_first):
+    def test_update_qgis_versions_from_empty_config(self, mock_get_qgis_versions):
         mock_get_qgis_versions.return_value = ['3.16', '3.16', '3.16']
-        mock_first.return_value = None
-        mock_create.return_value = MagicMock()
+
         update_qgis_versions()
-        mock_create.assert_called_once()
+
+        self.assertEqual(config.QGIS_VERSIONS, '3.16')
+
+    @patch('plugins.tasks.update_qgis_versions.get_qgis_versions', return_value=[])
+    def test_update_qgis_versions_keeps_historical_versions(self, mock_get_qgis_versions):
+        config.QGIS_VERSIONS = '2.18,3.9,3.16'
+
+        update_qgis_versions()
+
+        self.assertEqual(config.QGIS_VERSIONS, '3.16,3.9,2.18')
 
     @override_settings(DEFAULT_PLUGINS_SITE='http://test_plugins_site')
     @patch('requests.get')
@@ -48,7 +50,7 @@ class TestPluginTask(TestCase):
         mock_response.status_code = 200
         mock_response.text = '<some xml content> QGIS Version 34002|Visit https://download.qgis.org to get your copy of version 3.40.2'
         mock_get.return_value = mock_response
-        preferences.SitePreference.qgis_versions = '3.24,3.25'
+        config.QGIS_VERSIONS = '3.24,3.25'
 
         expected_folder_path = os.path.join(settings.MEDIA_ROOT, 'cached_xmls')
 
@@ -77,7 +79,7 @@ class TestPluginTask(TestCase):
         mock_response.text = '<some xml content>'
         mock_response.json.return_value = {'latest': {'version': '3.40'}, 'ltr': {'version': '3.40'}}
         mock_get.return_value = mock_response
-        preferences.SitePreference.qgis_versions = '3.24,3.25'
+        config.QGIS_VERSIONS = '3.24,3.25'
 
         expected_folder_path = os.path.join(settings.MEDIA_ROOT, 'cached_xmls')
 
