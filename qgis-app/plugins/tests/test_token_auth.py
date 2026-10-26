@@ -1,6 +1,7 @@
 import os
 from unittest.mock import patch
 
+import jwt
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -144,6 +145,28 @@ class UploadWithTokenTestCase(TestCase):
                 plugin__name="Test Plugin", version="0.0.2"
             ).exists()
         )
+
+    def test_upload_new_version_with_token_signed_by_another_key(self):
+        """
+        A token signed with a retired key cannot be rescued by retrying, so the
+        403 says to create a new one instead of just "Invalid token" (#468).
+        """
+        self.client.post(self.url_token_create, {})
+        outstanding_token = OutstandingToken.objects.last().token
+        refresh = RefreshToken(outstanding_token)
+        refresh["plugin_id"] = self.plugin.pk
+        refresh["refresh_jti"] = refresh["jti"]
+        payload = jwt.decode(
+            str(refresh.access_token), options={"verify_signature": False}
+        )
+        access_token = jwt.encode(payload, "a-retired-key", algorithm="HS256")
+
+        self.client.logout()
+        c = Client(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        response = c.post(self.url_add_version, {})
+
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("Create a new token", response.content.decode())
 
     def test_update_version_with_valid_token(self):
         # Generate a token for the authenticated user
