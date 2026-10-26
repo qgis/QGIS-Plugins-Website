@@ -8,6 +8,16 @@ EMAIL_HOST_PASSWORD = ""
 EMAIL_SUBJECT_PREFIX = '[QGIS Plugins] '
 DEFAULT_FROM_EMAIL = 'no-reply-plugins@qgis.org'
 
+# Plugin upload tokens. Uncomment to sign them with their own key, so that
+# rotating SECRET_KEY does not revoke every plugin token. This replaces the
+# whole dict, so keep both lifetimes. Rotating the key revokes every token.
+from datetime import timedelta
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=365 * 1000),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=365 * 1000),
+    "SIGNING_KEY": "generate-your-own-key",
+}
+
 # Developer emails for testing email sending in debug mode
 # Comma-separated list of email addresses to receive emails when DEBUG=True. If empty, no emails will be sent in debug mode.
 DEVELOPER_EMAILS = ''

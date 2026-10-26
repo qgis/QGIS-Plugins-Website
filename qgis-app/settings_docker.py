@@ -238,6 +238,7 @@ CELERY_IMPORTS = ("plugins.tasks",)
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=365 * 1000),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=365 * 1000),
+    "SIGNING_KEY": SECRET_KEY,
 }
 
 MATOMO_SITE_ID = "2"
