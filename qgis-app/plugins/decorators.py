@@ -1,4 +1,5 @@
 import datetime
+import logging
 from functools import wraps
 
 from django.http import HttpRequest, HttpResponseForbidden
@@ -9,6 +10,8 @@ from rest_framework_simplejwt.token_blacklist.models import (
     BlacklistedToken,
     OutstandingToken,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def validate_plugin_token(request: HttpRequest, plugin: Plugin) -> bool:
@@ -41,12 +44,17 @@ def validate_plugin_token(request: HttpRequest, plugin: Plugin) -> bool:
         plugin_token.save()
         request.plugin_token = plugin_token
         return True
-    except (
-        InvalidToken,
-        TokenError,
-        OutstandingToken.DoesNotExist,
-        PluginOutstandingToken.DoesNotExist,
-    ):
+    except (InvalidToken, TokenError) as error:
+        request.plugin_token_error = """
+            Due to a secret rotation from the website side, this token is no longer valid. 
+            Please create a new token on your plugin page, then update it wherever you upload from.
+            We apologise for any incovenience. Thank you for your understanding.
+        """
+        logger.warning(
+            f"Plugin token for {plugin.package_name} failed verification: {error}"
+        )
+        return False
+    except (OutstandingToken.DoesNotExist, PluginOutstandingToken.DoesNotExist):
         return False
 
 
@@ -56,7 +64,9 @@ def has_valid_token(function):
         package_name = kwargs.get("package_name")
         plugin = Plugin.objects.filter(package_name=package_name).first()
         if plugin is None or not validate_plugin_token(request, plugin):
-            return HttpResponseForbidden("Invalid token")
+            return HttpResponseForbidden(
+                getattr(request, "plugin_token_error", "Invalid token")
+            )
         return function(request, *args, **kwargs)
 
     return wrap
