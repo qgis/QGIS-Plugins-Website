@@ -166,7 +166,7 @@ class UploadWithTokenTestCase(TestCase):
         response = c.post(self.url_add_version, {})
 
         self.assertEqual(response.status_code, 403)
-        self.assertIn("Create a new token", response.content.decode())
+        self.assertIn("Please create a new token", response.content.decode())
 
     def test_update_version_with_valid_token(self):
         # Generate a token for the authenticated user
