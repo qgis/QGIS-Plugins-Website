@@ -93,7 +93,7 @@
 {% block content %}
 	<h2 class="title is-4">{% if title %}{{title}}{% else %}{% trans "All plugins" %}{% endif %}</h2>
 	{% if user.is_authenticated %}
-		<div class="buttons mb-0">
+		<div class="buttons mb-0 is-hidden-desktop">
 			<a class="button is-success is-fullwidth" href="{% url "plugin_upload" %}">
 				<span class="icon">
 				<i class="fas fa-upload"></i>
