@@ -46,8 +46,9 @@ def validate_plugin_token(request: HttpRequest, plugin: Plugin) -> bool:
         return True
     except (InvalidToken, TokenError) as error:
         request.plugin_token_error = """
-            This token is no longer valid. Create a new token on your plugin
-            page, then update it wherever you upload from.
+            Due to a secret rotation from the website side, this token is no longer valid. 
+            Please create a new token on your plugin page, then update it wherever you upload from.
+            We apologise for any incovenience. Thank you for your understanding.
         """
         logger.warning(
             f"Plugin token for {plugin.package_name} failed verification: {error}"
