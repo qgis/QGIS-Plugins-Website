@@ -198,6 +198,11 @@ class IsBlockedAddressTest(SimpleTestCase):
             "fe80::1",
             "fc00::1",
             "0.0.0.0",
+            "::ffff:127.0.0.1",  # loopback written in IPv4 mapped IPv6 form
+            "::ffff:10.0.0.1",  # RFC1918 mapped
+            "::ffff:192.168.0.5",  # RFC1918 mapped
+            "::ffff:169.254.169.254",  # link local mapped
+            "::ffff:100.64.0.1",  # carrier grade NAT mapped
         ):
             self.assertTrue(
                 safe_http.is_blocked_address(addr), f"{addr} should be blocked"
@@ -211,6 +216,7 @@ class IsBlockedAddressTest(SimpleTestCase):
             "100.63.255.255",  # just below carrier grade NAT, public
             "100.128.0.1",  # just above carrier grade NAT, public
             "2606:4700:4700::1111",
+            "::ffff:8.8.8.8",  # a public IPv4 in mapped form stays allowed
         ):
             self.assertFalse(
                 safe_http.is_blocked_address(addr), f"{addr} should be allowed"
@@ -268,3 +274,51 @@ class SafeSessionProxyTest(SimpleTestCase):
                 except requests.exceptions.RequestException:
                     pass
             self.assertEqual(proxy.hits, [], "the guarded session must not use a proxy")
+
+
+class HttpsHandshakeTest(SimpleTestCase):
+    """A blocked https target is refused before the TLS handshake, so the host
+    sees a bare TCP connection but never a ClientHello or an HTTP request."""
+
+    def test_no_client_hello_reaches_a_blocked_https_host(self):
+        received = []
+        accepted = []
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind(("127.0.0.1", 0))
+        server.listen(1)
+        port = server.getsockname()[1]
+
+        def serve():
+            server.settimeout(5)
+            try:
+                conn, _ = server.accept()
+            except OSError:
+                return
+            accepted.append(True)
+            conn.settimeout(2)
+            try:
+                received.append(conn.recv(1024))
+            except OSError:
+                received.append(b"")
+            finally:
+                conn.close()
+
+        thread = threading.Thread(target=serve, daemon=True)
+        thread.start()
+
+        session = safe_http.build_safe_session()
+        with self.assertRaises(
+            (requests.exceptions.RequestException, safe_http.BlockedAddressError)
+        ):
+            session.get(f"https://127.0.0.1:{port}/", timeout=3)
+
+        thread.join(5)
+        server.close()
+
+        self.assertTrue(
+            accepted, "the guard reads the real peer, so the TCP connection opens"
+        )
+        self.assertEqual(
+            received, [b""], "a blocked https host must receive no TLS ClientHello"
+        )

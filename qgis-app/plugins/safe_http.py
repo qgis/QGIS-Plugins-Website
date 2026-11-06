@@ -55,6 +55,10 @@ def is_blocked_address(host: str) -> bool:
         # Not a literal address. We only ever pass the connected peer here, so
         # this should not happen; refuse rather than guess.
         return True
+    # An IPv4 address written in IPv6 form (::ffff:10.0.0.1) must face the IPv4
+    # policy, not slip past it.
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+        ip = ip.ipv4_mapped
     if any(ip in network for network in _EXTRA_BLOCKED_NETWORKS):
         return True
     return any(
@@ -79,24 +83,25 @@ def _validate_peer(sock):
         raise BlockedAddressError(peer)
 
 
-class _GuardedHTTPConnection(HTTPConnection):
-    def connect(self):
-        super().connect()
+class _PeerValidatedConnection:
+    # Check the freshly connected socket here, before connect() wraps it in TLS
+    # or writes any HTTP, so a blocked host sees no ClientHello and no request.
+    def _new_conn(self):
+        sock = super()._new_conn()
         try:
-            _validate_peer(self.sock)
+            _validate_peer(sock)
         except BlockedAddressError:
-            self.close()
+            sock.close()
             raise
+        return sock
 
 
-class _GuardedHTTPSConnection(HTTPSConnection):
-    def connect(self):
-        super().connect()
-        try:
-            _validate_peer(self.sock)
-        except BlockedAddressError:
-            self.close()
-            raise
+class _GuardedHTTPConnection(_PeerValidatedConnection, HTTPConnection):
+    pass
+
+
+class _GuardedHTTPSConnection(_PeerValidatedConnection, HTTPSConnection):
+    pass
 
 
 class _GuardedHTTPConnectionPool(HTTPConnectionPool):
