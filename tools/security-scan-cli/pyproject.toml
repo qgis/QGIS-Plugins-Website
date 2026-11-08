@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qgis-plugin-security"
+version = "0.1.0"
+description = "Run the QGIS plugins platform security checks locally, before uploading."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "GPL-2.0-or-later" }
+authors = [{ name = "QGIS Plugins Website / Kartoza" }]
+keywords = ["qgis", "plugin", "security", "bandit", "flake8", "detect-secrets"]
+
+# Analysis tools are pinned to match the platform
+# (dockerize/docker/REQUIREMENTS.txt) so local results track the server.
+dependencies = [
+    "bandit~=1.9",
+    "detect-secrets~=1.5",
+    "flake8~=7.3",
+    "flake8-json~=24.4",
+]
+
+[project.scripts]
+qgis-plugin-security = "qgis_plugin_security.cli:main"
+
+[tool.setuptools]
+packages = ["qgis_plugin_security"]

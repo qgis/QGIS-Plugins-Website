@@ -182,22 +182,40 @@
        ═══════════════════════════════════════════════════════════════════════ -->
   <h5>Check Your Plugin Locally</h5>
 
-  <p>Run the same tools locally before uploading to catch issues early:</p>
+  <p>
+    The recommended way to check your plugin before uploading is the
+    <strong>QGIS plugin security CLI</strong>. It runs these exact same tools with the
+    platform's currently-enabled rules, so your local results match what the platform
+    enforces — no rule drift, and nothing is uploaded.
+  </p>
 
-  <pre><code># Install the security tools
-pip install bandit detect-secrets flake8
+  <pre><code># Install (from this repository, no PyPI account needed)
+pip install "git+https://github.com/qgis/QGIS-Plugins-Website.git#subdirectory=tools/security-scan-cli"
 
-# Run checks on your plugin directory
-bandit -r your_plugin_directory/
-detect-secrets scan your_plugin_directory/
-flake8 your_plugin_directory/</code></pre>
+# Run in your plugin directory
+qgis-plugin-security --path your_plugin_directory/</code></pre>
+
+  <p>
+    See the <a href="{% url 'docs_security_scanning_cli' %}">Run Locally (CLI)</a> guide for CI
+    and pre-commit usage, exit codes, and options.
+  </p>
 
   <p class="notification is-info is-light">
     <strong>Tip:</strong> You can suppress persistent false positives by bundling config files
     (<code>.bandit</code>, <code>.secrets.baseline</code>, <code>.flake8</code>) inside your
-    plugin ZIP — see the
+    plugin — the CLI honours them exactly like the platform does. See the
     <a href="{% url 'docs_security_config_files' %}">Config Files guide</a>.
   </p>
+
+  <p>
+    Prefer to invoke the underlying tools directly? You still can, though results may differ
+    from the platform because rule selection and tool versions are not synchronised:
+  </p>
+
+  <pre><code>pip install bandit detect-secrets flake8
+bandit -r your_plugin_directory/
+detect-secrets scan your_plugin_directory/
+flake8 your_plugin_directory/</code></pre>
 
   <!-- ═══════════════════════════════════════════════════════════════════════
        SEE ALSO
