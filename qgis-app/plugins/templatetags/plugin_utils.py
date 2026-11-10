@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 from django import template
 from django.conf import settings
+from django.urls import reverse
 from PIL import Image, UnidentifiedImageError
 
 register = template.Library()
@@ -22,6 +23,24 @@ def klass(ob):
 def is_image_field(bound_field):
     """Return True if a bound form field wraps an ImageField."""
     return bound_field.field.__class__.__name__ == "ImageField"
+
+
+@register.filter
+def with_divider_flags(submenu):
+    """
+    Annotate each navbar submenu entry with `divider_before`: True when a
+    separator is needed before it, i.e. at a boundary touching a flattened
+    group (an entry with its own `submenu`). Computed once per boundary so
+    two adjacent groups don't each add their own separator.
+    """
+    annotated = []
+    prev_is_group = False
+    for i, item in enumerate(submenu):
+        is_group = bool(item.get("submenu"))
+        item = {**item, "divider_before": i > 0 and (is_group or prev_is_group)}
+        annotated.append(item)
+        prev_is_group = is_group
+    return annotated
 
 
 @register.filter
@@ -158,13 +177,32 @@ def _filter_menu(menu, user):
     return filtered_menu
 
 
+def _resolve_urls(menu):
+    """
+    Resolve each item's `url_name` (a named URL pattern) to an actual `url`
+    via reverse(), recursing into nested submenus. Settings modules are
+    imported before the URLconf is ready, so menu entries that need a
+    reversed URL store `url_name` instead of a literal `url` and get
+    resolved here, at request time, instead of being hardcoded as a path.
+    """
+    resolved = []
+    for item in menu:
+        item = dict(item)
+        if "url_name" in item:
+            item["url"] = reverse(item.pop("url_name"))
+        if item.get("submenu"):
+            item["submenu"] = _resolve_urls(item["submenu"])
+        resolved.append(item)
+    return resolved
+
+
 @register.simple_tag()
 def get_navigation_menu(user):
     """
     Get the navigation menu from the settings, filtered by user status
     """
     menu = _filter_menu(settings.NAVIGATION_MENU, user)
-    return menu
+    return _resolve_urls(menu)
 
 
 @register.simple_tag()
