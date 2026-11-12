@@ -2,11 +2,13 @@
 
 ## Description
 
+Fixes #
 [Replace this with some text explaining the rationale and details about this pull request]
 
 ## Author's checklist
 
 - [ ] I have read the [contributing guidelines](https://github.com/qgis/QGIS-Plugins-Website/blob/master/CONTRIBUTING.md) and my pull request follows them.
+- [ ] My PR has an open issue and my PR description includes `Fixes #11111`.
 - [ ] my commits tend to comply with [Conventional Commits](https://www.conventionalcommits.org/); so they are descriptive and explain the rationale for changes. Messages and description are self-explanatory to make the git log a readable story of the project.
 - [ ] I have added tests that prove my fix is effective or that my feature works.
 - [ ] I have added necessary documentation (if appropriate).
@@ -18,6 +20,8 @@
 ### AI tool usage
 
 - [ ] AI tool(s) (Copilot, Claude, or something similar) supported my development of this PR. See our [policy about AI tool use](https://github.com/qgis/QGIS-Enhancement-Proposals/blob/master/qep-408-ai-tool-policy.md). Use of AI tools *must* be indicated. Failure to be honest might result in banning.
+
+- [ ] I certify that no AI tool(s) were used in writing this PR title and description. See our [policy about AI tool use for text content](https://github.com/qgis/QGIS-Enhancement-Proposals/blob/master/qep-408-ai-tool-policy.md).
 
 <!--
 **BEFORE HITTING SUBMIT** -- Please SPIN UP THE DOCKERIZED PROJECT AND TEST your changes thoroughly. This is YOUR responsibility! Do NOT rely on the project maintainers to do this for you!
