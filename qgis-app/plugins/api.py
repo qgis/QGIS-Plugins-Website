@@ -16,7 +16,11 @@ from plugins.models import *
 from plugins.models import SecurityRule
 from plugins.tasks.run_security_scan import run_security_scan_task
 from plugins.validator import validator
-from plugins.views import plugin_notify, send_upload_confirmation_email
+from plugins.views import (
+    check_plugin_access,
+    plugin_notify,
+    send_upload_confirmation_email,
+)
 from rpc4django import rpcmethod
 from taggit.models import Tag
 
@@ -80,6 +84,11 @@ def plugin_upload(package, auto_approve=False, **kwargs):
         # Gets existing plugin
         try:
             plugin = Plugin.objects.get(package_name=plugin_data["package_name"])
+            if not check_plugin_access(request.user, plugin):
+                raise PermissionDenied(
+                    "You do not have permission to upload a new version of this "
+                    "plugin. Ask one of its maintainers to add you as an owner."
+                )
             # Apply new values
             plugin.name = plugin_data["name"]
             plugin.description = plugin_data["description"]
