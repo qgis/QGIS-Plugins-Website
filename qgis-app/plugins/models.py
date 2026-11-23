@@ -189,6 +189,7 @@ class LatestPlugins(BasePluginManager):
 class UnapprovedPlugins(BasePluginManager):
     """
     Shows only unapproved and not deprecated plugins
+    Excludes plugins whose maintainer is blocked.
     """
 
     def get_queryset(self):
@@ -196,6 +197,7 @@ class UnapprovedPlugins(BasePluginManager):
             super(UnapprovedPlugins, self)
             .get_queryset()
             .filter(pluginversion__approved=False, deprecated=False, is_deleted=False)
+            .exclude(maintainer__is_active=False)
             .extra(
                 select={
                     "latest_version_date": (
@@ -320,7 +322,7 @@ def confirmed_email_exists():
 class FeedbackCompletedPlugins(models.Manager):
     """
     Show only unapproved plugins with resolved feedbacks
-    Excludes soft-deleted plugins.
+    Excludes soft-deleted plugins and plugins whose maintainer is blocked.
     """
 
     def get_queryset(self):
@@ -359,6 +361,7 @@ class FeedbackCompletedPlugins(models.Manager):
             .filter(latest_version_approved=False, deprecated=False)
             .filter(has_confirmed_email=True)
             .exclude(latest_version_status=VALIDATION_STATUS_BLOCKED)
+            .exclude(maintainer__is_active=False)
             .annotate(
                 total_feedback_count=Count("pluginversion__feedback"),
                 completed_feedback_count=Subquery(feedback_count_subquery),
@@ -380,7 +383,7 @@ class FeedbackCompletedPlugins(models.Manager):
 class FeedbackReceivedPlugins(models.Manager):
     """
     Show only unapproved plugins with a pending feedback
-    Excludes soft-deleted plugins.
+    Excludes soft-deleted plugins and plugins whose maintainer is blocked.
     """
 
     def get_queryset(self):
@@ -425,6 +428,7 @@ class FeedbackReceivedPlugins(models.Manager):
                 has_confirmed_email=True,
             )
             .exclude(latest_version_status=VALIDATION_STATUS_BLOCKED)
+            .exclude(maintainer__is_active=False)
             .extra(
                 select={
                     "latest_version_date": (
@@ -441,7 +445,7 @@ class FeedbackReceivedPlugins(models.Manager):
 class FeedbackPendingPlugins(models.Manager):
     """
     Show only unapproved plugins with a feedback
-    Excludes soft-deleted plugins.
+    Excludes soft-deleted plugins and plugins whose maintainer is blocked.
     """
 
     def get_queryset(self):
@@ -477,6 +481,7 @@ class FeedbackPendingPlugins(models.Manager):
                 has_confirmed_email=True,
             )
             .exclude(latest_version_status=VALIDATION_STATUS_BLOCKED)
+            .exclude(maintainer__is_active=False)
             .extra(
                 select={
                     "latest_version_date": (

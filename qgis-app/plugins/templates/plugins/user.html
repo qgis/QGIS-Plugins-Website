@@ -13,10 +13,10 @@
     <form method="post" action="{% url "user_permissions_manage" plugin_user.username %}">{% csrf_token %}
     <div class="form-actions mt-3">
         {% if plugin_user.is_active %}
-            <button class="button is-danger" type="submit" id="user_block" name="user_block" value="1">
+            <a class="button is-danger" id="user_block" href="{% url "user_block" plugin_user.username %}">
                 <span class="icon"><i class="fas fa-ban"></i></span>
                 <span>{% trans "Block author" %}</span>
-            </button>
+            </a>
         {% else %}
             <button class="button is-warning" type="submit" id="user_unblock" name="user_unblock" value="1">
                 <span class="icon"><i class="fas fa-check"></i></span>

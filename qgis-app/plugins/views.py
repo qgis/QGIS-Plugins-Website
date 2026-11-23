@@ -39,7 +39,7 @@ from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic.detail import DetailView
 
 # from sortable_listview import SortableListView
@@ -1919,18 +1919,41 @@ def plugin_manage(request, package_name):
 
 
 @staff_required
-@require_POST
-def user_block(request, username):
+@require_http_methods(["GET", "POST"])
+def user_block(request: HttpRequest, username: str) -> HttpResponse:
     """
-    Completely blocks a user
+    Asks for confirmation, then blocks a user.
+
+    A blocked user can no longer log in or upload. When the staff member ticks
+    ``unapprove_plugins``, every approved version of the plugins the user
+    maintains is unapproved as well.
     """
     user = get_object_or_404(User, username=username, is_staff=False)
-    # Disable
-    user.is_active = False
-    user.save()
-    msg = _("The user %s is now blocked." % user)
-    messages.success(request, msg, fail_silently=True)
-    return HttpResponseRedirect(reverse("user_details", args=[user.username]))
+    maintained_plugins = Plugin.objects.filter(maintainer=user).order_by("name")
+    if request.method == "POST":
+        with transaction.atomic():
+            user.is_active = False
+            user.save()
+            unapproved = 0
+            if maintained_plugins and request.POST.get("unapprove_plugins"):
+                versions = PluginVersion.objects.filter(
+                    plugin__in=maintained_plugins, approved=True
+                )
+                for version in versions:
+                    version.approved = False
+                    version.save()
+                    unapproved += 1
+        msg = _("The user %s is now blocked." % user)
+        if unapproved:
+            plural = "" if unapproved == 1 else "s"
+            msg = f"{msg} We unapproved {unapproved} plugin version{plural}."
+        messages.success(request, msg, fail_silently=True)
+        return HttpResponseRedirect(reverse("user_details", args=[user.username]))
+    return render(
+        request,
+        "plugins/user_block_confirm.html",
+        {"plugin_user": user, "maintained_plugins": maintained_plugins},
+    )
 
 
 @staff_required
@@ -1993,7 +2016,7 @@ def user_permissions_manage(request, username):
     Entry point for the user management functions
     """
     if request.POST.get("user_block"):
-        return user_block(request, username)
+        return HttpResponseRedirect(reverse("user_block", args=[username]))
     if request.POST.get("user_unblock"):
         return user_unblock(request, username)
     if request.POST.get("user_trust"):

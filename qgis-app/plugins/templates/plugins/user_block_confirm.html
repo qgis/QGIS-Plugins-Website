@@ -1,0 +1,45 @@
+{% extends 'plugins/plugin_base.html' %}
+{% block content %}
+    <h2 class="title is-4">Block {{ plugin_user.username }}</h2>
+    <form action="{% url 'user_block' plugin_user.username %}" method="post">{% csrf_token %}
+        <div class="notification is-danger is-light">
+            <p>Once you block this author, they can no longer log in or upload plugins.</p>
+            <p>This applies to the website, plugin tokens and the QGIS plugin uploader. You can unblock them later from their user page.</p>
+        </div>
+
+        {% if maintained_plugins %}
+        <div class="field">
+            <div class="control">
+                <label class="checkbox" for="unapprove_plugins">
+                    <input type="checkbox" id="unapprove_plugins" name="unapprove_plugins" value="1" aria-describedby="unapprove_plugins_help">
+                    Also unapprove every version of the plugins this author maintains
+                </label>
+            </div>
+            <p class="help" id="unapprove_plugins_help">The plugins leave the public list. They stay out of the review queue while the author is blocked.</p>
+        </div>
+        <p class="mb-2">{{ plugin_user.username }} maintains these plugins:</p>
+        <ul class="mb-5">
+            {% for plugin in maintained_plugins %}
+            <li><a href="{{ plugin.get_absolute_url }}">{{ plugin.name }}</a></li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="mb-5">{{ plugin_user.username }} does not maintain any plugin, so there is nothing to unapprove.</p>
+        {% endif %}
+
+        <div class="field is-grouped">
+            <p class="control">
+                <button type="submit" class="button is-danger" id="user_block_confirm" name="user_block_confirm" value="1">
+                    <span class="icon"><i class="fas fa-ban" aria-hidden="true"></i></span>
+                    <span>Block author</span>
+                </button>
+            </p>
+            <p class="control">
+                <a class="button is-success is-outlined" href="{% url 'user_details' plugin_user.username %}">
+                    <span class="icon"><i class="fas fa-times" aria-hidden="true"></i></span>
+                    <span>Keep the author active</span>
+                </a>
+            </p>
+        </div>
+    </form>
+{% endblock %}
