@@ -1,6 +1,6 @@
 # OAuth Provider Setup
 
-Each provider needs a **SocialApp** entry in the Django Admin.  
+Each provider needs a **SocialApp** entry in the Django Admin.
 Go to: **Admin → Social Accounts → Social applications → Add social application**
 
 Fields to fill:
@@ -77,14 +77,14 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 ```
 
-Then create the OAuth application on your self-hosted instance at  
+Then create the OAuth application on your self-hosted instance at
 `https://your-gitlab.example.com/-/profile/applications`.
 
 ---
 
 ## OpenStreetMap
 
-1. Go to <https://www.openstreetmap.org/user/YOUR_USERNAME/oauth_clients/new>  
+1. Go to <https://www.openstreetmap.org/user/YOUR_USERNAME/oauth_clients/new>
    (replace `YOUR_USERNAME` with your OSM username).
 2. Fill in:
    - **Name**: QGIS Plugins
@@ -212,9 +212,17 @@ Telegram uses a **Login Widget** rather than standard OAuth. There is no redirec
    - Client ID: your **bot username** (without `@`, e.g. `QGISPluginsBot`)
    - Secret key: the **bot token** (e.g. `123456789:ABC-...`)
 
-> The Telegram provider works via a login widget that calls back to  
-> `https://plugins.qgis.org/accounts/telegram/login/callback/`.  
+> The Telegram provider works via a login widget that calls back to
+> `https://plugins.qgis.org/accounts/telegram/login/callback/`.
 > No client secret registration on a portal is needed — the bot token itself signs the payload.
+
+---
+
+## Who can sign up
+
+New users create their account by signing in with one of the providers above. Local username and password signup is closed.
+
+`ACCOUNT_SIGNUP_ENABLED = False` in `settings_docker.py` closes local signup. Since allauth 65.22 that setting also closes social signup, so `social_adapters.SocialAccountAdapter` opens it again. If you remove the adapter, every new social user sees "Registration is not available here".
 
 ---
 

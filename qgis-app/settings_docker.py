@@ -153,6 +153,7 @@ SOCIALACCOUNT_PROVIDERS = {
     "telegram": {},
 }
 
+SOCIALACCOUNT_ADAPTER = "social_adapters.SocialAccountAdapter"
 SOCIALACCOUNT_AUTO_SIGNUP = False
 SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_FORMS = {"signup": "social_forms.SocialSignupForm"}
