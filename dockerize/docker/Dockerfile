@@ -171,9 +171,10 @@ FROM prod AS dev
 
 # Node comes back for the `webpack` compose service, which runs `npm start`.
 # sshd is here so PyCharm can attach a remote interpreter; sudo because it
-# wants to pip install as root.
+# wants to pip install as root. git is for pre-commit in `maindev`.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
+        git \
         openssh-server \
         sudo \
         wget \
@@ -181,6 +182,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && bash /tmp/node.sh \
     && apt-get update && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
+
+# The repo mounted at /srv/app belongs to the host user, not root.
+RUN git config --system --add safe.directory /srv/app
 
 COPY --from=builder /opt/node_modules /home/web/django_project/node_modules
 
