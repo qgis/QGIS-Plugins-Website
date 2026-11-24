@@ -6,6 +6,7 @@ import binascii
 import logging
 
 from django.contrib import auth
+from django.http import HttpRequest, HttpResponse
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,25 @@ def HttpAuthMiddleware(get_response):
                             remote_addr,
                         )
 
+        return get_response(request)
+
+    return middleware
+
+
+def InactiveUserMiddleware(get_response):
+    """Log out a blocked (inactive) user before any view runs.
+
+    ModelBackend already refuses inactive users, but the LDAP backend
+    authenticates them and restores their sessions. This closes both the
+    session path and the RPC Basic auth path, so it must run after
+    HttpAuthMiddleware.
+    """
+
+    def middleware(request: HttpRequest) -> HttpResponse:
+        user = getattr(request, "user", None)
+        if user is not None and user.is_authenticated and not user.is_active:
+            logger.warning(f"Rejected request from blocked user {user.username!r}")
+            auth.logout(request)
         return get_response(request)
 
     return middleware

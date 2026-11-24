@@ -20,7 +20,8 @@ def validate_plugin_token(request: HttpRequest, plugin: Plugin) -> bool:
 
     On success, sets ``request.plugin_token`` (a PluginOutstandingToken
     instance), updates its ``last_used_on`` timestamp, and returns True.
-    Returns False for any missing, invalid, blacklisted, or mismatched token.
+    Returns False for any missing, invalid, blacklisted, or mismatched token,
+    and for a token whose owner has been blocked.
     Unlike ``has_valid_token`` this never raises or returns an HTTP response,
     making it safe to call from views that should remain publicly accessible.
     """
@@ -34,6 +35,8 @@ def validate_plugin_token(request: HttpRequest, plugin: Plugin) -> bool:
         jti = validated_token.payload.get("refresh_jti")
         outstanding = OutstandingToken.objects.get(jti=jti)
         if BlacklistedToken.objects.filter(token=outstanding).exists():
+            return False
+        if outstanding.user is not None and not outstanding.user.is_active:
             return False
         if not plugin_id or plugin.pk != plugin_id:
             return False

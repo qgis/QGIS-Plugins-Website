@@ -687,10 +687,10 @@
             <h4 class="title is-6 mb-2 mt-5">{% trans "Author management"%}</h4>
             <form class="form-inline" method="post" action="{% url "user_permissions_manage" version.plugin.created_by.username %}">{% csrf_token %}
                 {% if version.created_by.is_active %}
-                <button class="button is-danger is-outlined" type="submit" id="user_block" name="user_block" value="1">
+                <a class="button is-danger is-outlined" id="user_block" href="{% url "user_block" version.plugin.created_by.username %}">
                     <span class="icon"><i class="fas fa-ban"></i></span>
                     <span>{% trans "Block author" %}</span>
-                </button>
+                </a>
                 {% else %}
                 <button class="button is-warning is-outlined" type="submit" id="user_unblock" name="user_unblock" value="1">
                     <span class="icon"><i class="fas fa-undo"></i></span>
