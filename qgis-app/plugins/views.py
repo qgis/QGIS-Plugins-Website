@@ -1526,9 +1526,7 @@ def plugin_token_create(request, package_name):
     )
 
     return HttpResponseRedirect(
-        reverse(
-            "plugin_token_detail", args=(plugin.package_name, outstanding_token.pk)
-        )
+        reverse("plugin_token_detail", args=(plugin.package_name, outstanding_token.pk))
     )
 
 
@@ -1685,14 +1683,7 @@ class PluginsList(ListView):
 
         # Check if any plugin is deprecated
         page = context["page_obj"]
-        self.any_deprecated = any(
-            obj.deprecated
-            for obj in self.get_queryset()[
-                (page.start_index() - 1) if page.start_index() else 0 : (
-                    page.end_index() if page.end_index() else 0
-                )
-            ]
-        )
+        self.any_deprecated = any(obj.deprecated for obj in page.object_list)
         context["any_deprecated"] = self.any_deprecated
         return context
 

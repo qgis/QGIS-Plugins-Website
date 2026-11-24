@@ -62,7 +62,12 @@ class ApprovedPlugins(BasePluginManager):
         return (
             super(ApprovedPlugins, self)
             .get_queryset()
-            .filter(pluginversion__approved=True)
+            # EXISTS, not a join, so DISTINCT sees one row per plugin.
+            .filter(
+                Exists(
+                    PluginVersion.objects.filter(plugin=OuterRef("pk"), approved=True)
+                )
+            )
             .distinct()
         )
 
@@ -77,7 +82,13 @@ class StablePlugins(BasePluginManager):
         return (
             super(StablePlugins, self)
             .get_queryset()
-            .filter(pluginversion__approved=True, pluginversion__experimental=False)
+            .filter(
+                Exists(
+                    PluginVersion.objects.filter(
+                        plugin=OuterRef("pk"), approved=True, experimental=False
+                    )
+                )
+            )
             .distinct()
         )
 
