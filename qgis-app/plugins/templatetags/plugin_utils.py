@@ -26,24 +26,6 @@ def is_image_field(bound_field):
 
 
 @register.filter
-def with_divider_flags(submenu):
-    """
-    Annotate each navbar submenu entry with `divider_before`: True when a
-    separator is needed before it, i.e. at a boundary touching a flattened
-    group (an entry with its own `submenu`). Computed once per boundary so
-    two adjacent groups don't each add their own separator.
-    """
-    annotated = []
-    prev_is_group = False
-    for i, item in enumerate(submenu):
-        is_group = bool(item.get("submenu"))
-        item = {**item, "divider_before": i > 0 and (is_group or prev_is_group)}
-        annotated.append(item)
-        prev_is_group = is_group
-    return annotated
-
-
-@register.filter
 def add_days(value, days):
     """Add days to a datetime value"""
     if value is None:

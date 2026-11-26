@@ -41,13 +41,16 @@
                                     <span>{{ item.name }}</span>
                                 </a>
                                 <div class="navbar-dropdown">
-                                    {% for subitem in item.submenu|with_divider_flags %}
-                                        {% if subitem.divider_before %}
-                                            <hr class="navbar-divider">
-                                        {% endif %}
+                                    {% for subitem in item.submenu %}
                                         {% if subitem.submenu %}
+                                            <div class="navbar-item has-text-weight-bold is-size-7 ml-1 mr-1">
+                                                <span class="mr-2">
+                                                    <i class="fas {{ subitem.icon }}"></i>
+                                                </span>
+                                                <span>{{ subitem.name }}</span>
+                                            </div>
                                             {% for entry in subitem.submenu %}
-                                                <a class="navbar-item has-text-weight-semibold is-size-7 ml-1 mr-1" href="{{ entry.url }}">
+                                                <a class="navbar-item has-text-weight-semibold is-size-7 ml-5 mr-1" href="{{ entry.url }}">
                                                     <span class="mr-2">
                                                         <i class="fas {{ entry.icon }}"></i>
                                                     </span>
